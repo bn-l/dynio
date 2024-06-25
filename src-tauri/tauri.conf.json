@@ -12,55 +12,78 @@
     },
     "tauri": {
         "allowlist": {
-            "all": false
+            "all": false,
+            "shell": {
+                "all": false,
+                "open": true
+            },
+            "process": {
+                "all": false,
+                "exit": true
+            },
+            "os": {
+                "all": true
+            },
+            "window": {
+                "show": true,
+                "hide": true,
+                "center": true,
+                "unminimize": true,
+                "setFocus": true,
+                "setSize": true,
+                "setMinSize": true,
+                "setMaxSize": true,
+                "setMinimizable": true,
+                "setMaximizable": true,
+                "setClosable": true,
+                "setAlwaysOnTop": true,
+                "startDragging": true
+            },
+            "globalShortcut": {
+                "all": true
+            },
+            "clipboard": {
+                "all": true,
+                "writeText": true,
+                "readText": true
+            }
+        },
+        "windows": [
+            {
+                "label": "main",
+                "title": "Dynio",
+                "url": "index.html",
+                "transparent": false,
+                "focus": true,
+                "center": true,
+                "titleBarStyle": "Transparent",
+                "maximizable": true,
+                "minimizable": true,
+                "decorations": true,
+                "closable": true,
+                "skipTaskbar": false,
+                "alwaysOnTop": false,
+                "resizable": true,
+                "fileDropEnabled": true,
+                "visible": true,
+                "fullscreen": false
+            }
+        ],
+        "macOSPrivateApi": true,
+        "security": {
+            "csp": null
         },
         "bundle": {
             "active": true,
-            "category": "DeveloperTool",
-            "copyright": "",
-            "deb": {
-                "depends": []
-            },
-            "externalBin": [],
+            "targets": "all",
+            "identifier": "com.dynio.net",
             "icon": [
                 "icons/32x32.png",
                 "icons/128x128.png",
                 "icons/128x128@2x.png",
                 "icons/icon.icns",
                 "icons/icon.ico"
-            ],
-            "identifier": "com.tauri.dev",
-            "longDescription": "",
-            "macOS": {
-                "entitlements": null,
-                "exceptionDomain": "",
-                "frameworks": [],
-                "providerShortName": null,
-                "signingIdentity": null
-            },
-            "resources": [],
-            "shortDescription": "",
-            "targets": "all",
-            "windows": {
-                "certificateThumbprint": null,
-                "digestAlgorithm": "sha256",
-                "timestampUrl": ""
-            }
-        },
-        "security": {
-            "csp": null
-        },
-        "updater": {
-            "active": false
-        },
-        "windows": [
-            {
-                "fullscreen": false,
-                "height": 600,
-                "resizable": true,
-                "title": "tausveltest3",
-                "width": 800
-            }
-        ]
+            ]
+        }
     }
 }

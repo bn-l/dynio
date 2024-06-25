@@ -2,6 +2,8 @@ import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import UnoCSS from 'unocss/vite'
 import presetUno from '@unocss/preset-uno'
+import tsconfigPaths from 'vite-tsconfig-paths';
+
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -11,7 +13,8 @@ export default defineConfig({
                 presetUno()
             ],
         }),
-        svelte()
+        svelte(),
+        tsconfigPaths(),
     ],
 
     // prevent vite from obscuring rust errors

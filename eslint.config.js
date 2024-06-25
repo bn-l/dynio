@@ -8,6 +8,7 @@ export default antfu(
                 project: "./tsconfig.json",
             },
         },
+        svelte: true,
         stylistic: {
             indent: 4,
             quotes: "double",

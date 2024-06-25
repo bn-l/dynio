@@ -15,9 +15,14 @@ rust-version = "1.60"
 tauri-build = { version = "1.5.2", features = [] }
 
 [dependencies]
-serde_json = "1.0"
-serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "1.6.5", features = [] }
+tauri = { version = "1.6.5", features = [ "os-all", "global-shortcut-all", "window-show", "clipboard-all", "window-set-minimizable", "process-exit", "window-set-closable", "window-set-always-on-top", "window-unminimize", "window-set-size", "shell-open", "window-set-max-size", "window-set-focus", "window-hide", "window-set-min-size", "window-center", "window-start-dragging", "window-set-maximizable", "macos-private-api"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "1.0.61"
+tauri-plugin-autostart = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+tokio = { version = "1.38.0", features = ["time", "sync", "process", "macros"] }
+serde_yaml = "0.9.34+deprecated"
+notify = "6.1.1"
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem and the built-in dev server is disabled.

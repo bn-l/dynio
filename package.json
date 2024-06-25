@@ -13,6 +13,7 @@
     },
     "dependencies": {
         "@tauri-apps/api": "^1",
+        "ansi_up": "^6.0.2",
         "lodash-es": "^4.17.21",
         "nanoid": "^5.0.7",
         "rambda": "^9.2.1"
@@ -46,6 +47,7 @@
         "typescript-eslint": "^7.13.1",
         "unocss": "^0.61.0",
         "vite": "^5.3.1",
+        "vite-tsconfig-paths": "^4.3.2",
         "zod": "^3.23.8"
     },
     "overrides": {

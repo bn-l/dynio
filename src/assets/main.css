@@ -1,0 +1,73 @@
+
+
+:root {
+    --main-font: Inter;
+    --main-letter-spacing: -0.01em;
+    font-family: var(--main-font);
+    letter-spacing: var(--main-letter-spacing);
+
+    font-size: 2.4vw;
+
+    /* line-height: 24px; */
+    /* font-weight: 400; */
+
+    /* font-synthesis: none; */
+
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
+
+    /* background-image: url("/desktop-background.jpg");
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed; */
+
+    background-color: transparent;
+}
+
+* {
+    outline: none;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('/Inter.ttf') format('truetype');
+
+}
+
+@font-face {
+    font-family: 'SourceCodePro';
+    src: url('/SourceCodePro.ttf') format('truetype');
+
+}
+
+code {
+    font-family: SourceCodePro;
+}
+
+/* Reset related only */
+input {
+    font-family: inherit;
+    letter-spacing: inherit;
+    background: inherit;
+    outline: none;
+    border: none;
+}
+
+#root {
+    height: 100vh;
+    width: 100vw;
+}
+
+body {
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+}
+
+
+@media (prefers-color-scheme: dark) {
+   
+}

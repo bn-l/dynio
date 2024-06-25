@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=./cmd-config-schema.json
+
+where:
+    command: where
+    description: Searches files by filename. Use * as a wildcard. E.g. *test*.
+    mode: runOnKeystroke
+    arguments:
+        - /t
+    activationOptions:
+        activateAction: open
+    outputOptions:
+        parseAnsiiColors: true
+        display:
+            type: list
+            options:
+                maxLineLength: 160
+                lineSplitter: "\n"
+

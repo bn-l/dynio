@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=./cmd-config-schema.json
+
+find:
+    command: find
+    description: Searches files by filename.
+    mode: runOnKeystroke
+    arguments:
+        - -maxdepth 3
+        - -name
+    activationOptions:
+        activateAction: open
+    outputOptions:
+        parseAnsiiColors: true
+        display:
+            type: list
+            options:
+                maxLineLength: 160
+                lineSplitter: "\n"
+

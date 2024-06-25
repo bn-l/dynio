@@ -1,0 +1,139 @@
+import { z } from "zod";
+
+export default z.record(
+  z
+    .object({
+      command: z
+        .string()
+        .describe(
+          "Absolute path to cmd or the name of a command that can run in the default shell.",
+        ),
+      description: z
+        .string()
+        .describe("Short description of what the program does")
+        .optional(),
+      mode: z
+        .enum(["runOnEnter", "runOnKeystroke"])
+        .describe(
+          "Whether to run the command after pressing enter OR each keystroke.",
+        )
+        .default("runOnKeystroke"),
+      arguments: z
+        .array(z.string())
+        .describe("Arguments for the cmd")
+        .optional(),
+      outputOptions: z
+        .object({
+          parseAnsiiColors: z
+            .boolean()
+            .describe(
+              "Whether to parse ascii colors (nb: color might not be accurate)",
+            )
+            .default(true),
+          display: z
+            .union([
+              z
+                .object({
+                  type: z.literal("list"),
+                  options: z
+                    .object({
+                      maxLineLength: z
+                        .number()
+                        .describe(
+                          "Displays only this many characters plus per item.",
+                        )
+                        .default(160),
+                      lineSplitter: z
+                        .string()
+                        .describe(
+                          "Character(s) to split the output string. Defaults to newlines.",
+                        )
+                        .default("\n"),
+                      showHotkeys: z
+                        .boolean()
+                        .describe(
+                          "Whether to show alt/option + number keyboard shortcuts for items in the list.",
+                        )
+                        .default(true),
+                    })
+                    .strict()
+                    .optional(),
+                })
+                .strict(),
+              z
+                .object({
+                  type: z.literal("single"),
+                  options: z
+                    .object({
+                      sizeBreakPoint: z
+                        .number()
+                        .describe(
+                          "Outputs under this size are shown using large size; over using small.",
+                        )
+                        .default(25),
+                      largeSize: z
+                        .string()
+                        .describe(
+                          "Output string length < sizeBreakPoint. Any valid tailwind font size.",
+                        )
+                        .default("text-4xl"),
+                      smallSize: z
+                        .string()
+                        .describe(
+                          "Output string length > sizeBreakPoint. Any valid tailwind font size.",
+                        )
+                        .default("text-xl"),
+                    })
+                    .strict()
+                    .optional(),
+                })
+                .strict(),
+            ])
+            .describe("Display type")
+            .default({ type: "list" }),
+          emptyDisplayOptions: z.record(z.never()).optional(),
+        })
+        .strict()
+        .optional(),
+      activationOptions: z
+        .object({
+          activateAction: z
+            .enum(["copy", "open"])
+            .describe(
+              "Enter / double click action for an output. Useful for opening or copying some text  to the clipboard. By default is undefined and does nothing. If:\n- no extractor: Will copy / open entire line.\n- extrator: Will copy / open match.\n- extractor + extractorGroup: Will copy / open specific match group.",
+            )
+            .optional(),
+          extractorRegexBody: z
+            .string()
+            .describe(
+              "Regex to extract text from each split line for use in the enterAction in this config. Don't pre/post-fix with /.",
+            )
+            .optional(),
+          extractorFlags: z
+            .string()
+            .describe(
+              "Regex flags to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
+            )
+            .optional(),
+          extractorGroup: z
+            .number()
+            .describe(
+              "Regex group to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
+            )
+            .optional(),
+        })
+        .strict()
+        .optional(),
+      hotkeyNumber: z
+        .number()
+        .describe(
+          "From 0-9, pressing alt+shift+hotkeyNumber will set the cmd as active.",
+        )
+        .optional(),
+      runOnBlank: z
+        .boolean()
+        .describe("Whether to run the command when there is no input.")
+        .default(false),
+    })
+    .strict(),
+);
