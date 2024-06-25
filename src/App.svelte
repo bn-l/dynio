@@ -1,4 +1,5 @@
 <script lang="ts">
+    import "virtual:uno.css";
     import svelteLogo from "./assets/svelte.svg";
     import viteLogo from "/vite.svg";
     import Counter from "$lib/Counter.svelte";
@@ -31,6 +32,7 @@
         Click on the Vite and Svelte logos to learn more
     </p>
 </main>
+
 
 <style>
     .logo {
