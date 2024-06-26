@@ -16,7 +16,8 @@
         "ansi_up": "^6.0.2",
         "lodash-es": "^4.17.21",
         "nanoid": "^5.0.7",
-        "rambda": "^9.2.1"
+        "rambda": "^9.2.1",
+        "virtua": "^0.33.0"
     },
     "devDependencies": {
         "@antfu/eslint-config": "^2.21.1",

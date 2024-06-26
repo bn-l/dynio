@@ -2,7 +2,7 @@
 import { nanoid } from 'nanoid'
 import { writable } from 'svelte/store';
 
-type ErrorType = "js" | "tauri" | "stderr" | "shell" | "unknown";
+type ErrorType = "js" | "tauri" | "shell" | "unknown";
 
 type ErrorItem = {
     id: string;

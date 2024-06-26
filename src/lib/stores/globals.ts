@@ -4,12 +4,9 @@ import type { Writable } from "svelte/store";
 
 export type TrayViewType = "stdout" | "stderr" | "errors" | "info" | "cmdSelector";
 export type Focusable = "tile" | "input" | "tray";
-export type StderrToCountMap = { [err: string]: number };
 
 export const currentTrayView = writable<TrayViewType>("stdout");
 export const currentFocus = writable<Focusable>("input");
-export const stderr = writable<StderrToCountMap>({});
-
 export const currentCmd = writable<string | undefined>(undefined);
 export const inputLocked = writable(false);
 export const viewLocked = writable(false);
@@ -22,4 +19,8 @@ export const exitCode = writable<number | undefined>(0);
 export const running = writable(false);
 export const query = writable("");
 export const unhiding = writable(true);
+
+export const stderr = writable<StderrToCountMap>({});
+export type StderrToCountMap = { [err: string]: number };
+
 

@@ -7,10 +7,16 @@ export interface ListDisplayOptions {
      */
     maxLineLength?: number;
     /**
-     * Character(s) to split the output string. Defaults to newlines.
+     * Character(s) to split the output into lines. 
+     * Defaults to newlines.
      * @default "\n"
      */
     lineSplitter?: string;
+    /**
+     * Regular expression to split the output into lines as an array where the first
+     * item is the regex body and the second is the flags.
+     */
+    lineSplitterRegex?: string[];
     /**
      * Whether to show alt/option + number keyboard shortcuts for items in the list.
      * @default true
@@ -41,17 +47,17 @@ export interface EmptyDisplayOptions {
     
 }
 
-type Display =
+export type Display =
     { type: "list"; options?: ListDisplayOptions } |
     { type: "single"; options?: SingleDisplayOptions };
 
 
 export interface OutputOptions {
     /**
-     * Whether to parse ascii colors (nb: color might not be accurate)
+     * Whether to parse ansi colors (nb: color might not be accurate)
      * @default true
      */
-    parseAnsiiColors?: boolean;
+    parseAnsiColors?: boolean;
     /**
      * Display type
      * @default { type: "list" }

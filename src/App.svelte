@@ -38,6 +38,8 @@
     </div>
 </div>
 
+<!-- Regenerate types and schemas -->
+
 <script lang="ts">
     import "./assets/main.css";
     import "./assets/scroll-area.css";

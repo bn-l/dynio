@@ -1,10 +1,10 @@
 
 import type { CmdConfig, CmdConfigItem } from "$lib/stores/schema/cmd-config-schema.js";  
 import type { Writable, Readable } from "svelte/store";
-import { writable, derived } from "svelte/store";
+import { writable, derived , get } from "svelte/store";
 import { currentCmd } from "$lib/stores/globals.js";
 import { merge } from "lodash-es";
-import { get } from "svelte/store";
+
 
 export const cmdConfig: Writable<CmdConfig> = writable({});
 
@@ -14,38 +14,61 @@ export const currentCmdConfig = derived<[typeof currentCmd, typeof cmdConfig], C
 
         // console.log("currentCmdConfig in store", get(cmdConfig));
  
-        // eslint-disable-next-line ts/strict-boolean-expressions
         return $currentCmd !== undefined && $cmdConfig[$currentCmd] ?
             $cmdConfig[$currentCmd] :
             undefined;
     }
 );
 
+const defaultListCmdConfigItem: Partial<CmdConfigItem> = {
+    outputOptions: {
+        display: {
+            type: "list",
+            options: {
+                lineSplitter: "\n",
+                maxLineLength: 160,
+                // maxItems: 1000,
+            }
+        },
+        parseAnsiColors: true,
+    },
+    mode: "runOnKeystroke",
+    activationOptions: {
+        activateAction: "copy",
+    },
+    runOnBlank: false,
+}
+
+const defaultSingleCmdConfigItem: Partial<CmdConfigItem> = {
+    outputOptions: {
+        display: {
+            type: "single",
+            options: {
+                sizeBreakPoint: 25,
+                largeSize: "text-4xl",
+                smallSize: "text-xl",
+            }
+        },
+        parseAnsiColors: true,
+    },
+    mode: "runOnKeystroke",
+    activationOptions: {
+        activateAction: "copy",
+    },
+    runOnBlank: false,
+}
+
 export function initializeCmdConfigs(incoming: CmdConfig) {
-
-    const defaultCmdConfigItem: Partial<CmdConfigItem> = {
-        outputOptions: {
-            display: {
-                type: "list",
-                options: {
-                    lineSplitter: "\n",
-                    maxLineLength: 160,
-                    // maxItems: 1000,
-                }
-            },
-            parseAnsiiColors: true,
-        },
-        mode: "runOnKeystroke",
-        activationOptions: {
-            activateAction: "copy",
-        },
-        runOnBlank: false,
-    }
-
 
     const withDefaults: CmdConfig = Object.fromEntries(
         Object.entries(incoming).map(([cmdName, cmdConfigItem]) => {
-            return [cmdName, merge({}, defaultCmdConfigItem, cmdConfigItem)];
+
+            if (cmdConfigItem?.outputOptions?.display?.type === "list") {
+                return [cmdName, merge({}, defaultListCmdConfigItem, cmdConfigItem)];
+            }
+            else {
+                return [cmdName, merge({}, defaultSingleCmdConfigItem, cmdConfigItem)];
+            }
         })
     );
 
