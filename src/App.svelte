@@ -40,6 +40,8 @@
 
 <!-- Regenerate types and schemas -->
 
+<!-- for context menu: https://melt-ui.com/docs/builders/context-menu  -->
+
 <script lang="ts">
     import "./assets/main.css";
     import "./assets/scroll-area.css";

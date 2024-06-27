@@ -5,7 +5,7 @@
     {data.length}
 </div>
 
-<VList {data} let:item class="vlist" getKey={(i) => i.line} bind:this={vlist}>
+<VList {data} let:item class="nice-scroll" getKey={(i) => i.line} bind:this={vlist}>
     <div
         class={`grid grid-cols-10 gap-3 ${item.index === selectedIndex ? activeClass : ""}`}
     >
@@ -38,9 +38,6 @@
 </VList>
 
 <script lang="ts">
-    import "../ScrollAreaR.css";
-    import "./vlist.css";
-
     import { VList } from "virtua/svelte";
     import { beforeUpdate } from "svelte";
     import { debounce } from "lodash-es";

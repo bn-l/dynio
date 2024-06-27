@@ -1,34 +1,44 @@
 
 
 <div
-    class=""
->   
-<div
-    class=""
-    onClick={clearStderr}
+    class="nice-scroll"
 >
-    clear
-</div>
+    <div
+        class=""
+        on:click={() => {
+            $stderr = [];
+        }}
+    >
+        clear
+    </div>
 
-<!-- List start -->
+    <!-- Display using code font and new lines should break --> 
     <div
         class=""
     >   
-        <div
-            class=""
-        >
-            {err}
-        </div>
-        <div
-            class=""
-        >
-            {count}
-        </div>
+        {processedStderr}
     </div>
-<!-- List end -->
 </div>
 
 <script lang="ts">
-    // Listing to std err here and set store (like in stdout)
+
+// ! stderr can be basically anything. 
+    // E.g. a stack trace, explanation, etc.
+    // Display as a list is not suitable and can't be added to 
+    // special "errors" store.
+
+    import { stderr } from "$lib/stores/globals.ts";
+    import { onMount } from "svelte";
+    import { listen } from "@tauri-apps/api/event";
+    import type { Event } from "@tauri-apps/api/event";
+
+    onMount(() => {
+        const unlisten = listen("stderr", (e: Event<string[]>) => {
+            $stderr = e.payload;
+        });
+        return () => { void unlisten.then( f => f()) };
+    }); 
+
+    $: processedStderr = $stderr.join("\n");
 
 </script>

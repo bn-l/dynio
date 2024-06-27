@@ -20,7 +20,6 @@ export const running = writable(false);
 export const query = writable("");
 export const unhiding = writable(true);
 
-export const stderr = writable<StderrToCountMap>({});
-export type StderrToCountMap = { [err: string]: number };
+export const stderr = writable<string[]>([]);
 
 
