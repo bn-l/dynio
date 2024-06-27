@@ -15,6 +15,7 @@ use tokio::time::Duration;
 // use std::fs;
 // use tauri::{Manager, Window, State, Monitor, Size, PhysicalSize, LogicalSize, PhysicalPosition, LogicalPosition};
 use tauri::{Manager, Size, PhysicalSize, PhysicalPosition, Window };
+use tauri::GlobalShortcutManager;
 
 use notify::{Watcher, RecursiveMode};//, RecommendedWatcher };
 
@@ -260,6 +261,18 @@ async fn close_tray(app_handle: tauri::AppHandle) {
     }
 }
 
+fn toggle_main_window(app_handle: &tauri::AppHandle) {
+    if let Some(window) = app_handle.get_window("main") {
+        if !window.is_visible().unwrap() {
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
+        else {
+            let _ = window.hide();
+        }
+    }
+}
+
 #[tauri::command]
 async fn close_splashscreen(window: Window) { 
 
@@ -267,14 +280,14 @@ async fn close_splashscreen(window: Window) {
     if let Some(window) = window.get_window("splashscreen") {
         let _ = window.close();
     }
-    // Show main window
 
+    // Show main window
     if let Some(window) = window.get_window("main") {
         if !window.is_visible().unwrap() {
             let _ = window.show();
             let _ = window.set_focus();
         }
-    }   
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -304,12 +317,6 @@ async fn get_config_files() -> Result<ConfigFiles, SerError> {
 
 
 
-// fn start_watcher(app_handle: tauri::AppHandle) -> notify::Result<()> {
-
-  
-// } 
-
-
 fn main() {
 
     tauri::Builder::default()
@@ -319,15 +326,23 @@ fn main() {
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(Vec::new())))
         .setup(move |app| {
 
-            // Start watching config dir:
-    
+            // Global shortcuts / "accelerators" setup
+            // Alt + Space
+            let app_handle_clone = app.app_handle().clone();
+            if !app.global_shortcut_manager().is_registered("Alt+Space").expect("Could not get hotkey reg status") {
+                let _ = app.global_shortcut_manager().register("Alt+Space", move || {
+                    
+                    toggle_main_window(&app_handle_clone);
+                });
+            }
 
-            setup_default_files();
-            setup_main_window(app.app_handle().clone());
+    
             setup_default_files();
 
             setup_splash_window(app.app_handle().clone());
             setup_main_window(app.app_handle().clone());
+
+            // ! Test watching !
 
             let app_handle_clone = app.app_handle().clone();
             let mut watcher = notify::recommended_watcher(move |res| {

@@ -30,7 +30,7 @@ const defaultListCmdConfigItem: Partial<CmdConfigItem> = {
                 // maxItems: 1000,
             }
         },
-        parseAnsiColors: true,
+        parseAnsiiColors: true,
     },
     mode: "runOnKeystroke",
     activationOptions: {

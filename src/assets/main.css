@@ -67,6 +67,7 @@ body {
     margin: 0;
 }
 
+
 .nice-scroll::-webkit-scrollbar {
     background-color: inherit;
     width: 0.8rem;

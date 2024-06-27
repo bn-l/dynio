@@ -33,7 +33,8 @@ export async function loadValidateAndInitConfigStores() {
     if (cmdConfigText) {
         try {
             cmdConfig = yaml.parse(cmdConfigText);
-            validateCmdConfig(cmdConfig);
+            // This applies the defaults in the generated zod files
+            cmdConfig = validateCmdConfig(cmdConfig);
         } catch (err) {
             // @ts-expect-error ignore
             const newError = new Error(`Error parsing command config. Message: ${err?.message}. Stacktrace: ${err?.stack}`);
@@ -48,7 +49,8 @@ export async function loadValidateAndInitConfigStores() {
     if (generalSettingsText) {
         try {
             generalSettings = yaml.parse(generalSettingsText);
-            validateGeneralSettings(generalSettings);
+            // This applies the defaults in the generated zod files
+            generalSettings = validateGeneralSettings(generalSettings);
         } catch (err) {
             // @ts-expect-error ignore
             const newError = new Error(`Error parsing general settings. Message: ${err?.message}. Stacktrace: ${err?.stack}`);

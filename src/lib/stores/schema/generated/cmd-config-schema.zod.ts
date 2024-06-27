@@ -24,10 +24,10 @@ export default z.record(
         .optional(),
       outputOptions: z
         .object({
-          parseAnsiiColors: z
+          parseAnsiColors: z
             .boolean()
             .describe(
-              "Whether to parse ascii colors (nb: color might not be accurate)",
+              "Whether to parse ansi colors (nb: color might not be accurate)",
             )
             .default(true),
           display: z
@@ -46,9 +46,15 @@ export default z.record(
                       lineSplitter: z
                         .string()
                         .describe(
-                          "Character(s) to split the output string. Defaults to newlines.",
+                          "Character(s) to split the output into lines.  Defaults to newlines.",
                         )
                         .default("\n"),
+                      lineSplitterRegex: z
+                        .array(z.string())
+                        .describe(
+                          "Regular expression to split the output into lines as an array where the first item is the regex body and the second is the flags.",
+                        )
+                        .optional(),
                       showHotkeys: z
                         .boolean()
                         .describe(
@@ -89,8 +95,7 @@ export default z.record(
                 })
                 .strict(),
             ])
-            .describe("Display type")
-            .default({ type: "list" }),
+            .optional(),
           emptyDisplayOptions: z.record(z.never()).optional(),
         })
         .strict()

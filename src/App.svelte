@@ -29,10 +29,8 @@
 
         </div>
 
-        {#if $trayOpen}
-            <Tray> 
-                <slot /> 
-            </Tray>
+        {#if _trayOpen}
+            <Tray />
         {/if}
          
     </div>
@@ -42,23 +40,26 @@
 
 <!-- for context menu: https://melt-ui.com/docs/builders/context-menu  -->
 
+<!-- Uncaught error (i.e. critical error) boundary / handling -->
+
+
 <script lang="ts">
     import "./assets/main.css";
-    import "./assets/scroll-area.css";
     import "./assets/bar.css";
     import "virtual:uno.css";
     import theme from "$lib/theme.json"
 
     import { settings } from "$lib/stores/settings.js";
-    import { fileHovering, trayOpen, currentCmd } from "$lib/stores/globals.js";
-    import Tray from "$lib/Tray/Tray.svelte";
-    import Hover from "$lib/Meta/Hover.svelte";
-    import Input from "$lib/Bar/Input.svelte";
-    import LeftTile from "$lib/Bar/LeftTile.svelte";
-    import ErrorIndicator from "$lib/Bar/ErrorIndicator.svelte";
-    import DragSpot from "$lib/Bar/DragSpot.svelte";
+    import { fileHovering, trayOpen } from "$lib/stores/globals.js";
+    import Tray from "./Tray/Tray.svelte";
+    import Hover from "./Meta/Hover.svelte";
+    import Input from "./Bar/Input.svelte";
+    import LeftTile from "./Bar/LeftTile.svelte";
+    import ErrorIndicator from "./Bar/ErrorIndicator.svelte";
+    import DragSpot from "./Bar/DragSpot.svelte";
     import { loadValidateAndInitConfigStores } from "./lib/utils/config-file-utils.ts";
     import { onMount } from 'svelte';
+    import { invoke } from '@tauri-apps/api/tauri';
 
     onMount(async () => {
         await loadValidateAndInitConfigStores();
@@ -70,4 +71,19 @@
         // NB: this is also called in Bar
         console.log("hideWindow called, still to be implemented");
     }
+
+    let _trayOpen = false;
+
+    // First expand window with "open_tray" on backend *then* show tray
+    // (do opposite when closing tray)
+    $: {
+        if($trayOpen) {
+            invoke("open_tray").then(() => _trayOpen = true);
+        }
+        else {
+            _trayOpen = false
+            invoke("close_tray");
+        }
+    }
+
 </script>

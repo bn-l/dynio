@@ -1,11 +1,9 @@
-
-
 interface HotkeysOptions {
     keys: string[]; 
     handler: (event: KeyboardEvent) => void
     enabledWhenEditing?: boolean;
     enabled?: boolean;
-    modifiers?: string[];
+    modifiers?: ('Control' | 'Shift' | 'Alt' | 'Meta' | 'CtrlOrCmd')[];
 }
 
 export function hotkeys(
@@ -26,11 +24,12 @@ export function hotkeys(
         // Check if the event.key is one of the specified keys
         if (!keys.map(key => key.toLowerCase()).includes(event.key.toLowerCase())) return; 
 
+        // NB: Meta is the Command key on Mac
         const requiredModifiers: { [key: string]: boolean } = {
-            'Control': modifiers.includes('Control'),
+            'Control': modifiers.includes('Control') || modifiers.includes('CtrlOrCmd'),
             'Shift': modifiers.includes('Shift'),
             'Alt': modifiers.includes('Alt'),
-            'Meta': modifiers.includes('Meta') // Meta is the Command key on Mac
+            'Meta': modifiers.includes('Meta') || modifiers.includes('CtrlOrCmd') 
         };
 
         for (const mod in requiredModifiers) {
