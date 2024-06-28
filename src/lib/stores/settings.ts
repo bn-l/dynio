@@ -10,18 +10,4 @@ import { merge } from "lodash-es";
 
 export const settings = writable<GeneralSettings>({});
 
-export function initializeGeneralSettings(incoming: GeneralSettings) {
-
-    const defaults: GeneralSettings = {
-        darkMode: false,
-        timeoutSecs: 300,
-        showWelcome: true,
-        hideOnLostFocus: true,
-        firstLaunch: true,
-    }
-    const withDefaults = merge({}, defaults, incoming);
-    settings.set(withDefaults);
-}
-
-
 

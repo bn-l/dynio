@@ -1,13 +1,14 @@
 
 import yaml from 'yaml';
-import { validateCmdConfig } from "$lib/stores/schema/cmd-config-validate.ts";
-import { validateGeneralSettings } from "$lib/stores/schema/general-settings-validate.ts";
 import type { CmdConfig } from '$lib/stores/schema/cmd-config-schema.ts';
 import type { GeneralSettings } from '$lib/stores/schema/general-settings-schema.ts';
 import { invoke } from '@tauri-apps/api';
-import { initializeCmdConfigs } from "$lib/stores/cmd-config.ts";
-import { initializeGeneralSettings } from "$lib/stores/settings.ts";
+import { cmdConfig } from "$lib/stores/cmd-config.ts";
+import { settings } from "$lib/stores/settings.ts";
 import { currentCmd } from "$lib/stores/globals.js";
+
+import cmdConfigZod from "$lib/stores/schema/generated/cmd-config-schema.zod.js";
+import generalSettingsZod from "$lib/stores/schema/generated/general-settings-schema.zod.js";
 
 
 // Cannot use join, homeDir from '@tauri-apps/api/path' because it relies on navigator.
@@ -29,12 +30,12 @@ export async function loadValidateAndInitConfigStores() {
 
     // Setup command configs
 
-    let cmdConfig: CmdConfig = {};
+    let loadedCmdConfig: CmdConfig = {};
     if (cmdConfigText) {
         try {
-            cmdConfig = yaml.parse(cmdConfigText);
+            loadedCmdConfig = yaml.parse(cmdConfigText);
             // This applies the defaults in the generated zod files
-            cmdConfig = validateCmdConfig(cmdConfig);
+            loadedCmdConfig = cmdConfigZod.parse(loadedCmdConfig);
         } catch (err) {
             // @ts-expect-error ignore
             const newError = new Error(`Error parsing command config. Message: ${err?.message}. Stacktrace: ${err?.stack}`);
@@ -45,12 +46,12 @@ export async function loadValidateAndInitConfigStores() {
 
     // Setup command general settings 
 
-    let generalSettings: GeneralSettings = {};
+    let loadedGeneralSettings: GeneralSettings = {};
     if (generalSettingsText) {
         try {
-            generalSettings = yaml.parse(generalSettingsText);
+            loadedGeneralSettings = yaml.parse(generalSettingsText);
             // This applies the defaults in the generated zod files
-            generalSettings = validateGeneralSettings(generalSettings);
+            loadedGeneralSettings = generalSettingsZod.parse(loadedGeneralSettings);
         } catch (err) {
             // @ts-expect-error ignore
             const newError = new Error(`Error parsing general settings. Message: ${err?.message}. Stacktrace: ${err?.stack}`);
@@ -62,23 +63,23 @@ export async function loadValidateAndInitConfigStores() {
     // Default command. If not set, find one.
 
     if (
-        generalSettings.defaultCommand && 
-        !cmdConfig[generalSettings.defaultCommand]
+        loadedGeneralSettings.defaultCommand && 
+        !loadedCmdConfig[loadedGeneralSettings.defaultCommand]
     ) {
-        throw new Error(`The default command "${generalSettings.defaultCommand}" was not found in the command config file. Please check spelling.`);
+        throw new Error(`The default command "${loadedGeneralSettings.defaultCommand}" was not found in the command config file. Please check spelling.`);
 
     } 
-    else if (!generalSettings.defaultCommand) {
-        const hkOne = Object.keys(cmdConfig).find(key => cmdConfig[key].hotkeyNumber === 1);
-        generalSettings.defaultCommand = hkOne ?? Object.keys(cmdConfig)[0];
+    else if (!loadedGeneralSettings.defaultCommand) {
+        const hkOne = Object.keys(loadedCmdConfig).find(key => loadedCmdConfig[key].hotkeyNumber === 1);
+        loadedGeneralSettings.defaultCommand = hkOne ?? Object.keys(loadedCmdConfig)[0];
     }
 
-    initializeCmdConfigs(cmdConfig);
-    initializeGeneralSettings(generalSettings);
+    cmdConfig.set(loadedCmdConfig);
+    settings.set(loadedGeneralSettings);
 
     currentCmd.update((current) => {
         if (!current) {
-            return generalSettings.defaultCommand;
+            return loadedGeneralSettings.defaultCommand;
         }
         return current;
     })

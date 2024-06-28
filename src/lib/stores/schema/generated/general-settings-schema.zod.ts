@@ -21,7 +21,12 @@ export default z
         "Max time a command can take in seconds. By default 300 (= 5 mins).",
       )
       .default(300),
-    defaultCommand: z.string().default("whichever has hotkeyNumber 1"),
+    defaultCommand: z
+      .string()
+      .describe(
+        "Defaults to whichever has hotkey number 1 (or if not hotkeys, the first one it finds)",
+      )
+      .optional(),
     hideOnLostFocus: z
       .boolean()
       .describe(

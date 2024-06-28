@@ -27,9 +27,13 @@ export default z.record(
           parseAnsiColors: z
             .boolean()
             .describe(
-              "Whether to parse ansi colors (nb: color might not be accurate)",
+              "Whether to parse ansii colors (nb: color might not be accurate)",
             )
             .default(true),
+          reverse: z
+            .boolean()
+            .describe("Whether to reverse the output")
+            .default(false),
           display: z
             .union([
               z

@@ -9,6 +9,7 @@
         (e) => {
             $currentTrayView = "cmdSelector";
             $currentFocus = "tray";
+            $trayOpen = true;
         }
     }
     on:keydown={
@@ -25,7 +26,7 @@
 
 <script lang="ts">
     import { focusSync } from "$lib/actions/focusSync.js";
-    import { currentTrayView, currentFocus, currentCmd, query } from "$lib/stores/globals.js";
+    import { currentTrayView, currentFocus, currentCmd, trayOpen } from "$lib/stores/globals.js";
 
-
+    console.log($currentTrayView);
 </script>

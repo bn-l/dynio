@@ -21,7 +21,7 @@
             {#if $currentCmdConfig?.outputOptions?.parseAnsiColors}
                 <span
                     class="whitespace-pre-wrap"
-                >
+                >   
                     {@html processedOutput}
                 </span> 
             {:else}

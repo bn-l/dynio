@@ -29,7 +29,7 @@
 
         </div>
 
-        {#if _trayOpen}
+        {#if $trayOpen}
             <Tray />
         {/if}
          
@@ -42,6 +42,11 @@
 
 <!-- Uncaught error (i.e. critical error) boundary / handling -->
 
+<!-- All tray output should be monospaced font -->
+
+<!-- Add "press enter to run" empty display message if running on enter -->
+
+<!-- Make placeholder unselectable in input bar -->
 
 <script lang="ts">
     import "./assets/main.css";
@@ -50,7 +55,7 @@
     import theme from "$lib/theme.json"
 
     import { settings } from "$lib/stores/settings.js";
-    import { fileHovering, trayOpen } from "$lib/stores/globals.js";
+    import { fileHovering, trayOpen, running, stdoutLock} from "$lib/stores/globals.js";
     import Tray from "./Tray/Tray.svelte";
     import Hover from "./Meta/Hover.svelte";
     import Input from "./Bar/Input.svelte";
@@ -59,7 +64,11 @@
     import DragSpot from "./Bar/DragSpot.svelte";
     import { loadValidateAndInitConfigStores } from "./lib/utils/config-file-utils.ts";
     import { onMount } from 'svelte';
-    import { invoke } from '@tauri-apps/api/tauri';
+    import { listen } from "@tauri-apps/api/event";
+    import type { Event } from "@tauri-apps/api/event";
+    import { stdout } from "$lib/stores/globals.js";
+    import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
+    import { debounce } from "lodash-es";
 
     onMount(async () => {
         await loadValidateAndInitConfigStores();
@@ -67,23 +76,59 @@
 
     console.log("rendered");
 
+    console.log($trayOpen);
+
     async function hideWindow() {
         // NB: this is also called in Bar
-        console.log("hideWindow called, still to be implemented");
+        console.log("hideWindow called in App.tsx, still to be implemented");
     }
 
-    let _trayOpen = false;
 
-    // First expand window with "open_tray" on backend *then* show tray
-    // (do opposite when closing tray)
-    $: {
-        if($trayOpen) {
-            invoke("open_tray").then(() => _trayOpen = true);
-        }
-        else {
-            _trayOpen = false
-            invoke("close_tray");
-        }
-    }
+    // ----------------- Tray open / closed logic ----------------- //
+
+    // Starts closed
+    // Closes: upon hiding (done in event listener below)
+    // Opens: whenever stdout is received (done in stdout listener below)
+
+    // -------------- Backend Stdout Event Listener --------------- //
+
+    // If running don't clear output. Set time out to clear it. else clear it.
+
+    onMount(() => {
+        const unlisten = listen("stdout", (e: Event<string[]>) => {
+            console.log("got output: ", e.payload);
+            $stdout = $currentCmdConfig?.outputOptions?.reverse ?
+                e.payload.reverse() :
+                e.payload;
+
+            $trayOpen = true;
+        });
+        return () => { void unlisten.then( f => f()) };
+    }); 
+
+
+    // ----------- Backend window hide Event Listener ------------- //
+
+    onMount(() => {
+        const unlisten = listen("main_hide_unhide", (e: Event<"hide" | "unhide">) => {
+            console.log(e.payload);
+            if(e.payload === "hide" && $trayOpen && $stdout.length === 0) {
+                $trayOpen = false;
+            }
+        });
+        return () => { void unlisten.then( f => f()) };
+    }); 
+
+    // --------------- Backend exit Event Listener --------------- //
+
+    const x = debounce(() => $running = false, 100);
+
+    onMount(() => {
+        const unlisten = listen("exit", (e: Event<number | undefined>) => {
+            console.log("exit event received: ", e.payload);
+            x();
+        });
+        return () => { void unlisten.then( f => f()) };
+    }); 
 
 </script>

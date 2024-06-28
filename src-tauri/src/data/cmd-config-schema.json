@@ -71,8 +71,13 @@
       "properties": {
         "parseAnsiColors": {
           "type": "boolean",
-          "description": "Whether to parse ansi colors (nb: color might not be accurate)",
+          "description": "Whether to parse ansii colors (nb: color might not be accurate)",
           "default": true
+        },
+        "reverse": {
+          "type": "boolean",
+          "description": "Whether to reverse the output",
+          "default": false
         },
         "display": {
           "$ref": "#/definitions/Display",

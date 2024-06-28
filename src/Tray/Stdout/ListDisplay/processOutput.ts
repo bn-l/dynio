@@ -12,7 +12,10 @@ const ansi_up = new AnsiUp();
 
 export function processOutput(output: string[], options: ProcessOutputOptions) {
 
+    console.log("start of process output");
+
     if(!options) return output;
+    if(!output || output.length === 0) return [];
 
     const { maxLineLength, lineSplitter, lineSplitterRegex, parseAnsiColors} = options;
 
@@ -29,7 +32,8 @@ export function processOutput(output: string[], options: ProcessOutputOptions) {
     }
 
     if(parseAnsiColors) {
-        output = output.map(ansi_up.ansi_to_html);
+        console.log("in processoutput. output length", output.length);
+        output = output.map((line: string) => ansi_up.ansi_to_html(line));
     }
 
     return output;

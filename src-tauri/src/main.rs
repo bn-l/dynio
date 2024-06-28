@@ -266,9 +266,11 @@ fn toggle_main_window(app_handle: &tauri::AppHandle) {
         if !window.is_visible().unwrap() {
             let _ = window.show();
             let _ = window.set_focus();
+            let _ = app_handle.emit_all("main_hide_unhide", "unhide");
         }
         else {
             let _ = window.hide();
+            let _ = app_handle.emit_all("main_hide_unhide", "hide");
         }
     }
 }
@@ -343,11 +345,15 @@ fn main() {
             setup_main_window(app.app_handle().clone());
 
             // ! Test watching !
+            // Watching not working
 
             let app_handle_clone = app.app_handle().clone();
             let mut watcher = notify::recommended_watcher(move |res| {
                 match res {
-                   Ok(_event) => tauri::api::process::restart(&app_handle_clone.env()),
+                   Ok(_event) => {
+                        println!("Watched file changed");
+                        tauri::api::process::restart(&app_handle_clone.env())
+                   },
                    Err(e) => println!("Watch error: {:?}", e),
                 }
             })?;

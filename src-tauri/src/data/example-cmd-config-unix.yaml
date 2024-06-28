@@ -10,7 +10,7 @@ find:
     activationOptions:
         activateAction: open
     outputOptions:
-        parseAnsiiColors: true
+        parseAnsiColors: true
         display:
             type: list
             options:

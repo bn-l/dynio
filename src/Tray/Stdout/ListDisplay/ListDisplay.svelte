@@ -5,7 +5,8 @@
     {data.length}
 </div>
 
-<VList {data} let:item class="nice-scroll" getKey={(i) => i.line} bind:this={vlist}>
+
+<VList {data} let:item class="nice-scroll" getKey={i => i.line} bind:this={vlist}>
     <div
         class={`grid grid-cols-10 gap-3 ${item.index === selectedIndex ? activeClass : ""}`}
     >
@@ -48,14 +49,15 @@
     import { activate } from "$lib/utils/activator.ts";
     import { processOutput } from "./processOutput.ts";
 
+
     $: display = $currentCmdConfig?.outputOptions?.display;
     $: displayOptions = display?.type === "list" ? display?.options : undefined;
-    $: processedOutput = processOutput($stdout, {
-        maxLineLength: displayOptions?.maxLineLength,
-        lineSplitter: displayOptions?.lineSplitter,
-        lineSplitterRegex: displayOptions?.lineSplitterRegex,
-        parseAnsiColors: $currentCmdConfig?.outputOptions?.parseAnsiColors,
-    });
+
+
+    // If list doesn't go back to 0 on new output
+    // beforeUpdate(() => {
+    //     selectedIndex = 0;
+    // });
 
     function onActivation(text: string) {
         (text: string) => activate(text, $currentCmdConfig?.activationOptions);
@@ -63,17 +65,20 @@
 
     type Indexed = { line: string; index: number };
 
-    let data: Indexed[] = processedOutput.map((line, index) => {
-        return { line, index };
+    let processedOutput: string[] = [];
+    $: processedOutput = processOutput($stdout, {
+        maxLineLength: displayOptions?.maxLineLength,
+        lineSplitter: displayOptions?.lineSplitter,
+        lineSplitterRegex: displayOptions?.lineSplitterRegex,
+        parseAnsiColors: $currentCmdConfig?.outputOptions?.parseAnsiColors,
     });
+    let data: Indexed[] = [];
+    $: data = processedOutput.map((line, index) => ({ line, index }));
+
+    console.log("In Listdisplay data length: ", data.length);
 
     let vlist: VList<Indexed>;
     let selectedIndex = 0;
-
-    // If list doesn't go back to 0 on new output
-    // beforeUpdate(() => {
-    //     selectedIndex = 0;
-    // });
 
     const upDownListHandler = debounce(
         (e: KeyboardEvent, indexChange: number) => {
@@ -93,15 +98,17 @@
         },
         16,
         { leading: true, trailing: false },
-    );
-
-    $: hotKeysEnabled =
-        $currentCmdConfig?.mode === "runOnKeystroke" ||
-        ($currentCmdConfig?.mode === "runOnEnter" && $currentFocus === "tray");
+    ); 
 
     // When the tray is not focussed show a "ghost" version of the active highlight
     $: activeClass = $currentFocus === "tray" ? "bg-blue-300" : "bg-blue-100";
+
+    // This may not be reactive need to test here an in CmdSelector
+    $: hotkeysEnabled = $currentCmdConfig?.mode === "runOnKeystroke" ||
+    ($currentCmdConfig?.mode === "runOnEnter" && $currentFocus === "tray");
+
 </script>
+
 
 <svelte:body
     use:hotkeys={{
@@ -115,6 +122,6 @@
             }
         },
         keys: ["ArrowUp", "ArrowDown", "Enter"],
-        enabled: hotKeysEnabled,
+        enabled:  hotkeysEnabled,
     }}
 />

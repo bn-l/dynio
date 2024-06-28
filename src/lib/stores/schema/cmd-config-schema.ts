@@ -54,10 +54,15 @@ export type Display =
 
 export interface OutputOptions {
     /**
-     * Whether to parse ansi colors (nb: color might not be accurate)
+     * Whether to parse ansii colors (nb: color might not be accurate)
      * @default true
      */
     parseAnsiColors?: boolean;
+    /**
+     * Whether to reverse the output
+     * @default false
+     */
+    reverse?: boolean; 
     /**
      * Display type
      * @default { type: "list" }

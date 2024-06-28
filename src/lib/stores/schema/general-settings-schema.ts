@@ -20,7 +20,7 @@ export type GeneralSettings = {
      */
     timeoutSecs?: number;
     /**
-     * @default whichever has hotkeyNumber 1
+     * Defaults to whichever has hotkey number 1 (or if not hotkeys, the first one it finds)
      */
     defaultCommand?: string;
     /**

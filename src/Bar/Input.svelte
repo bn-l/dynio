@@ -12,9 +12,15 @@
     use:focusSync={"input"}
     bind:value={$query}
     on:keydown={(e) => {
-        if (e.key === "Enter") {
+        if (e.key === "Enter" && $currentCmdConfig?.mode === "runOnEnter") {
             e.preventDefault();
             $currentFocus = "tray";
+            debouncedRP($query)
+        }
+    }}
+    on:input={(e) => {
+        if ($currentCmdConfig?.mode === "runOnKeystroke") {
+            debouncedRP($query);
         }
     }}
 />
@@ -28,14 +34,7 @@
     import errors from "$lib/stores/errors.js";
     import { debounce } from "lodash-es";
 
-    $: {
-        if ($currentCmdConfig?.mode === "runOnKeystroke") {
-            $query.trim().length === 0 && !$currentCmdConfig.runOnBlank ? 
-                runProgram($query) : 
-                debouncedRP($query);
-        }
-    }
-
+    
     function runProgram(input: string) {
 
         if (!$currentCmdConfig) return;
@@ -44,11 +43,14 @@
             console.log("Input is empty, not running program.");
             void invoke("stop_running");
             $stdoutLock = true;
-            $stdout = [];
             $exitCode = undefined;
             $running = false;
+            $stdout = [];
             return;
         }
+
+        $running = true;
+        $stdoutLock = false;
 
         console.log("About to run program with: ", $currentCmdConfig.command, [...($currentCmdConfig.arguments ?? []), input].join(" "));
 
@@ -58,9 +60,7 @@
             arguments: [...($currentCmdConfig.arguments ?? []), input],
         })
         .then(() => {
-            $running = true;
             $currentTrayView = "stdout";
-
             console.log("Program invoked successfully (need to listen for output).");
         })
         .catch(err => {
