@@ -55,7 +55,7 @@
     import theme from "$lib/theme.json"
 
     import { settings } from "$lib/stores/settings.js";
-    import { fileHovering, trayOpen, running, stdoutLock} from "$lib/stores/globals.js";
+    import { fileHovering, trayOpen, running, stdoutLock, currentFocus, query } from "$lib/stores/globals.js";
     import Tray from "./Tray/Tray.svelte";
     import Hover from "./Meta/Hover.svelte";
     import Input from "./Bar/Input.svelte";
@@ -94,14 +94,41 @@
 
     // If running don't clear output. Set time out to clear it. else clear it.
 
+    let timeout: number | NodeJS.Timeout = 0;
+    let emptyStdCounter = 0;
+
     onMount(() => {
         const unlisten = listen("stdout", (e: Event<string[]>) => {
             console.log("got output: ", e.payload);
+
+            $trayOpen = true;
+
+            if($stdoutLock) return;
+
+            clearTimeout(timeout);
+            // Debounce if it will set stdout to [] to prevent output flashing.
+            if(e.payload.length === 0) {
+                emptyStdCounter += 1;
+                // If 3 empties in a row, clear immediately.
+                if(emptyStdCounter > 3) {
+                    emptyStdCounter = 0;
+                    $stdout = [];
+                    return;
+                }
+                timeout = setTimeout(() => {
+                    console.log("timer ran");
+                    $stdout = [];
+                }, 1000);
+                return;
+            }
+            clearTimeout(timeout);
+            emptyStdCounter = 0;
+
+            console.log("setting stdout to value")
             $stdout = $currentCmdConfig?.outputOptions?.reverse ?
                 e.payload.reverse() :
                 e.payload;
 
-            $trayOpen = true;
         });
         return () => { void unlisten.then( f => f()) };
     }); 
@@ -112,8 +139,11 @@
     onMount(() => {
         const unlisten = listen("main_hide_unhide", (e: Event<"hide" | "unhide">) => {
             console.log(e.payload);
-            if(e.payload === "hide" && $trayOpen && $stdout.length === 0) {
+            if(e.payload === "hide" && $trayOpen && !$query && $stdout.length === 0) {
                 $trayOpen = false;
+            }
+            if(e.payload === "unhide") {
+                $currentFocus = "input";
             }
         });
         return () => { void unlisten.then( f => f()) };

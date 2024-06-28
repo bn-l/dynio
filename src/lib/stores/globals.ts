@@ -23,8 +23,8 @@ export const unhiding = writable(true);
 export const stderr = writable<string[]>([]);
 
 
-let timeout: number | NodeJS.Timeout = 0;
-let emptyStdCounter = 0;
+// let timeout: number | NodeJS.Timeout = 0;
+// let emptyStdCounter = 0;
 
 function createStdoutStore() {
     const { subscribe, set: _set } = writable<string[]>([]);
@@ -33,26 +33,7 @@ function createStdoutStore() {
         subscribe,
 
         set: (value: string[]) => {
-
-            clearTimeout(timeout);
-            // Debounce if it will set stdout to [] to prevent output flashing.
-            if(value.length === 0) {
-                emptyStdCounter += 1;
-                // If 3 empties in a row, clear immediately.
-                if(emptyStdCounter > 3) {
-                    emptyStdCounter = 0;
-                    _set([]);
-                    return;
-                }
-                timeout = setTimeout(() => {
-                    _set([]);
-                }, 1000);
-                return;
-            }
-            clearTimeout(timeout);
-            emptyStdCounter = 0;
-
-            console.log("setting stdout to value")
+            console.log("in globals, setting stdout")
             _set(value);
         }
     }

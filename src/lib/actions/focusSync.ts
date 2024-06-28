@@ -1,6 +1,6 @@
 import { currentFocus } from "$lib/stores/globals.js";
 import type { Focusable } from "$lib/stores/globals.js";
-
+import { get } from "svelte/store";
 
 export function focusSync(node: HTMLElement, focusId: Focusable): { destroy: () => void } {
 
@@ -10,9 +10,14 @@ export function focusSync(node: HTMLElement, focusId: Focusable): { destroy: () 
         currentFocus.set(focusId);
     };
 
+    const handleBlur = (event: FocusEvent) => {
+        
+    }
+
     // If the current node is not focussed, and the focusId arg this action was called with
     //  matches the currently focussed in the store, then focus this node.
     const unsubscribe = currentFocus.subscribe(value => { 
+        console.log("in current focus subscribe")
         if (document.activeElement !== node && value === focusId) { 
             node.focus();
         }
@@ -20,6 +25,7 @@ export function focusSync(node: HTMLElement, focusId: Focusable): { destroy: () 
 
 
     node.addEventListener('focus', handleFocus);
+    node.addEventListener('blur', handleBlur);
 
     return {
         destroy() {

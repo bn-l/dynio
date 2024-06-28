@@ -49,6 +49,7 @@
             return;
         }
 
+        // $stdout = [];
         $running = true;
         $stdoutLock = false;
 
