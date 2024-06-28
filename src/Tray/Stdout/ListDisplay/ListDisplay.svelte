@@ -6,7 +6,7 @@
 </div>
 
 
-<VList {data} let:item class="nice-scroll" getKey={i => i.line} bind:this={vlist}>
+<VList {data} let:item class="nice-scroll" bind:this={vlist}>
     <div
         class={`grid grid-cols-10 gap-3 ${item.index === selectedIndex ? activeClass : ""}`}
     >
@@ -43,7 +43,7 @@
     import { beforeUpdate } from "svelte";
     import { debounce } from "lodash-es";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
-    import { currentFocus } from "$lib/stores/globals.ts";
+    import { currentFocus, currentTrayView } from "$lib/stores/globals.ts";
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
     import { stdout } from "$lib/stores/globals.ts";
     import { activate } from "$lib/utils/activator.ts";
@@ -60,7 +60,8 @@
     // });
 
     function onActivation(text: string) {
-        (text: string) => activate(text, $currentCmdConfig?.activationOptions);
+        console.log("calling activator")
+        activate(text, $currentCmdConfig?.activationOptions);
     }
 
     type Indexed = { line: string; index: number };
@@ -101,11 +102,10 @@
     ); 
 
     // When the tray is not focussed show a "ghost" version of the active highlight
-    $: activeClass = $currentFocus === "tray" ? "bg-blue-300" : "bg-blue-100";
+    const activeClass = "bg-blue-300";
 
-    // This may not be reactive need to test here an in CmdSelector
-    $: hotkeysEnabled = $currentCmdConfig?.mode === "runOnKeystroke" ||
-    ($currentCmdConfig?.mode === "runOnEnter" && $currentFocus === "tray");
+    $: console.log("$currentTrayView === stdout", $currentTrayView === "stdout");
+
 
 </script>
 
@@ -114,14 +114,16 @@
     use:hotkeys={{
         handler(event) {
             if (event.key === "ArrowUp") {
+                console.log("called arrow up")
                 upDownListHandler(event, -1);
             } else if (event.key === "ArrowDown") {
                 upDownListHandler(event, 1);
             } else if (event.key === "Enter") {
-                onActivation?.(data[selectedIndex].line);
+                console.log("enter pressed")
+                onActivation(data[selectedIndex].line);
             }
         },
         keys: ["ArrowUp", "ArrowDown", "Enter"],
-        enabled:  hotkeysEnabled,
+        enabled:  true,
     }}
 />

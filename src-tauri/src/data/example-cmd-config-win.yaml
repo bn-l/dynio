@@ -3,7 +3,6 @@
 where:
     command: where
     description: Searches files by filename. Use * as a wildcard. E.g. *test*.
-    mode: runOnKeystroke
     arguments:
         - /t
     activationOptions:

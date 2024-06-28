@@ -12,12 +12,6 @@ export default z.record(
         .string()
         .describe("Short description of what the program does")
         .optional(),
-      mode: z
-        .enum(["runOnEnter", "runOnKeystroke"])
-        .describe(
-          "Whether to run the command after pressing enter OR each keystroke.",
-        )
-        .default("runOnKeystroke"),
       arguments: z
         .array(z.string())
         .describe("Arguments for the cmd")
@@ -139,10 +133,6 @@ export default z.record(
           "From 0-9, pressing alt+shift+hotkeyNumber will set the cmd as active.",
         )
         .optional(),
-      runOnBlank: z
-        .boolean()
-        .describe("Whether to run the command when there is no input.")
-        .default(false),
     })
     .strict(),
 );

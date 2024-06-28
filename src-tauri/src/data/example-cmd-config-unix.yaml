@@ -3,7 +3,6 @@
 find:
     command: find
     description: Searches files by filename.
-    mode: runOnKeystroke
     arguments:
         - -maxdepth 3
         - -name

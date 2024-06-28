@@ -11,13 +11,16 @@ export function focusSync(node: HTMLElement, focusId: Focusable): { destroy: () 
     };
 
     const handleBlur = (event: FocusEvent) => {
-        
+        if (!event.relatedTarget || !(event.relatedTarget as HTMLElement).tabIndex) {
+            currentFocus.set(undefined); 
+        } 
+        // console.log(`${focusId} is blurring`);
     }
 
     // If the current node is not focussed, and the focusId arg this action was called with
     //  matches the currently focussed in the store, then focus this node.
     const unsubscribe = currentFocus.subscribe(value => { 
-        console.log("in current focus subscribe")
+        // console.log("in current focus subscribe")
         if (document.activeElement !== node && value === focusId) { 
             node.focus();
         }

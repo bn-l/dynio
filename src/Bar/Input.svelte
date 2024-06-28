@@ -11,17 +11,8 @@
     autoFocus
     use:focusSync={"input"}
     bind:value={$query}
-    on:keydown={(e) => {
-        if (e.key === "Enter" && $currentCmdConfig?.mode === "runOnEnter") {
-            e.preventDefault();
-            $currentFocus = "tray";
-            debouncedRP($query)
-        }
-    }}
     on:input={(e) => {
-        if ($currentCmdConfig?.mode === "runOnKeystroke") {
-            debouncedRP($query);
-        }
+        debouncedRP($query);
     }}
 />
 
@@ -39,7 +30,7 @@
 
         if (!$currentCmdConfig) return;
 
-        if (!input.trim() && !$currentCmdConfig.runOnBlank) {
+        if (!input.trim()) {
             console.log("Input is empty, not running program.");
             void invoke("stop_running");
             $stdoutLock = true;

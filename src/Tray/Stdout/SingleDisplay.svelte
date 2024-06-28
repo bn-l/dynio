@@ -58,17 +58,4 @@
         (text: string) => activate(text, $currentCmdConfig?.activationOptions)
     }
 
-    $: hotKeysEnabled = (
-        $currentCmdConfig?.mode === "runOnKeystroke" || 
-        $currentCmdConfig?.mode === "runOnEnter" && $currentFocus === "tray"
-    );
-
 </script>
-
-<svelte:body use:hotkeys={{
-    handler(event) {
-        onActivation?.(processedOutput);
-    },
-    keys: ["Enter"],
-    enabled: hotKeysEnabled
-}} />

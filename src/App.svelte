@@ -48,6 +48,8 @@
 
 <!-- Make placeholder unselectable in input bar -->
 
+<!-- Hide on lost focus logic -->
+
 <script lang="ts">
     import "./assets/main.css";
     import "./assets/bar.css";

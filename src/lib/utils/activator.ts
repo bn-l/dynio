@@ -13,6 +13,8 @@ const defaultActivationOptions: ActivationOptions = {
 
 export function activate(text: string, options: ActivationOptions = defaultActivationOptions) {
 
+    console.log(`in activation function with: '${text}'`);
+
     const { activateAction, extractorRegexBody, extractorFlags, extractorGroup } = options;
 
     const activateFunction = activateAction === "copy" ? writeText : open;

@@ -23,15 +23,6 @@
           "type": "string",
           "description": "Short description of what the program does"
         },
-        "mode": {
-          "type": "string",
-          "enum": [
-            "runOnEnter",
-            "runOnKeystroke"
-          ],
-          "description": "Whether to run the command after pressing enter OR each keystroke.",
-          "default": "runOnKeystroke"
-        },
         "arguments": {
           "type": "array",
           "items": {
@@ -54,11 +45,6 @@
         "hotkeyNumber": {
           "type": "number",
           "description": "From 0-9, pressing alt+shift+hotkeyNumber will set the cmd as active."
-        },
-        "runOnBlank": {
-          "type": "boolean",
-          "description": "Whether to run the command when there is no input.",
-          "default": false
         }
       },
       "required": [

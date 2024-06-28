@@ -117,11 +117,6 @@ export type CmdConfigItem = {
      */
     description?: string;
     /**
-     * Whether to run the command after pressing enter OR each keystroke.
-     * @default "runOnKeystroke"
-     */
-    mode?: "runOnEnter" | "runOnKeystroke";
-    /**
      * Arguments for the cmd
      * @example ["-n", 100]
      */
@@ -132,11 +127,6 @@ export type CmdConfigItem = {
      * From 0-9, pressing alt+shift+hotkeyNumber will set the cmd as active.
      */
     hotkeyNumber?: number;
-    /**
-     * Whether to run the command when there is no input.
-     * @default false
-     */
-    runOnBlank?: boolean;
 };
 
 /**

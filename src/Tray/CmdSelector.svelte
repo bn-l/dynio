@@ -45,20 +45,6 @@
                 <div
                     class=""
                 >
-                    Runs on:
-                </div>
-                <div
-                    class=""
-                >
-                    {item.config.mode === "runOnEnter" ? "Enter" : "Key stroke"}
-                </div>
-            </div>
-            <div
-                class=""
-            >
-                <div
-                    class=""
-                >
                     Display as:
                 </div>
                 <div
@@ -167,7 +153,7 @@
         { leading: true, trailing: false },
     );
 
-    $: activeClass = $currentFocus === "tray" ? "bg-blue-300" : "bg-blue-100";
+    const activeClass = "bg-blue-300";
 
 </script>
 
@@ -194,7 +180,6 @@
             }
             else {
                 $currentTrayView = "cmdSelector";
-                $currentFocus = "tray";
             }
         },
         keys: ["s"],

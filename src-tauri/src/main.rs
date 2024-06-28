@@ -165,7 +165,6 @@ async fn run_program(
     let mut stderr = tokio::io::BufReader::new(stderr_pipe).lines();   
 
     // Bufreader reads bytes in buf. 
-    // Can 
 
     let (stdout_tx, stderr_tx) = create_outputter(app_handle.clone());
 

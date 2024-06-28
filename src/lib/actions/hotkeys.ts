@@ -11,7 +11,7 @@ export function hotkeys(
     options: HotkeysOptions,
 ): { destroy: () => void } {
 
-    const { enabledWhenEditing = false, enabled = true, keys, modifiers = [], handler } = options; 
+    const { enabledWhenEditing = true, enabled = true, keys, modifiers = [], handler } = options; 
 
     const handlerWrapper = (event: KeyboardEvent) => {
         if (!enabled) return;

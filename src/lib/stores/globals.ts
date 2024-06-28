@@ -4,7 +4,7 @@ import type { Writable } from "svelte/store";
 import { invoke } from "@tauri-apps/api";
 
 export type TrayViewType = "stdout" | "stderr" | "errors" | "info" | "cmdSelector";
-export type Focusable = "tile" | "input" | "tray";
+export type Focusable = "input" | undefined;
 
 export const currentTrayView = writable<TrayViewType>("stdout");
 export const currentFocus = writable<Focusable>("input");

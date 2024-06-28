@@ -2,9 +2,7 @@
 
 <div
     id="tray"
-    tabIndex={1}
     class="border-0 border-t-2 border-solid border-gray-300 relative overflow-hidden rounded-b-md h-[20rem] whitespace-pre-wrap nice-scroll"
-    use:focusSync={"tray"}
 >
     <svelte:component this={currentTray.component} {...currentTray.props} />
 </div>
