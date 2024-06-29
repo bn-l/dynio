@@ -22,6 +22,31 @@ use notify::{Watcher, RecursiveMode};//, RecommendedWatcher };
 // mod types { pub mod general_settings_schema; }
 // use types::general_settings_schema::GeneralSettings;
 
+
+use encoding_rs::UTF_8;
+use encoding_rs::UTF_16LE;
+use encoding_rs::UTF_16BE;
+use encoding_rs::WINDOWS_874;
+use encoding_rs::WINDOWS_1252;
+use encoding_rs::ISO_8859_3;
+use encoding_rs::IBM866;
+
+use std::ffi::{OsStr, OsString};
+use std::os::windows::ffi::{OsStrExt, OsStringExt};
+use byteorder::{LittleEndian, ReadBytesExt};
+
+
+// Function to convert a Windows file name (UTF-16LE) to a Rust String (UTF-8)
+// fn convert_windows_filename_to_utf8(file_name: &OsStr) -> Result<String, String> {
+//     // Convert from OsStr (Windows encoding) to Vec<u16> (UTF-16LE)
+//     let file_name_utf16: Vec<u16> = file_name.encode_wide().collect();
+    
+//     // Attempt to convert UTF-16LE to Rust's UTF-8 String
+//     String::from_utf16(&file_name_utf16)
+//         .map_err(|e| format!("Failed to decode file name: {}", e))
+// }
+
+
 type VecSender = tokio::sync::watch::Sender<Vec<String>>;
 
 // mod error;
@@ -42,7 +67,7 @@ impl serde::Serialize for SerError {
 }
 
 
-fn create_outputter(app_handle: tauri::AppHandle) -> (VecSender, VecSender) {
+fn create_collector(app_handle: tauri::AppHandle) -> (VecSender, VecSender) {
     let (stdout_tx, mut stdout_rx) = tokio::sync::watch::channel(Vec::<String>::new());
     let (stderr_tx, mut stderr_rx) = tokio::sync::watch::channel(Vec::<String>::new());
 
@@ -161,18 +186,64 @@ async fn run_program(
     let stdout_pipe = child.stdout.take().expect("Could not take stdout");
     let stderr_pipe = child.stderr.take().expect("Could not take stderr");
 
-    let mut stdout = tokio::io::BufReader::new(stdout_pipe).lines();
-    let mut stderr = tokio::io::BufReader::new(stderr_pipe).lines();   
+    // Read until LF then check if CR is before it.
+    // Append everything up to the CRLF / LF.
+    // In the readers do the utf-8 -> utf-16le fallback (if utf-16le fails, ignore line 
+    //  and emit error message with line.)
+
+    let mut stdout = tokio::io::BufReader::new(stdout_pipe);
+    let mut stderr = tokio::io::BufReader::new(stderr_pipe).lines();
 
     // Bufreader reads bytes in buf. 
 
-    let (stdout_tx, stderr_tx) = create_outputter(app_handle.clone());
+    let (stdout_tx, stderr_tx) = create_collector(app_handle.clone());
 
     tokio::spawn(async move {
-        while let Some(line) = stdout.next_line().await.expect("Could not get stdout line") {
-            stdout_tx.send_modify(|vec| vec.push(line));
+        // while let Some(line) = stdout.next_line().await.expect("Could not get stdout line") {
+        //     stdout_tx.send_modify(|vec| vec.push(line));
+        // }
+        // cr = "\r", lf = "\n"
+        let mut buf = Vec::<u8>::new();
+        loop {
+            let num_bytes = stdout.read_until(b'\n', &mut buf).await.expect("Error reading from stdout");
+
+            // println!("In loop with line of length {}", buf.len());
+            // println!("Got {} bytes", num_bytes);
+        
+            if num_bytes == 0 {
+                break; // Exit loop if no bytes were read
+            }
+
+            if !buf.is_empty() {
+                if buf.ends_with(b"\n") {
+                    buf.pop();
+                    if buf.ends_with(b"\r") {
+                        buf.pop();
+                    }
+                }
+            }
+
+            // !!!!!!!!!!!!!!!!!!!!!!!
+            // !! Need to conditionally compile the error then utf-16 encoding
+            //  for windows only.
+            // !!!!!!!!!!!!!!!!!!!!!!!
+
+            // WINDOWS_874;
+            // WINDOWS_1252;
+            // ISO_8859_3;
+            // IBM866;
+
+            let (cow, _encoding_used, _had_errors) = encoding_rs::ISO_8859_7.decode(&buf[..]);
+            println!("tried with encode: {}. Had errors?: {_had_errors}", _encoding_used.name());
+
+            stdout_tx.send_modify(|vec| vec.push(cow.to_string()));
+            buf.clear();
+
         }
+
     });
+
+
     tokio::spawn(async move {
         while let Some(line) = stderr.next_line().await.expect("Could not get stdout line") {
             stderr_tx.send_modify(|vec| vec.push(line));

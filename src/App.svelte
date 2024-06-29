@@ -50,6 +50,8 @@
 
 <!-- Hide on lost focus logic -->
 
+<!-- Handle activate errors -->
+
 <script lang="ts">
     import "./assets/main.css";
     import "./assets/bar.css";
@@ -101,7 +103,7 @@
 
     onMount(() => {
         const unlisten = listen("stdout", (e: Event<string[]>) => {
-            console.log("got output: ", e.payload);
+            // console.log("got output: ", e.payload);
 
             $trayOpen = true;
 
