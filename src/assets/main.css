@@ -43,8 +43,18 @@
 
 }
 
+@font-face {
+    font-family: 'RobotoMono-Regular';
+    src: url('/RobotoMono-Regular.ttf') format('truetype');
+
+}
+
 code {
     font-family: SourceCodePro;
+}
+
+#tray {
+    font-family: RobotoMono-Regular;
 }
 
 /* Reset related only */
@@ -55,6 +65,13 @@ input {
     outline: none;
     border: none;
 }
+
+input::placeholder {
+    --tw-text-opacity: 1;
+    color: rgb(156 163 175 / var(--tw-text-opacity));
+    user-select: none;
+}
+
 
 #root {
     height: 100vh;

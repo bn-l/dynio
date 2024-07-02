@@ -16,6 +16,10 @@ export default z.record(
         .array(z.string())
         .describe("Arguments for the cmd")
         .optional(),
+      currentDir: z
+        .string()
+        .describe("Current directory for the command.")
+        .optional(),
       outputOptions: z
         .object({
           parseAnsiColors: z

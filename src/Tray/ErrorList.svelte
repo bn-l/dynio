@@ -47,7 +47,7 @@
 
 <script lang="ts">
 
-    import errors from "$lib/stores/errors.ts";
+    import { errors } from "$lib/stores/errors.ts";
 
     
 

@@ -33,6 +33,10 @@ export default z
         "Whether clicking outside the command bar will cause it to hide.",
       )
       .default(true),
+    keepOnTop: z
+      .boolean()
+      .describe("Keep on top of other windows?")
+      .default(false),
     firstLaunch: z.boolean().optional(),
   })
   .strict();

@@ -21,7 +21,6 @@
 </div>
 
 <script lang="ts">
-    import { focusSync } from "$lib/actions/focusSync.js";
     import { currentTrayView, currentFocus, currentCmd, trayOpen } from "$lib/stores/globals.js";
 
     console.log($currentTrayView);

@@ -50,6 +50,4 @@ function createErrorStore() {
     }
 }
 
-const errors = createErrorStore();
-
-export default errors;
+export const errors = createErrorStore();

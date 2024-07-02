@@ -22,8 +22,9 @@ use notify::{Watcher, RecursiveMode};//, RecommendedWatcher };
 // mod types { pub mod general_settings_schema; }
 // use types::general_settings_schema::GeneralSettings;
 
+use std::io::BufRead;
 
-use encoding_rs::UTF_8;
+// use encoding_rs::;
 use encoding_rs::UTF_16LE;
 use encoding_rs::UTF_16BE;
 use encoding_rs::WINDOWS_874;
@@ -34,17 +35,14 @@ use encoding_rs::IBM866;
 use std::ffi::{OsStr, OsString};
 use std::os::windows::ffi::{OsStrExt, OsStringExt};
 use byteorder::{LittleEndian, ReadBytesExt};
+use std::os::windows::process::CommandExt;
 
-
-// Function to convert a Windows file name (UTF-16LE) to a Rust String (UTF-8)
-// fn convert_windows_filename_to_utf8(file_name: &OsStr) -> Result<String, String> {
-//     // Convert from OsStr (Windows encoding) to Vec<u16> (UTF-16LE)
-//     let file_name_utf16: Vec<u16> = file_name.encode_wide().collect();
-    
-//     // Attempt to convert UTF-16LE to Rust's UTF-8 String
-//     String::from_utf16(&file_name_utf16)
-//         .map_err(|e| format!("Failed to decode file name: {}", e))
-// }
+use winapi::um::winbase::{
+    CREATE_NO_WINDOW,
+    // DETACHED_PROCESS,
+    // CREATE_UNICODE_ENVIRONMENT,
+    // CREATE_NEW_PROCESS_GROUP,
+};
 
 
 type VecSender = tokio::sync::watch::Sender<Vec<String>>;
@@ -162,6 +160,7 @@ impl Default for KillChannel {
 #[tauri::command]
 async fn run_program(
     program: String,
+    current_dir: Option<String>,
     arguments: Vec<String>,
     app_handle: tauri::AppHandle,
 ) -> Result<(), SerError> {
@@ -177,8 +176,29 @@ async fn run_program(
         let _ = sender.send(());
     }
 
-    let mut command = tokio::process::Command::new(program);
-    command.args(arguments);
+    // Windows commands are run in the default shell (cmd)
+    //  and this needs to be told to go into utf8 mode
+    //  chcp changes the code page from 437 to utf8
+    let mut command = if cfg!(target_os = "windows") {
+        let mut temp = tokio::process::Command::new("cmd");
+        temp.creation_flags(CREATE_NO_WINDOW);
+        let program_quoted = format!(r#""{}""#, program);
+        let argstring = format!(r#""chcp 65001 >nul && {} {}""#, program_quoted, arguments.join(" "));
+        println!("{argstring}");
+        temp.arg("/C");
+        temp.raw_arg(&argstring);    
+        temp
+    } else {
+        let mut temp = tokio::process::Command::new(program);
+        temp.args(arguments);
+        temp
+    };
+
+    if let Some(ref dir) = current_dir {
+        command.current_dir(std::path::Path::new(dir));
+    }
+
+
     command.stdout(Stdio::piped()).stderr(Stdio::piped());
 
     let mut child = command.spawn()?;
@@ -191,7 +211,7 @@ async fn run_program(
     // In the readers do the utf-8 -> utf-16le fallback (if utf-16le fails, ignore line 
     //  and emit error message with line.)
 
-    let mut stdout = tokio::io::BufReader::new(stdout_pipe);
+    let mut stdout = tokio::io::BufReader::new(stdout_pipe).lines();
     let mut stderr = tokio::io::BufReader::new(stderr_pipe).lines();
 
     // Bufreader reads bytes in buf. 
@@ -199,48 +219,9 @@ async fn run_program(
     let (stdout_tx, stderr_tx) = create_collector(app_handle.clone());
 
     tokio::spawn(async move {
-        // while let Some(line) = stdout.next_line().await.expect("Could not get stdout line") {
-        //     stdout_tx.send_modify(|vec| vec.push(line));
-        // }
-        // cr = "\r", lf = "\n"
-        let mut buf = Vec::<u8>::new();
-        loop {
-            let num_bytes = stdout.read_until(b'\n', &mut buf).await.expect("Error reading from stdout");
-
-            // println!("In loop with line of length {}", buf.len());
-            // println!("Got {} bytes", num_bytes);
-        
-            if num_bytes == 0 {
-                break; // Exit loop if no bytes were read
-            }
-
-            if !buf.is_empty() {
-                if buf.ends_with(b"\n") {
-                    buf.pop();
-                    if buf.ends_with(b"\r") {
-                        buf.pop();
-                    }
-                }
-            }
-
-            // !!!!!!!!!!!!!!!!!!!!!!!
-            // !! Need to conditionally compile the error then utf-16 encoding
-            //  for windows only.
-            // !!!!!!!!!!!!!!!!!!!!!!!
-
-            // WINDOWS_874;
-            // WINDOWS_1252;
-            // ISO_8859_3;
-            // IBM866;
-
-            let (cow, _encoding_used, _had_errors) = encoding_rs::ISO_8859_7.decode(&buf[..]);
-            println!("tried with encode: {}. Had errors?: {_had_errors}", _encoding_used.name());
-
-            stdout_tx.send_modify(|vec| vec.push(cow.to_string()));
-            buf.clear();
-
+        while let Some(line) = stdout.next_line().await.expect("Could not get stdout line") {
+            stdout_tx.send_modify(|vec| vec.push(line));
         }
-
     });
 
 
@@ -336,12 +317,32 @@ fn toggle_main_window(app_handle: &tauri::AppHandle) {
         if !window.is_visible().unwrap() {
             let _ = window.show();
             let _ = window.set_focus();
+            // let _ = window.unminimize();
             let _ = app_handle.emit_all("main_hide_unhide", "unhide");
         }
         else {
             let _ = window.hide();
             let _ = app_handle.emit_all("main_hide_unhide", "hide");
         }
+    }
+}
+
+#[tauri::command]
+async fn show_main(app_handle: tauri::AppHandle) {
+    if let Some(window) = app_handle.get_window("main") {
+        if !window.is_visible().unwrap() {
+            let _ = window.show();
+            let _ = window.set_focus();
+            let _ = app_handle.emit_all("main_hide_unhide", "unhide");
+        }
+    }
+}
+
+#[tauri::command]
+async fn hide_main(app_handle: tauri::AppHandle) {
+    if let Some(window) = app_handle.get_window("main") {
+        let _ = window.hide();
+        let _ = app_handle.emit_all("main_hide_unhide", "hide");
     }
 }
 
@@ -394,7 +395,7 @@ fn main() {
     tauri::Builder::default()
         .manage(KillChannel::default())
         .manage(Mutex::new(TrayState::default()))
-        .invoke_handler(tauri::generate_handler![run_program, stop_running, open_tray, close_tray, close_splashscreen, get_config_files])
+        .invoke_handler(tauri::generate_handler![run_program, stop_running, open_tray, close_tray, close_splashscreen, get_config_files, hide_main])
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(Vec::new())))
         .setup(move |app| {
 

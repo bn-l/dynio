@@ -121,6 +121,10 @@ export type CmdConfigItem = {
      * @example ["-n", 100]
      */
     arguments?: string[];
+    /**
+     * Current directory for the command.
+     */
+    currentDir?: string;
     outputOptions?: OutputOptions;
     activationOptions?: ActivationOptions;
     /**

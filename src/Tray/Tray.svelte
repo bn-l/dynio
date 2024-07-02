@@ -8,7 +8,6 @@
 </div>
 
 <script lang="ts">
-    import { focusSync } from "$lib/actions/focusSync.ts";
     import { currentTrayView } from "$lib/stores/globals.ts";
     import Stdout from "./Stdout/Stdout.svelte";
     import Stderr from "./Stderr.svelte";

@@ -28,5 +28,10 @@ export type GeneralSettings = {
      * @default true
      */
     hideOnLostFocus?: boolean;
+    /**
+     * Keep on top of other windows?
+     * @default false
+     */
+    keepOnTop?: boolean;
     firstLaunch?: boolean;
 }

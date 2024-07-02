@@ -3,26 +3,31 @@
 
 <input
     id="cmdInput"
-    tabIndex={0}
     class="text-3xl text-slate-900 placeholder:text-gray-400 w-[78%] h-full"
     placeholder="Input"
     autoComplete="off"
     spellCheck="false"
-    autoFocus
-    use:focusSync={"input"}
+    on:blur={() => {
+        if(!$clickInBounds && Boolean($settings.hideOnLostFocus)) {
+            console.log("click out of bounds & hideOnLostFocus, invoking toggle_main_window");
+            void invoke("hide_main");
+        }
+    }}
     bind:value={$query}
-    on:input={(e) => {
+    on:keydown={() => console.log("got key down")}
+    on:input={() => {
         debouncedRP($query);
     }}
+    on:focus={() => console.log("Input focussed")}
+    on:blur={() => console.log("Input blurred")}
 />
 
 <script lang="ts">
-    import { focusSync } from "$lib/actions/focusSync.js";
-
+    import { settings } from "$lib/stores/settings.ts";
     import { currentCmdConfig } from "$lib/stores/cmd-config.js";
-    import { running, stdoutLock, stdout, exitCode, query, currentTrayView, currentFocus } from "$lib/stores/globals.js";
+    import { running, stdoutLock, stdout, exitCode, query, currentTrayView, currentFocus, clickInBounds } from "$lib/stores/globals.js";
     import { invoke } from "@tauri-apps/api/tauri";
-    import errors from "$lib/stores/errors.js";
+    import { errors } from "$lib/stores/errors.js";
     import { debounce } from "lodash-es";
 
     
@@ -44,10 +49,11 @@
         $running = true;
         $stdoutLock = false;
 
-        console.log("About to run program with: ", $currentCmdConfig.command, [...($currentCmdConfig.arguments ?? []), input].join(" "));
+        console.log("About to run program with: ", $currentCmdConfig.command, $currentCmdConfig.currentDir, [...($currentCmdConfig.arguments ?? []), input].join(" "));
 
         invoke("run_program", {
             program: $currentCmdConfig.command,
+            current_dir: $currentCmdConfig.currentDir,
             // The input is added as the last argument.
             arguments: [...($currentCmdConfig.arguments ?? []), input],
         })

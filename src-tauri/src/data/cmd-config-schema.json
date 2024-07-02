@@ -36,6 +36,10 @@
             ]
           ]
         },
+        "currentDir": {
+          "type": "string",
+          "description": "Current directory for the command."
+        },
         "outputOptions": {
           "$ref": "#/definitions/OutputOptions"
         },

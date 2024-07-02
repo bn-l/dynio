@@ -56,7 +56,7 @@
                 "transparent": false,
                 "focus": true,
                 "center": true,
-                "titleBarStyle": "Transparent",
+                "contentProtected": false,
                 "maximizable": true,
                 "minimizable": true,
                 "decorations": true,

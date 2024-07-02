@@ -19,8 +19,10 @@ export const exitCode = writable<number | undefined>(0);
 export const running = writable(false);
 export const query = writable("");
 export const unhiding = writable(true);
+export const clickInBounds = writable(false);
 
 export const stderr = writable<string[]>([]);
+
 
 
 // let timeout: number | NodeJS.Timeout = 0;
