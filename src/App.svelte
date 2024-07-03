@@ -1,5 +1,12 @@
 
-<svelte:window  on:error|capture={(event) => { uncaughtErrorHandler(event)} }/>
+<svelte:window  
+    on:error|capture={(event) => { uncaughtErrorHandler(event)} }
+/>
+
+{#if $settings.autoUpdate}
+    <AutoUpdater />
+{/if}
+    
 {#if uncaughtError !== undefined}
     <UncaughtErrors error={uncaughtError} />
 {/if}
@@ -48,15 +55,22 @@
     </div>
 </div>
 
+<!-- 
+To be done when moving to github:
+Use tauri github action: https://tauri.app/v1/guides/building/cross-platform/#tauri-github-action
+to generate JSON file: https://tauri.app/v1/guides/distribution/updater#static-json-file
+expected by updater.
+
+When this is in place, put updater settings in tauri.conf
+
+-->
+
 <!-- Hover works properly -->
 
 <!-- Hot keys work properly -->
 
 <!-- Error display system ( jiggle error symbol and/or change size / contrast ) -->
 
-<!-- for context menu: https://melt-ui.com/docs/builders/context-menu  -->
-
-<!-- Uncaught error (i.e. critical error) boundary / handling -->
 
 <script lang="ts">
     import "./assets/main.css";
@@ -83,6 +97,7 @@
     import { isRegistered, register, unregister } from "@tauri-apps/api/globalShortcut"
     import { invoke } from "@tauri-apps/api";
     import UncaughtErrors from "./Meta/UncaughtErrors.svelte";
+    import AutoUpdater from "./Meta/AutoUpdater.svelte";
 
     onMount(async () => {
         await loadValidateAndInitConfigStores();

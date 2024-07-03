@@ -34,4 +34,8 @@ export type GeneralSettings = {
      */
     keepOnTop?: boolean;
     firstLaunch?: boolean;
+    /**
+     * @default true
+     */
+    autoUpdate?: boolean;
 }

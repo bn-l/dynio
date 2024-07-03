@@ -38,5 +38,6 @@ export default z
       .describe("Keep on top of other windows?")
       .default(false),
     firstLaunch: z.boolean().optional(),
+    autoUpdate: z.boolean().default(true),
   })
   .strict();

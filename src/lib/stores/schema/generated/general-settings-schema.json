@@ -40,6 +40,10 @@
         },
         "firstLaunch": {
           "type": "boolean"
+        },
+        "autoUpdate": {
+          "type": "boolean",
+          "default": true
         }
       },
       "additionalProperties": false
