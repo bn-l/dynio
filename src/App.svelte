@@ -1,15 +1,9 @@
 
-<svelte:window  
-    on:error|capture={(event) => { uncaughtErrorHandler(event)} }
-/>
 
 {#if $settings.autoUpdate}
     <AutoUpdater />
 {/if}
-    
-{#if uncaughtError !== undefined}
-    <UncaughtErrors error={uncaughtError} />
-{/if}
+
 
 <div 
     id="app"
@@ -17,7 +11,7 @@
     on:mousedown={() => $clickInBounds = true}
     on:mouseup={() => $clickInBounds = false}
     on:keydown={(e) => {
-        if (e.key === "Alt") {
+        if (e.key === "Alt" || e.key === "Escape") {
             e.preventDefault();
         }
     }}
@@ -31,11 +25,6 @@
         class="text-slate-900 rounded-md shadow-lg opacity-99 absolute top-4 left-3 right-4"
         style="background-color: var(--background);"
         style:--background={$settings.darkMode ? theme.backgroundDark: theme.backgroundLight}
-        on:blur={() => {
-            if ($settings.hideOnLostFocus) {
-                void hideWindow();
-            }
-        }}  
     >
         <div
             id="inputWrapper"
@@ -44,6 +33,7 @@
             <LeftTile />
             <Input />
             <ErrorIndicator />
+            <StderrIndicator />
             <DragSpot />
 
         </div>
@@ -71,6 +61,8 @@ When this is in place, put updater settings in tauri.conf
 
 <!-- Error display system ( jiggle error symbol and/or change size / contrast ) -->
 
+<!-- Put heading on various tray views -->
+
 
 <script lang="ts">
     import "./assets/main.css";
@@ -79,12 +71,13 @@ When this is in place, put updater settings in tauri.conf
     import theme from "$lib/theme.json"
 
     import { settings } from "$lib/stores/settings.js";
-    import { fileHovering, trayOpen, running, stdoutLock, currentFocus, query, clickInBounds } from "$lib/stores/globals.js";
+    import { fileHovering, trayOpen, running, stdoutLock, currentFocus, query, clickInBounds, stderr, currentTrayView } from "$lib/stores/globals.js";
     import Tray from "./Tray/Tray.svelte";
     import Hover from "./Meta/Hover.svelte";
     import Input from "./Bar/Input.svelte";
     import LeftTile from "./Bar/LeftTile.svelte";
     import ErrorIndicator from "./Bar/ErrorIndicator.svelte";
+    import StderrIndicator from "./Bar/StderrIndicator.svelte";
     import DragSpot from "./Bar/DragSpot.svelte";
     import { loadValidateAndInitConfigStores } from "./lib/utils/config-file-utils.ts";
     import { onMount, afterUpdate, beforeUpdate } from 'svelte';
@@ -98,19 +91,13 @@ When this is in place, put updater settings in tauri.conf
     import { invoke } from "@tauri-apps/api";
     import UncaughtErrors from "./Meta/UncaughtErrors.svelte";
     import AutoUpdater from "./Meta/AutoUpdater.svelte";
+    import { errors } from "$lib/stores/errors.ts";
+    import { hotkeys } from "$lib/actions/hotkeys.ts";
+    import { tick } from "svelte";
 
     onMount(async () => {
         await loadValidateAndInitConfigStores();
     });
-
-    console.log("rendered");
-
-    console.log($trayOpen);
-
-    async function hideWindow() {
-        // NB: this is also called in Bar
-        console.log("hideWindow called in App.tsx, still to be implemented");
-    }
 
 
     // ----------------- Tray open / closed logic ----------------- //
@@ -161,6 +148,15 @@ When this is in place, put updater settings in tauri.conf
         return () => { void unlisten.then( f => f()) };
     }); 
 
+    // -------------- Backend Stderr Event Listener --------------- //
+
+    onMount(() => {
+        const unlisten = listen("stderr", (e: Event<string[]>) => {
+            console.log("stderr event received: ", e.payload);
+            $stderr = e.payload;
+        });
+        return () => { void unlisten.then( f => f()) };
+    }); 
 
     // ----------- Backend window hide Event Listener ------------- //
 
@@ -180,11 +176,12 @@ When this is in place, put updater settings in tauri.conf
                 $trayOpen = false;
             }
             if(e.payload === "unhide") {
-                console.log("unhide event received on FE");
+                clearTimeout(clearInputTimeout);
             }
         });
         return () => { void unlisten.then( f => f()) };
     }); 
+
 
     // --------------- Backend exit Event Listener --------------- //
 
@@ -198,10 +195,35 @@ When this is in place, put updater settings in tauri.conf
         return () => { void unlisten.then( f => f()) };
     });
 
-    let uncaughtError: Error | undefined;
-    function uncaughtErrorHandler(event: any) {
-        uncaughtError = (event as ErrorEvent).error;
-        $trayOpen = true;
+    onMount(() => {
+        setInterval( () => {
+            errors.addError("fake error", "unknown");
+        }, 2000);
+    })
+
+    function escapeKeyHandler() {
+        if($currentTrayView !== "stdout") {
+            $currentTrayView = "stdout";
+        }
+        else if($query.length > 0) {
+            void tick().then(() => {
+                $query = "";
+                $stdout = [];
+                $stdoutLock = true;
+            });
+        }
+        else {
+            void invoke("hide_main");
+        }
     }
 
 </script>
+
+
+<svelte:body
+    use:hotkeys={{
+        handler: escapeKeyHandler,
+        keys: ["Escape"],
+        enabled:  true,
+    }}
+/>

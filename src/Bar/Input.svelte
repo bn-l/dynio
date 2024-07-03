@@ -3,32 +3,26 @@
 
 <input
     id="cmdInput"
-    class="text-3xl text-slate-900 placeholder:text-gray-400 w-[78%] h-full"
+    class="text-3xl text-slate-900 placeholder:text-gray-400 w-[80%] h-full"
     placeholder="Input"
     autoComplete="off"
     spellCheck="false"
-    on:blur={() => {
-        if(!$clickInBounds && Boolean($settings.hideOnLostFocus)) {
-            console.log("click out of bounds & hideOnLostFocus, invoking toggle_main_window");
-            void invoke("hide_main");
-        }
-    }}
+    use:inputFocusAction
     bind:value={$query}
     on:keydown={() => console.log("got key down")}
     on:input={() => {
         debouncedRP($query);
     }}
-    on:focus={() => console.log("Input focussed")}
-    on:blur={() => console.log("Input blurred")}
 />
 
 <script lang="ts">
     import { settings } from "$lib/stores/settings.ts";
     import { currentCmdConfig } from "$lib/stores/cmd-config.js";
-    import { running, stdoutLock, stdout, exitCode, query, currentTrayView, currentFocus, clickInBounds } from "$lib/stores/globals.js";
+    import { running, stdoutLock, stdout, exitCode, query, currentTrayView, currentFocus, clickInBounds, stderr } from "$lib/stores/globals.js";
     import { invoke } from "@tauri-apps/api/tauri";
     import { errors } from "$lib/stores/errors.js";
     import { debounce } from "lodash-es";
+    import { inputFocusAction } from "./InputFocusAction.ts";
 
     
     function runProgram(input: string) {
@@ -42,10 +36,11 @@
             $exitCode = undefined;
             $running = false;
             $stdout = [];
+            $stderr = [];
             return;
         }
 
-        // $stdout = [];
+        $stderr = [];
         $running = true;
         $stdoutLock = false;
 

@@ -32,13 +32,6 @@
     import { listen } from "@tauri-apps/api/event";
     import type { Event } from "@tauri-apps/api/event";
 
-    onMount(() => {
-        const unlisten = listen("stderr", (e: Event<string[]>) => {
-            $stderr = e.payload;
-        });
-        return () => { void unlisten.then( f => f()) };
-    }); 
-
     $: processedStderr = $stderr.join("\n");
 
 </script>

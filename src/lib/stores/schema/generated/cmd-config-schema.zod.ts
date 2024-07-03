@@ -57,12 +57,6 @@ export default z.record(
                           "Regular expression to split the output into lines as an array where the first item is the regex body and the second is the flags.",
                         )
                         .optional(),
-                      showHotkeys: z
-                        .boolean()
-                        .describe(
-                          "Whether to show alt/option + number keyboard shortcuts for items in the list.",
-                        )
-                        .default(true),
                     })
                     .strict()
                     .optional(),

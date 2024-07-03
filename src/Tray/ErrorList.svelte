@@ -2,6 +2,7 @@
 
 <div
     class=""
+    id="errorList"
 >  
     <div
         class=""
@@ -10,7 +11,7 @@
         clear
     </div>
 
-    {#each $errors as {id, message, type, timestamp} (id)}
+    {#each $errors as {id, message, type, timestamp, count} (id)}
         <div
             class=""
         >   
@@ -24,6 +25,11 @@
             <div
                 class=""
             >
+                <div
+                    class=""
+                >
+                    {count}
+                </div>
                 <div
                     class=""
                 >
@@ -48,7 +54,6 @@
 <script lang="ts">
 
     import { errors } from "$lib/stores/errors.ts";
-
     
 
     function formatTimestamp(timestamp: number): string {
@@ -58,7 +63,8 @@
         const day = (`0${date.getDate()}`).slice(-2);
         const hours = (`0${date.getHours()}`).slice(-2);
         const minutes = (`0${date.getMinutes()}`).slice(-2);
-        return `${hours}:${minutes} ${year}/${month}/${day}`;
+        const seconds = (`0${date.getSeconds()}`).slice(-2);
+        return `${hours}:${minutes}:${seconds}`;
     }
 
 </script>

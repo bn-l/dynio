@@ -107,6 +107,10 @@ body {
     display: none;
 }
 
+#errorList {
+    font-family: Inter, sans-serif;
+}
+
 
 @media (prefers-color-scheme: dark) {
    

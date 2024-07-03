@@ -137,11 +137,6 @@
             "type": "string"
           },
           "description": "Regular expression to split the output into lines as an array where the first item is the regex body and the second is the flags."
-        },
-        "showHotkeys": {
-          "type": "boolean",
-          "description": "Whether to show alt/option + number keyboard shortcuts for items in the list.",
-          "default": true
         }
       },
       "additionalProperties": false

@@ -1,0 +1,26 @@
+
+
+@keyframes growAndShrink {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.5);
+    }
+}
+
+@keyframes jiggle {
+    0%, 100% {
+        transform: rotate(0deg);
+    }
+    25% {
+        transform: rotate(-5deg);
+    }
+    75% {
+        transform: rotate(5deg);
+    }
+}
+
+.indicatorAnimation {
+    animation:jiggle 0.2s ease 0s 2;
+}

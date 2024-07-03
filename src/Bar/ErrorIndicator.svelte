@@ -1,14 +1,10 @@
 
 
-<div
-    id="errorIndicator"
-    class="absolute right-0 h-1"
-    on:click={() => $currentTrayView = "errors"}
->
+<Indicator clickView="errors" monitorStream={errors}>
     <svg 
         id="errorTriangleSvg" 
         xmlns="http://www.w3.org/2000/svg" 
-        viewBox="0 0 24 24" 
+        viewBox="0 0 24 24"  
         height="1em" width="1em" 
         fill={$settings.darkMode ? "#ef4444" : "#fee2e2"} 
         stroke="currentColor" 
@@ -20,10 +16,13 @@
         <line x1="12" y1="9" x2="12" y2="13"></line>
         <line x1="12" y1="17" x2="12.01" y2="17"></line>
     </svg>
-</div>
+</Indicator>
 
 
 <script  lang="ts">
-    import { currentTrayView } from "$lib/stores/globals.js";
+    import "./indicatorAnimation.css";
     import { settings } from "$lib/stores/settings.js";
+    import Indicator from "./Indicator.svelte";
+    import { errors } from "$lib/stores/errors.ts";
+
 </script>

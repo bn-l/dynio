@@ -23,18 +23,6 @@
                 {item.line}
             {/if}
         </div>
-
-        {#if displayOptions?.showHotkeys}
-            <div class="col-span-1 flex-row-center">
-                {#if item.index + 1 < 10}
-                    <code>
-                        {" "}
-                        ⌥
-                        {item.index + 1}
-                    </code>
-                {/if}
-            </div>
-        {/if}
     </div>
 </VList>
 

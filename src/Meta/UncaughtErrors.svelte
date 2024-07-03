@@ -1,6 +1,6 @@
 <div 
     id="errorFallback"
-    class="bg-gradient-to-b from-red-100 to-red-50 rounded-md z-50 absolute left-3 top-3 left-3 right-3 bottom-5 p-3"
+    class="bg-gradient-to-b from-red-100 to-red-50 rounded-md z-50 absolute left-0 top-3 left-3 right-0 bottom-5 p-3"
 >
 <div 
     id="errorFallbackTitle"
@@ -27,7 +27,7 @@
 >
     <pre
         class="text-wrap m-0"
-    >{error.message}</pre>
+    >{errorMessage}</pre>
 </div>
 </div>
 
@@ -37,4 +37,8 @@
     import { invoke } from "@tauri-apps/api/tauri";
 
     export let error: Error;
+
+    $: errorMessage = error && error instanceof Error ?
+            error.message :
+            JSON.stringify(error);
 </script>

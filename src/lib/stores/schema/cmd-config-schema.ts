@@ -17,11 +17,6 @@ export interface ListDisplayOptions {
      * item is the regex body and the second is the flags.
      */
     lineSplitterRegex?: string[];
-    /**
-     * Whether to show alt/option + number keyboard shortcuts for items in the list.
-     * @default true
-     */
-    showHotkeys?: boolean;
 }
 
 export interface SingleDisplayOptions {

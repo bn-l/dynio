@@ -110,13 +110,8 @@ fn create_collector(app_handle: tauri::AppHandle) -> (VecSender, VecSender) {
                 }
                 break;
             }
-
-            let mut count_map = HashMap::new();
-            for key in &update {
-                *count_map.entry(key).or_insert(0) += 1;
-            }
             app_handle2
-                .emit_all("stderr", count_map)
+                .emit_all("stderr", update)
                 .unwrap();
             if stderr_rx.changed().await.is_err() {
                 break;
@@ -313,11 +308,13 @@ async fn close_tray(app_handle: tauri::AppHandle) {
 }
 
 fn toggle_main_window(app_handle: &tauri::AppHandle) {
+
+    println!("toggling main window");
+
     if let Some(window) = app_handle.get_window("main") {
         if !window.is_visible().unwrap() {
             let _ = window.show();
             let _ = window.set_focus();
-            // let _ = window.unminimize();
             let _ = app_handle.emit_all("main_hide_unhide", "unhide");
         }
         else {
@@ -402,9 +399,16 @@ fn main() {
             // Global shortcuts / "accelerators" setup
             // Alt + Space
             let app_handle_clone = app.app_handle().clone();
+
+            let _ = app.global_shortcut_manager().unregister_all();
+
             if !app.global_shortcut_manager().is_registered("Alt+Space").expect("Could not get hotkey reg status") {
+
+                println!("Assigning hanler to alt+space");
+
                 let _ = app.global_shortcut_manager().register("Alt+Space", move || {
-                    
+
+                    println!("toggle called in parent handler");
                     toggle_main_window(&app_handle_clone);
                 });
             }
