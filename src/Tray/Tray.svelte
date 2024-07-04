@@ -2,7 +2,7 @@
 
 <div
     id="tray"
-    class="border-0 border-t-2 border-solid border-gray-300 relative overflow-hidden rounded-b-md h-[20rem] whitespace-pre-wrap nice-scroll"
+    class="border-0 border-t-2 border-gray-300 relative overflow-hidden rounded-b-md h-[20rem] whitespace-pre-wrap nice-scroll"
 >
     <svelte:component this={currentTray.component} {...currentTray.props} />
 </div>

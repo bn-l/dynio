@@ -1,9 +1,12 @@
+
+const possibleModifiers = ["Control", "Shift", "Alt", "Meta", "CmdOrCtrl"] as const;
+
 interface HotkeysOptions {
     keys: string[]; 
     handler: (event: KeyboardEvent) => void
     enabledWhenEditing?: boolean;
     enabled?: boolean;
-    modifiers?: ("Control" | "Shift" | "Alt" | "Meta" | "CtrlOrCmd")[];
+    modifiers?: (typeof possibleModifiers[number])[];
 }
 
 export function hotkeys(
@@ -24,22 +27,19 @@ export function hotkeys(
         // Check if the event.key is one of the specified keys
         if (!keys.map(key => key.toLowerCase()).includes(event.key.toLowerCase())) return; 
 
-        // NB: Meta is the Command key on Mac
-        const requiredModifiers: { [key: string]: boolean } = {
-            "Control": modifiers.includes("Control") || modifiers.includes("CtrlOrCmd"),
-            "Shift": modifiers.includes("Shift"),
-            "Alt": modifiers.includes("Alt"),
-            "Meta": modifiers.includes("Meta") || modifiers.includes("CtrlOrCmd") 
-        };
+        for (const mod of possibleModifiers) {
 
-        for (const mod in requiredModifiers) {
-            if(modifiers.includes("CtrlOrCmd") && (mod === "Control" || mod === "Meta")) {
-                continue;
-            } 
-            else if (requiredModifiers[mod] && !event.getModifierState(mod)) {
+            if( 
+                modifiers.includes("CmdOrCtrl") && 
+                event.getModifierState("Control") || event.getModifierState("Meta")
+            ) {
+                console.log("break");
+                break;
+            }
+            else if (modifiers.includes(mod) && !event.getModifierState(mod)) {
                 return;
             }
-        }
+        }   
 
         handler(event);
     }

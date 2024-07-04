@@ -3,7 +3,7 @@
 
 <input
     id="cmdInput"
-    class="text-3xl text-slate-900 placeholder:text-gray-400 w-[80%] h-full"
+    class="text-3xl text-slate-900 placeholder:text-gray-400 w-140 h-full ml-21"
     placeholder="Input"
     autoComplete="off"
     spellCheck="false"

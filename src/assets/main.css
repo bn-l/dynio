@@ -84,6 +84,77 @@ body {
     margin: 0;
 }
 
+#mainWrapper {
+    box-shadow: 
+        0.676rem 0.676rem 1.353rem 0 rgba(0, 0, 0, 0.2),
+        -0.676rem -0.676rem 1.353rem 0 rgba(255, 255, 255, 0.5);
+}
+
+#mainWrapper::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* background-image: url(/mask.svg); */
+    /* background-size: 4em; */
+    opacity: 0.5;
+    z-index: -1;
+    border-radius: 0.375rem;
+}
+
+/*  Pressed */
+/* #leftTile {
+    box-shadow: 
+        inset 6px 6px 10px 0 rgba(0, 0, 0, 0.2),
+        inset -6px -6px 10px 0 rgba(255, 255, 255, 0.5);
+} */
+
+/* inset */
+/* 
+box-shadow: inset -3px -3px 7px #ffffffb0, inset 3px 3px 5px rgba(94, 104, 121, 0.692); */
+
+
+
+#leftTile {
+    /* box-shadow: 
+        -0.338rem -0.338rem 0.451rem rgba(255, 255, 255, 0.9),
+        0.282rem 0.282rem 0.451rem rgba(0, 0, 0, 0.07); */
+    box-shadow: 
+        -0.138rem -0.038rem 0.2rem rgba(255, 255, 255, 0.9), 
+        0.182rem 0.182rem 0.2rem rgba(0, 0, 0, 0.07);
+    
+    /* transition: box-shadow 100ms cubic-bezier(0.445, 0.05, 0.55, 0.95); */
+    /* transition: all 2s; */
+    /* max-width: 15rem; */
+    overflow: hidden;
+    white-space: nowrap;
+    
+    top: 50%; 
+    left: 9.7%; 
+    transform: translate(-50%, -50%); 
+}
+ 
+#resultValue {
+    word-break: break-word;
+}
+
+#dragSpot {
+    cursor: grab;
+}
+
+#dragSpot:active {
+    cursor: grabcmdg;
+}
+
+#divider {
+    box-shadow: 
+        inset 2px -5px 7px #ffffffb0, 
+        inset -2px 4px 5px rgba(94, 104, 121, 0.692);
+    width: 100%;
+    height: 0.3em;
+}
 
 .nice-scroll::-webkit-scrollbar {
     background-color: inherit;

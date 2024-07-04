@@ -33,17 +33,8 @@ use encoding_rs::WINDOWS_1252;
 use encoding_rs::ISO_8859_3;
 use encoding_rs::IBM866;
 
-use std::ffi::{OsStr, OsString};
-use std::os::windows::ffi::{OsStrExt, OsStringExt};
-use byteorder::{LittleEndian, ReadBytesExt};
-use std::os::windows::process::CommandExt;
-
-use winapi::um::winbase::{
-    CREATE_NO_WINDOW,
-    // DETACHED_PROCESS,
-    // CREATE_UNICODE_ENVIRONMENT,
-    // CREATE_NEW_PROCESS_GROUP,
-};
+#[cfg(target_os = "windows")]
+use winapi::um::winbase::{ CREATE_NO_WINDOW };
 
 use tauri::{CustomMenuItem, SystemTrayMenu, SystemTrayMenuItem, SystemTray};
 

@@ -118,7 +118,7 @@
             }
         },
         keys: ["o"],
-        modifiers: ["CtrlOrCmd"],
+        modifiers: ["CmdOrCtrl"],
         enabled:  true,
     }}
 />

@@ -11,6 +11,8 @@
     on:mousedown={() => $clickInBounds = true}
     on:mouseup={() => $clickInBounds = false}
 >
+<!-- style="background-color: var(--background);"
+style:--background={$settings.darkMode ? theme.backgroundDark: theme.backgroundLight} -->
     <div
         id="mainWrapper"
         class="text-slate-900 rounded-md shadow-lg opacity-99 absolute top-4 left-3 right-4"
@@ -19,17 +21,17 @@
     >
         <div
             id="inputWrapper"
-            class="flex flex-row justify-start items-center gap-2.7 p-3.3 relative"
-        >
-            <LeftTile />
+            class="flex flex-row justify-start items-center gap-2.7 p-3.3 relative my-0.5"
+        >   
+            <div class="mx-1.5"><LeftTile /></div>
             <Input />
             <ErrorIndicator />
             <StderrIndicator />
             <DragSpot />
-
         </div>
 
         {#if $trayOpen}
+            <div id="divider"></div>
             <Tray />
         {/if}
          
@@ -48,11 +50,17 @@ When this is in place, put updater settings in tauri.conf
 
 <!-- clear cargo.toml & package.json -->
 
+<!-- Tile / panel gets random color based on name? -->
+
 <!-- Set unused imports / params in tsconfig as error  -->
 
 <!-- Error indicators not shown if no error -->
 
+<!-- Style error indicators (use tailwind animations) -->
+
 <!-- Different styling on tile when currentTrayView = cmdSelector -->
+
+<!-- Visual differentiation currentTrayView != stdout -->
 
 <!-- Styling --> 
 <!--    Styling list display: -->
@@ -232,7 +240,8 @@ When this is in place, put updater settings in tauri.conf
                 (Number(event.key) === configItem.hotkeyNumber)
             ) {
                 clearInput();
-                $currentCmd = cmdName
+                $currentCmd = cmdName;
+                $currentTrayView = "stdout";
             }
         });
     }
