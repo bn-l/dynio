@@ -1,5 +1,4 @@
 
-
 <script>
     import { checkUpdate, installUpdate } from '@tauri-apps/api/updater';
     void checkUpdate().then(updateStatus => {

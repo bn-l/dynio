@@ -47,18 +47,19 @@
     //     selectedIndex = 0;
     // });
 
-    function onActivation(text: string) {
+    function onActivation(text: string, openContaining: boolean = false) {
         console.log("calling activator")
-        activate(text, $currentCmdConfig?.activationOptions);
+        void activate(text, $currentCmdConfig?.activationOptions, openContaining);
     }
 
     type Indexed = { line: string; index: number };
 
     let processedOutput: string[] = [];
+    const { lineSplitter, lineSplitterRegex, maxLineLength } = displayOptions ?? {};
     $: processedOutput = processOutput($stdout, {
-        maxLineLength: displayOptions?.maxLineLength,
-        lineSplitter: displayOptions?.lineSplitter,
-        lineSplitterRegex: displayOptions?.lineSplitterRegex,
+        maxLineLength,
+        lineSplitter,
+        lineSplitterRegex,
         parseAnsiColors: $currentCmdConfig?.outputOptions?.parseAnsiColors,
     });
     let data: Indexed[] = [];
@@ -91,10 +92,6 @@
 
     // When the tray is not focussed show a "ghost" version of the active highlight
     const activeClass = "bg-blue-300";
-
-    $: console.log("$currentTrayView === stdout", $currentTrayView === "stdout");
-
-
 </script>
 
 
@@ -102,7 +99,6 @@
     use:hotkeys={{
         handler(event) {
             if (event.key === "ArrowUp") {
-                console.log("called arrow up")
                 upDownListHandler(event, -1);
             } else if (event.key === "ArrowDown") {
                 upDownListHandler(event, 1);
@@ -112,6 +108,17 @@
             }
         },
         keys: ["ArrowUp", "ArrowDown", "Enter"],
+        enabled:  true,
+    }}
+    use:hotkeys={{
+        handler: () => {
+            console.log("opening containing");
+            if($currentCmdConfig?.activationOptions?.isPath) {
+                onActivation(data[selectedIndex].line, true);
+            }
+        },
+        keys: ["o"],
+        modifiers: ["CtrlOrCmd"],
         enabled:  true,
     }}
 />

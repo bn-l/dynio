@@ -25,7 +25,6 @@
     let indicatorEl: HTMLDivElement;
 
     function handleNewError() {
-        console.log("saw new error");
 
         if (!indicatorEl) return;
 
@@ -40,5 +39,10 @@
     }
     
 
-    $: $monitorStream, handleNewError();
+    $: { 
+        $monitorStream;
+        if($monitorStream.length > 0) {
+            handleNewError();
+        }
+    }
 </script>

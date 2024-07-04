@@ -4,6 +4,7 @@
 // NB: The macos launcher part is needed for macos but is ignored on windows.
 // tauri_plugin_autostart works cross platform.
 use tauri_plugin_autostart::MacosLauncher;
+use tauri_plugin_fs_watch;
 use serde::{Serialize, Deserialize};
 
 use std::collections::HashMap;
@@ -44,6 +45,9 @@ use winapi::um::winbase::{
     // CREATE_NEW_PROCESS_GROUP,
 };
 
+use tauri::{CustomMenuItem, SystemTrayMenu, SystemTrayMenuItem, SystemTray};
+
+use std::sync::atomic::{self, AtomicBool};
 
 type VecSender = tokio::sync::watch::Sender<Vec<String>>;
 
@@ -75,16 +79,7 @@ fn create_collector(app_handle: tauri::AppHandle) -> (VecSender, VecSender) {
     tokio::spawn(async move {
         loop {
             let mut update = stdout_rx.borrow_and_update().clone();
-            if update.len() > 100000 {
-                if let Some(sender) = app_handle1.state::<KillChannel>()
-                    .kill_sender
-                    .lock()
-                    .unwrap()
-                    .take() {
-                    let _ = sender.send(());
-                }
-                break;
-            }
+
             update.dedup();
             app_handle1
                 .emit_all("stdout", update)
@@ -100,16 +95,7 @@ fn create_collector(app_handle: tauri::AppHandle) -> (VecSender, VecSender) {
     tokio::spawn(async move {
         loop {
             let update = stderr_rx.borrow_and_update().clone();
-            if update.len() > 100000 {
-                if let Some(sender) = app_handle2.state::<KillChannel>()
-                    .kill_sender
-                    .lock()
-                    .unwrap()
-                    .take() {
-                    let _ = sender.send(());
-                }
-                break;
-            }
+ 
             app_handle2
                 .emit_all("stderr", update)
                 .unwrap();
@@ -212,16 +198,20 @@ async fn run_program(
     // Bufreader reads bytes in buf. 
 
     let (stdout_tx, stderr_tx) = create_collector(app_handle.clone());
+    let finish_flag = std::sync::Arc::new(AtomicBool::new(false));
 
+    let finish_flag_clone = finish_flag.clone();
     tokio::spawn(async move {
         while let Some(line) = stdout.next_line().await.expect("Could not get stdout line") {
+            if finish_flag_clone.load(atomic::Ordering::Relaxed) { break; }
             stdout_tx.send_modify(|vec| vec.push(line));
         }
     });
 
-
+    let finish_flag_clone = finish_flag.clone();
     tokio::spawn(async move {
         while let Some(line) = stderr.next_line().await.expect("Could not get stdout line") {
+            if finish_flag_clone.load(atomic::Ordering::Relaxed) { break; }
             stderr_tx.send_modify(|vec| vec.push(line));
         }
     });
@@ -240,7 +230,10 @@ async fn run_program(
                 let _ = app_handle.emit_all("exit", exit_status.code());
             }
         }
-        _ = kill_receiver => child.kill().await.expect("Couldn't kill process")
+        _ = kill_receiver => { 
+            finish_flag.store(true, atomic::Ordering::Relaxed);
+            child.kill().await.expect("Couldn't kill process")
+        }
     }
 
     Ok(())
@@ -311,15 +304,19 @@ fn toggle_main_window(app_handle: &tauri::AppHandle) {
 
     println!("toggling main window");
 
+    let tray_item_handle = app_handle.tray_handle().get_item("togglevis");
+
     if let Some(window) = app_handle.get_window("main") {
         if !window.is_visible().unwrap() {
             let _ = window.show();
             let _ = window.set_focus();
             let _ = app_handle.emit_all("main_hide_unhide", "unhide");
+            tray_item_handle.set_title("Hide").expect("Could not set title");
         }
         else {
             let _ = window.hide();
             let _ = app_handle.emit_all("main_hide_unhide", "hide");
+            tray_item_handle.set_title("Show").expect("Could not set title");
         }
     }
 }
@@ -360,6 +357,13 @@ async fn close_splashscreen(window: Window) {
     }
 }
 
+#[tauri::command]
+async fn trim_path(path: String) -> Result<String, SerError> {
+    let path = std::path::Path::new(&path);
+    let parent_path = path.parent().expect("Could not get parent path");
+    Ok(parent_path.to_str().expect("Could not convert path to string").to_string())
+}
+
 #[derive(Serialize, Deserialize)]
 struct ConfigFiles {
     cmd_config: String,
@@ -385,15 +389,32 @@ async fn get_config_files() -> Result<ConfigFiles, SerError> {
     })
 }
 
+#[tauri::command]
+async fn get_config_dir() -> Result<String, SerError> {
+    let path = tauri::api::path::home_dir().expect("Could not get home dir.").join(".dynio");
+    let path_str = path.to_str().expect("Could not convert path to string").to_string();
+    Ok(path_str)
+}
 
 
 fn main() {
 
+    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
+    let hide = CustomMenuItem::new("togglevis".to_string(), "Hide");
+    let tray_menu = SystemTrayMenu::new()
+        .add_item(quit)
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(hide);
+    let system_tray = SystemTray::new().with_menu(tray_menu);
+
     tauri::Builder::default()
+        .system_tray(system_tray)
         .manage(KillChannel::default())
         .manage(Mutex::new(TrayState::default()))
-        .invoke_handler(tauri::generate_handler![run_program, stop_running, open_tray, close_tray, close_splashscreen, get_config_files, hide_main])
+        .invoke_handler(tauri::generate_handler![run_program, stop_running, open_tray, close_tray, close_splashscreen, get_config_files, hide_main, get_config_dir, trim_path])
         .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(Vec::new())))
+        .plugin(tauri_plugin_fs_watch::init())
+        .on_system_tray_event(system_tray_handler())
         .setup(move |app| {
 
             // Global shortcuts / "accelerators" setup
@@ -404,37 +425,15 @@ fn main() {
 
             if !app.global_shortcut_manager().is_registered("Alt+Space").expect("Could not get hotkey reg status") {
 
-                println!("Assigning hanler to alt+space");
-
                 let _ = app.global_shortcut_manager().register("Alt+Space", move || {
-
-                    println!("toggle called in parent handler");
                     toggle_main_window(&app_handle_clone);
                 });
             }
 
-    
             setup_default_files();
 
             setup_splash_window(app.app_handle().clone());
             setup_main_window(app.app_handle().clone());
-
-            // ! Test watching !
-            // Watching not working
-
-            let app_handle_clone = app.app_handle().clone();
-            let mut watcher = notify::recommended_watcher(move |res| {
-                match res {
-                   Ok(_event) => {
-                        println!("Watched file changed");
-                        tauri::api::process::restart(&app_handle_clone.env())
-                   },
-                   Err(e) => println!("Watch error: {:?}", e),
-                }
-            })?;
-            let mut home_dir = tauri::api::path::home_dir().expect("Couldn't get home dir");
-            home_dir.push(".dynio");
-            watcher.watch(&home_dir, RecursiveMode::Recursive).expect("Error watching conf dir");
 
             Ok(()) 
         })
@@ -443,6 +442,25 @@ fn main() {
 }
 
 
+fn system_tray_handler() -> impl Fn(&tauri::AppHandle, tauri::SystemTrayEvent) + 'static {
+    move |app, event| {
+        match event {
+            tauri::SystemTrayEvent::MenuItemClick { id, .. } => {
+
+              match id.as_str() {
+                "quit" =>{
+                    app.exit(0);
+                }
+                "togglevis" => {
+                    toggle_main_window(&app);
+                }
+                _ => {}
+              }
+            }
+            _ => {}
+        }
+    }
+}
 
 
 // Check default files exist (if not create them) then load them

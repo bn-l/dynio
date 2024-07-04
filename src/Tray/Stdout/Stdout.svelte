@@ -22,15 +22,14 @@
     <ListDisplay />
 
 {:else}
-    <EmptyDisplay message="4444444444444" />
+    <EmptyDisplay message="" />
     
 {/if}
 
 <script lang="ts">
     import { stdout, stdoutLock, running, exitCode, query } from "$lib/stores/globals.ts";
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
-    import type { SvelteComponent } from "svelte";
-    
+
     import SingleDisplay from "./SingleDisplay.svelte";
     import ListDisplay from "./ListDisplay/ListDisplay.svelte";
     import EmptyDisplay from "./EmptyDisplay.svelte";
@@ -38,7 +37,5 @@
     $: displayType = $currentCmdConfig?.outputOptions?.display?.type;
 
     $: console.log("in stdout.svelte", "stdoutLock", $stdoutLock, "stdout.length", $stdout.length, "running", $running)
-
-    // $: console.log("$stdout.length === 0 ", $stdout.length === 0, "!$stdoutLock && $query.trim().length > 0 ", !$stdoutLock && $query.trim().length > 0, "!$stdoutLock ", !$stdoutLock, "!$running ", !$running);
 
 </script>

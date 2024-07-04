@@ -130,8 +130,11 @@
     const getKey = (item: commandListData) => item.id;
 
 
+
     let vlist: VList<commandListData>;
     let selectedIndex = 0;
+
+    $: $currentCmd = data[selectedIndex].id;
 
     const upDownListHandler = debounce(
         (e: KeyboardEvent, indexChange: number) => {

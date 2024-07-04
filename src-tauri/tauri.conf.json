@@ -19,7 +19,8 @@
             },
             "process": {
                 "all": false,
-                "exit": true
+                "exit": true,
+                "relaunch": true
             },
             "os": {
                 "all": true
@@ -47,6 +48,10 @@
                 "writeText": true,
                 "readText": true
             }
+        },
+        "systemTray": {
+            "iconPath": "icons/icon.png",
+            "iconAsTemplate": true
         },
         "windows": [
             {

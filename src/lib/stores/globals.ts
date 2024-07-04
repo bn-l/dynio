@@ -64,3 +64,12 @@ function createTrayOpenStore() {
 }
 
 export const trayOpen = createTrayOpenStore();
+
+export function clearInput() {
+    query.set("");
+    stdoutLock.set(true);
+    exitCode.set(undefined);
+    running.set(false);
+    stdout.set([]);
+    stderr.set([]);
+}

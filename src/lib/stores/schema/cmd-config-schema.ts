@@ -95,6 +95,12 @@ export interface ActivationOptions {
      * Must have set extractorRegex. Don't pre/post-fix with /.
      */
     extractorGroup?: number;
+    /**
+     * Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent
+     *  folder of the extracted text or error if the extract text is not a path.
+     * @default false 
+     */
+    isPath?: boolean;
 }
 
 
@@ -117,15 +123,15 @@ export type CmdConfigItem = {
      */
     arguments?: string[];
     /**
-     * Current directory for the command.
+     * Current directory where the command executes
      */
     currentDir?: string;
     outputOptions?: OutputOptions;
     activationOptions?: ActivationOptions;
     /**
-     * From 0-9, pressing alt+shift+hotkeyNumber will set the cmd as active.
+     * From 1-9, pressing alt+shift+hotkeyNumber will set the cmd as active.
      */
-    hotkeyNumber?: number;
+    hotkeyNumber?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 };
 
 /**

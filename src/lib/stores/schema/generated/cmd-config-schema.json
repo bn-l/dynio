@@ -38,7 +38,7 @@
         },
         "currentDir": {
           "type": "string",
-          "description": "Current directory for the command."
+          "description": "Current directory where the command executes"
         },
         "outputOptions": {
           "$ref": "#/definitions/OutputOptions"
@@ -48,7 +48,18 @@
         },
         "hotkeyNumber": {
           "type": "number",
-          "description": "From 0-9, pressing alt+shift+hotkeyNumber will set the cmd as active."
+          "enum": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "description": "From 1-9, pressing alt+shift+hotkeyNumber will set the cmd as active."
         }
       },
       "required": [
@@ -191,6 +202,11 @@
         "extractorGroup": {
           "type": "number",
           "description": "Regex group to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /."
+        },
+        "isPath": {
+          "type": "boolean",
+          "description": "Enables Control or Cmd (on mac) + O to open containing folder.",
+          "default": false
         }
       },
       "additionalProperties": false

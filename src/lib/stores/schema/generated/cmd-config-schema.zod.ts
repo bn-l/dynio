@@ -18,7 +18,7 @@ export default z.record(
         .optional(),
       currentDir: z
         .string()
-        .describe("Current directory for the command.")
+        .describe("Current directory where the command executes")
         .optional(),
       outputOptions: z
         .object({
@@ -122,13 +122,29 @@ export default z.record(
               "Regex group to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
             )
             .optional(),
+          isPath: z
+            .boolean()
+            .describe(
+              "Enables Control or Cmd (on mac) + O to open containing folder.",
+            )
+            .default(false),
         })
         .strict()
         .optional(),
       hotkeyNumber: z
-        .number()
+        .union([
+          z.literal(1),
+          z.literal(2),
+          z.literal(3),
+          z.literal(4),
+          z.literal(5),
+          z.literal(6),
+          z.literal(7),
+          z.literal(8),
+          z.literal(9),
+        ])
         .describe(
-          "From 0-9, pressing alt+shift+hotkeyNumber will set the cmd as active.",
+          "From 1-9, pressing alt+shift+hotkeyNumber will set the cmd as active.",
         )
         .optional(),
     })

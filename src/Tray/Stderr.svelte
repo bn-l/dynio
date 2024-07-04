@@ -3,6 +3,13 @@
 <div
     class="nice-scroll"
 >
+    <!-- Panel heading -->
+    <div
+        id="panelHeading"
+        class=""
+    >
+        Stderr
+    </div>
     <div
         class=""
         on:click={() => {

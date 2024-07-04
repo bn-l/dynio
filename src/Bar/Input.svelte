@@ -9,7 +9,6 @@
     spellCheck="false"
     use:inputFocusAction
     bind:value={$query}
-    on:keydown={() => console.log("got key down")}
     on:input={() => {
         debouncedRP($query);
     }}
@@ -18,7 +17,7 @@
 <script lang="ts">
     import { settings } from "$lib/stores/settings.ts";
     import { currentCmdConfig } from "$lib/stores/cmd-config.js";
-    import { running, stdoutLock, stdout, exitCode, query, currentTrayView, currentFocus, clickInBounds, stderr } from "$lib/stores/globals.js";
+    import { running, stdoutLock, stdout, exitCode, query, currentTrayView, currentFocus, clickInBounds, stderr, clearInput } from "$lib/stores/globals.js";
     import { invoke } from "@tauri-apps/api/tauri";
     import { errors } from "$lib/stores/errors.js";
     import { debounce } from "lodash-es";
@@ -40,7 +39,6 @@
             return;
         }
 
-        $stderr = [];
         $running = true;
         $stdoutLock = false;
 

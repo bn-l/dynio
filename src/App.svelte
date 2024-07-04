@@ -10,16 +10,7 @@
     class="h-screen w-screen flex flex-col justify-center items-center"
     on:mousedown={() => $clickInBounds = true}
     on:mouseup={() => $clickInBounds = false}
-    on:keydown={(e) => {
-        if (e.key === "Alt" || e.key === "Escape") {
-            e.preventDefault();
-        }
-    }}
 >
-    {#if $fileHovering}
-        <Hover />
-    {/if}
-
     <div
         id="mainWrapper"
         class="text-slate-900 rounded-md shadow-lg opacity-99 absolute top-4 left-3 right-4"
@@ -55,13 +46,17 @@ When this is in place, put updater settings in tauri.conf
 
 -->
 
-<!-- Hover works properly -->
+<!-- clear cargo.toml & package.json -->
 
-<!-- Hot keys work properly -->
+<!-- Set unused imports / params in tsconfig as error  -->
 
-<!-- Error display system ( jiggle error symbol and/or change size / contrast ) -->
+<!-- Error indicators not shown if no error -->
 
-<!-- Put heading on various tray views -->
+<!-- Different styling on tile when currentTrayView = cmdSelector -->
+
+<!-- Styling --> 
+<!--    Styling list display: -->
+<!--        - Long line should be able to wrap to x number of lines then be trunked (do this by checking the character width of the tray and dividing etc) -->
 
 
 <script lang="ts">
@@ -71,9 +66,8 @@ When this is in place, put updater settings in tauri.conf
     import theme from "$lib/theme.json"
 
     import { settings } from "$lib/stores/settings.js";
-    import { fileHovering, trayOpen, running, stdoutLock, currentFocus, query, clickInBounds, stderr, currentTrayView } from "$lib/stores/globals.js";
+    import { fileHovering, trayOpen, running, stdoutLock, currentFocus, query, clickInBounds, stderr, currentTrayView, currentCmd, clearInput } from "$lib/stores/globals.js";
     import Tray from "./Tray/Tray.svelte";
-    import Hover from "./Meta/Hover.svelte";
     import Input from "./Bar/Input.svelte";
     import LeftTile from "./Bar/LeftTile.svelte";
     import ErrorIndicator from "./Bar/ErrorIndicator.svelte";
@@ -84,7 +78,7 @@ When this is in place, put updater settings in tauri.conf
     import { listen } from "@tauri-apps/api/event";
     import type { Event } from "@tauri-apps/api/event";
     import { stdout } from "$lib/stores/globals.js";
-    import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
+    import { currentCmdConfig, cmdConfig } from "$lib/stores/cmd-config.ts";
     import { debounce } from "lodash-es";
     import { getCurrent } from "@tauri-apps/api/window"
     import { isRegistered, register, unregister } from "@tauri-apps/api/globalShortcut"
@@ -94,11 +88,34 @@ When this is in place, put updater settings in tauri.conf
     import { errors } from "$lib/stores/errors.ts";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { tick } from "svelte";
+    import { appWindow } from "@tauri-apps/api/window";
+    import { watch } from "tauri-plugin-fs-watch-api";
+    import type { UnlistenFn } from '@tauri-apps/api/event';
+    import { relaunch } from '@tauri-apps/api/process';
+
+    // ! Debug, delete
+    $: console.log($query);
 
     onMount(async () => {
         await loadValidateAndInitConfigStores();
     });
 
+    onMount(() => {
+        const watcher = async (): Promise<UnlistenFn> => {
+            const configDir = await invoke("get_config_dir") as string;
+            const stopWatching = await watch(
+                configDir,
+                (event) => {
+                    void relaunch();
+                },
+                { recursive: true },
+            );
+            return stopWatching;
+        }
+        const unwatchPromise = watcher();
+
+        return () => { unwatchPromise.then(f => f()); }
+    })
 
     // ----------------- Tray open / closed logic ----------------- //
 
@@ -117,7 +134,7 @@ When this is in place, put updater settings in tauri.conf
     onMount(() => {
         const unlisten = listen("stdout", (e: Event<string[]>) => {
             $trayOpen = true;
-
+            console.log("stdout event recived: ", e.payload)
             if($stdoutLock) return;
 
             clearTimeout(timeout);
@@ -165,11 +182,9 @@ When this is in place, put updater settings in tauri.conf
 
             console.log(e.payload);
             if(e.payload === "hide") {
+                $currentTrayView = "stdout";
                 clearInputTimeout = setTimeout(() => {
-                    $query = "";
-                    $trayOpen = false;
-                    $stdout = [];
-                    $stdoutLock = true;
+                    clearInput();
                 }, 1000 * 60 * 10); // 10mins
             }
             if(e.payload === "hide" && $trayOpen && !$query && $stdout.length === 0) {
@@ -189,17 +204,13 @@ When this is in place, put updater settings in tauri.conf
 
     onMount(() => {
         const unlisten = listen("exit", (e: Event<number | undefined>) => {
-            console.log("exit event received: ", e.payload);
+            console.log("cmd exit code received: ", e.payload);
             exitHandler();
         });
         return () => { void unlisten.then( f => f()) };
     });
 
-    onMount(() => {
-        setInterval( () => {
-            errors.addError("fake error", "unknown");
-        }, 2000);
-    })
+    // -------------------- Hotkey handlers --------------------- //
 
     function escapeKeyHandler() {
         if($currentTrayView !== "stdout") {
@@ -207,13 +218,34 @@ When this is in place, put updater settings in tauri.conf
         }
         else if($query.length > 0) {
             void tick().then(() => {
-                $query = "";
-                $stdout = [];
-                $stdoutLock = true;
+                clearInput();
             });
         }
         else {
             void invoke("hide_main");
+        }
+    }
+
+    function cmdHotkeyHandler(event: KeyboardEvent) {
+        Object.entries($cmdConfig).forEach(([cmdName, configItem]) => {
+            if(configItem.hotkeyNumber !== undefined && 
+                (Number(event.key) === configItem.hotkeyNumber)
+            ) {
+                clearInput();
+                $currentCmd = cmdName
+            }
+        });
+    }
+
+    function tileHotkeyHandler() {
+        if($currentTrayView === "cmdSelector") {
+            $currentTrayView = "stdout";
+
+        }
+        else {
+            clearInput();
+            $trayOpen = true;
+            $currentTrayView = "cmdSelector";
         }
     }
 
@@ -225,5 +257,38 @@ When this is in place, put updater settings in tauri.conf
         handler: escapeKeyHandler,
         keys: ["Escape"],
         enabled:  true,
+    }}
+    use:hotkeys={{
+        handler: cmdHotkeyHandler,
+        keys: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
+        modifiers: ["Alt"],
+        enabled:  true,
+    }}
+    use:hotkeys={{
+        handler: tileHotkeyHandler,
+        keys: ["S"],
+        modifiers: ["Alt"],
+        enabled:  true,
+    }}
+/>
+
+<svelte:window 
+    on:keydown={(e) => {
+        const ctrl = e.getModifierState("Control");
+        const meta  = e.getModifierState("Meta");
+        const ctrlOrCmd = ctrl || meta;
+        const alt = e.getModifierState("Alt");
+        const shift  = e.getModifierState("Shift");
+        if (
+            alt
+            || alt && e.key === "Escape"
+            || alt && e.key === "Space"
+            || ctrlOrCmd && e.key === "u"
+            || ctrlOrCmd && e.key === "p"
+            || e.key === "F5"
+        ) {
+            console.log("preventing default");
+            e.preventDefault();
+        }
     }}
 />

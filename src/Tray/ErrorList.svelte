@@ -4,6 +4,13 @@
     class=""
     id="errorList"
 >  
+    <!-- Panel heading -->
+    <div
+        id="panelHeading"
+        class=""
+    >
+        Errors
+    </div>
     <div
         class=""
         on:click={errors.clear}
