@@ -66,6 +66,7 @@ When this is in place, put updater settings in tauri.conf
 <!--    Styling list display: -->
 <!--        - Long line should be able to wrap to x number of lines then be trunked (do this by checking the character width of the tray and dividing etc) -->
 
+<!-- Zod parsing error should add an error to the errors store -->
 
 <script lang="ts">
     import "./assets/main.css";

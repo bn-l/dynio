@@ -3,7 +3,7 @@
 export interface ListDisplayOptions {
     /**
      * Displays only this many characters plus per item.
-     * @default 160
+     * @default 200
      */
     maxLineLength?: number;
     /**
@@ -26,15 +26,15 @@ export interface SingleDisplayOptions {
      */
     sizeBreakPoint?: number;
     /**
-     * Output string length < sizeBreakPoint. Any valid tailwind font size.
-     * @default "text-4xl"
+     * Font size when output length < sizeBreakPoint. Any valid int or float.
+     * @default 1.5
      */
-    largeSize?: string;
+    largeSize?: number;
     /**
      * Output string length > sizeBreakPoint. Any valid tailwind font size.
-     * @default "text-xl"
+     * @default 1.2
      */
-    smallSize?: string;
+    smallSize?: number;
 }
 
 
@@ -43,8 +43,28 @@ export interface EmptyDisplayOptions {
 }
 
 export type Display =
-    { type: "list"; options?: ListDisplayOptions } |
-    { type: "single"; options?: SingleDisplayOptions };
+    { 
+        /**
+         * Display type
+         */
+        type: "list"; 
+        /**
+         * Display options. Use {} for default options.
+         * @default {}
+         */
+        options: ListDisplayOptions 
+    } |
+    { 
+        /**
+         * Display type
+         */
+        type: "single";
+        /**
+         * Display options. Use {} for default options.
+         * @default {}
+         */ 
+        options: SingleDisplayOptions 
+    };
 
 
 export interface OutputOptions {
@@ -60,7 +80,6 @@ export interface OutputOptions {
     reverse?: boolean; 
     /**
      * Display type
-     * @default { type: "list" }
      */
     display?: Display;
     emptyDisplayOptions?: EmptyDisplayOptions;
@@ -132,6 +151,11 @@ export type CmdConfigItem = {
      * From 1-9, pressing alt+shift+hotkeyNumber will set the cmd as active.
      */
     hotkeyNumber?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+    /**
+     * Input placeholder text. Useful for differentiating between different commands.
+     * @default "Input"
+     */
+    placeholderText?: string;
 };
 
 /**

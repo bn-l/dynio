@@ -1,30 +1,34 @@
 
-
-<!-- Item count, consider removing -->
-<div class="">
-    {data.length}
-</div>
-
-
-<VList {data} let:item class="nice-scroll" bind:this={vlist}>
-    <div
-        class={`grid grid-cols-10 gap-3 ${item.index === selectedIndex ? activeClass : ""}`}
-    >
-        <div
-            class="col-span-9 flex-row-start"
-            on:click={() => {
-                selectedIndex = item.index;
-                onActivation?.(item.line);
-            }}
-        >
-            {#if $currentCmdConfig?.outputOptions?.parseAnsiColors}
-                {@html item.line}
-            {:else}
-                {item.line}
-            {/if}
-        </div>
+<div 
+    class="h-79 border-2 border-solid flex flex-col"
+>
+    <!-- Item count, consider removing -->
+    <div class="text-right p-2">
+        {data.length}
     </div>
-</VList>
+
+    <div class="border-solid border-2 border-red-500 flex-grow">
+        <VList {data} let:item class="nice-scroll overflow-x-hidden p-0" bind:this={vlist}>
+            <div
+                class={`${item.index === selectedIndex ? "bg-orange-200" : "hover:bg-orange-100 m-0 p-0"} break-all`}
+            >
+                <div
+                    class="flex-row-start cursor-pointer"
+                    on:click={() => {
+                        selectedIndex = item.index;
+                        onActivation?.(item.line);
+                    }}
+                >
+                    {#if $currentCmdConfig?.outputOptions?.parseAnsiColors}
+                        {@html item.line}
+                    {:else}
+                        {item.line}
+                    {/if}
+                </div>
+            </div>
+        </VList>
+    </div>
+</div>
 
 <script lang="ts">
     import { VList } from "virtua/svelte";
@@ -37,9 +41,8 @@
     import { activate } from "$lib/utils/activator.ts";
     import { processOutput } from "./processOutput.ts";
 
-
-    $: display = $currentCmdConfig?.outputOptions?.display;
-    $: displayOptions = display?.type === "list" ? display?.options : undefined;
+    $: display = $currentCmdConfig?.outputOptions?.display; 
+    $: displayOptions = display?.type === "list" ? display.options : undefined;
 
 
     // If list doesn't go back to 0 on new output

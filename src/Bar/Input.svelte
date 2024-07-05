@@ -3,8 +3,8 @@
 
 <input
     id="cmdInput"
-    class="text-3xl text-slate-900 placeholder:text-gray-400 w-140 h-full ml-21"
-    placeholder="Input"
+    class="text-3xl text-slate-900 placeholder:text-gray-400 w-140 h-full ml--3"
+    placeholder={$currentCmdConfig?.placeholderText}
     autoComplete="off"
     spellCheck="false"
     use:inputFocusAction

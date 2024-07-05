@@ -2,7 +2,7 @@
 {#key clampedCmdName}
 <!-- class="select-none rounded-md self-stretch flex items-center justify-center px-2 font-light text-lg cursor-pointer hover:shadow-md py-0.5 w-15 absolute justify-center align-middle self-center" -->
 <div
-    transition:blur
+    transition:blur={{duration: 200}}
     id="leftTile"
     class="select-none rounded-md self-stretch flex items-center justify-center px-2 font-light text-lg cursor-pointer hover:shadow-md py-0.5 w-18 absolute justify-center align-middle self-center "
     on:click={ 

@@ -60,6 +60,11 @@
             9
           ],
           "description": "From 1-9, pressing alt+shift+hotkeyNumber will set the cmd as active."
+        },
+        "placeholderText": {
+          "type": "string",
+          "description": "Input placeholder text. Useful for differentiating between different commands.",
+          "default": "Input"
         }
       },
       "required": [
@@ -82,10 +87,7 @@
         },
         "display": {
           "$ref": "#/definitions/Display",
-          "description": "Display type",
-          "default": {
-            "type": "list"
-          }
+          "description": "Display type"
         },
         "emptyDisplayOptions": {
           "$ref": "#/definitions/EmptyDisplayOptions"
@@ -100,14 +102,18 @@
           "properties": {
             "type": {
               "type": "string",
-              "const": "list"
+              "const": "list",
+              "description": "Display type"
             },
             "options": {
-              "$ref": "#/definitions/ListDisplayOptions"
+              "$ref": "#/definitions/ListDisplayOptions",
+              "description": "Display options",
+              "default": {}
             }
           },
           "required": [
-            "type"
+            "type",
+            "options"
           ],
           "additionalProperties": false
         },
@@ -116,14 +122,18 @@
           "properties": {
             "type": {
               "type": "string",
-              "const": "single"
+              "const": "single",
+              "description": "Display type"
             },
             "options": {
-              "$ref": "#/definitions/SingleDisplayOptions"
+              "$ref": "#/definitions/SingleDisplayOptions",
+              "description": "Display options",
+              "default": {}
             }
           },
           "required": [
-            "type"
+            "type",
+            "options"
           ],
           "additionalProperties": false
         }
@@ -161,14 +171,14 @@
           "default": 25
         },
         "largeSize": {
-          "type": "string",
-          "description": "Output string length < sizeBreakPoint. Any valid tailwind font size.",
-          "default": "text-4xl"
+          "type": "number",
+          "description": "Font size when output length < sizeBreakPoint. Any valid int or float.",
+          "default": 1.5
         },
         "smallSize": {
-          "type": "string",
+          "type": "number",
           "description": "Output string length > sizeBreakPoint. Any valid tailwind font size.",
-          "default": "text-xl"
+          "default": 1.2
         }
       },
       "additionalProperties": false
@@ -205,7 +215,7 @@
         },
         "isPath": {
           "type": "boolean",
-          "description": "Enables Control or Cmd (on mac) + O to open containing folder.",
+          "description": "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent  folder of the extracted text or error if the extract text is not a path.",
           "default": false
         }
       },

@@ -36,7 +36,7 @@ export default z.record(
             .union([
               z
                 .object({
-                  type: z.literal("list"),
+                  type: z.literal("list").describe("Display type"),
                   options: z
                     .object({
                       maxLineLength: z
@@ -58,13 +58,12 @@ export default z.record(
                         )
                         .optional(),
                     })
-                    .strict()
-                    .optional(),
+                    .strict(),
                 })
                 .strict(),
               z
                 .object({
-                  type: z.literal("single"),
+                  type: z.literal("single").describe("Display type"),
                   options: z
                     .object({
                       sizeBreakPoint: z
@@ -74,20 +73,19 @@ export default z.record(
                         )
                         .default(25),
                       largeSize: z
-                        .string()
+                        .number()
                         .describe(
-                          "Output string length < sizeBreakPoint. Any valid tailwind font size.",
+                          "Font size when output length < sizeBreakPoint. Any valid int or float.",
                         )
-                        .default("text-4xl"),
+                        .default(1.5),
                       smallSize: z
-                        .string()
+                        .number()
                         .describe(
                           "Output string length > sizeBreakPoint. Any valid tailwind font size.",
                         )
-                        .default("text-xl"),
+                        .default(1.2),
                     })
-                    .strict()
-                    .optional(),
+                    .strict(),
                 })
                 .strict(),
             ])
@@ -125,7 +123,7 @@ export default z.record(
           isPath: z
             .boolean()
             .describe(
-              "Enables Control or Cmd (on mac) + O to open containing folder.",
+              "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent  folder of the extracted text or error if the extract text is not a path.",
             )
             .default(false),
         })
@@ -147,6 +145,12 @@ export default z.record(
           "From 1-9, pressing alt+shift+hotkeyNumber will set the cmd as active.",
         )
         .optional(),
+      placeholderText: z
+        .string()
+        .describe(
+          "Input placeholder text. Useful for differentiating between different commands.",
+        )
+        .default("Input"),
     })
     .strict(),
 );

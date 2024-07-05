@@ -2,7 +2,7 @@
 
 <div
     id="outputSingle"
-    class="flex flex-col justify-stretch items-stretch gap-4 pb-2 pt-3"
+    class="flex flex-col justify-stretch items-stretch pb-2 pt-3"
 >
     <div
         id="output"
@@ -10,27 +10,25 @@
     >
         <div
             id="outputValue"
-            class={`col-span-9 flex-row-start \
-                ${displayOptions?.sizeBreakPoint && 
-                    processedOutput.length < displayOptions?.sizeBreakPoint ? 
-                        displayOptions?.largeSize : 
-                        displayOptions?.smallSize
-                }`
-            }
+            class="col-span-9 flex-row-start"
         >
-            {#if $currentCmdConfig?.outputOptions?.parseAnsiColors}
-                <span
-                    class="whitespace-pre-wrap"
-                >   
-                    {@html processedOutput}
-                </span> 
-            {:else}
-                <span
-                    class="whitespace-pre-wrap"
-                >
-                    {processedOutput}
-                </span>
-            {/if}
+            <div
+                style={`font-size: ${fontSize}rem`}
+            >
+                {#if $currentCmdConfig?.outputOptions?.parseAnsiColors}
+                    <span
+                        class="whitespace-pre-wrap"
+                    >   
+                        {@html processedOutput}
+                    </span> 
+                {:else}
+                    <span
+                        class="whitespace-pre-wrap"
+                    >
+                        {processedOutput}
+                    </span>
+                {/if}
+            </div>
         </div>
     </div>
 
@@ -45,17 +43,25 @@
     import { stdout } from "$lib/stores/globals.ts";
     import { activate } from "$lib/utils/activator.ts";
     import { AnsiUp } from "ansi_up";
+    import stripAnsi from 'strip-ansi';
 
     const ansi_up = new AnsiUp();
 
-    $: display = $currentCmdConfig?.outputOptions?.display;
-    $: displayOptions = display?.type === "single" ? display?.options : undefined;
+    let displayOptions = $currentCmdConfig?.outputOptions?.display?.type === "single" ?
+        $currentCmdConfig?.outputOptions?.display?.options: 
+        undefined;
+    $: joinedStdout = $stdout.join("\n");
     $: processedOutput = $currentCmdConfig?.outputOptions?.parseAnsiColors ? 
-        ansi_up.ansi_to_html($stdout.join("\n")) : 
-        $stdout.join("\n");
+        ansi_up.ansi_to_html(joinedStdout): 
+        joinedStdout;
+
+    $: fontSize = displayOptions?.sizeBreakPoint && 
+        stripAnsi(joinedStdout).length < displayOptions?.sizeBreakPoint ? 
+            displayOptions?.largeSize : 
+            displayOptions?.smallSize;
 
     function onActivation(text: string) {
         (text: string) => activate(text, $currentCmdConfig?.activationOptions)
     }
 
-</script>
+</script> 
