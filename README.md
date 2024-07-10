@@ -5,19 +5,20 @@
 
 </p>
 
-<div align="center">
-    <img src="./app-icon.png" alt="header logo: dynio" width="128px" height="128px" align="left">
-</div>
+
+<img src="./app-icon.png" alt="header logo: dynio" width="128px" height="128px" align="left">
 
 <br>
 <br>
-Dynamic input and output GUI. Converts any command that runs on the cli to gui.
+
+### Dynamic input and output GUI. Converts any command that runs on the cli to gui.
 
 <br>
 <br>
 <br>
 
 <img src="./demo.webp" alt="screen recording of usage">
+
 
 ## Installation
 
