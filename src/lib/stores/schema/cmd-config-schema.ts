@@ -161,7 +161,7 @@ export type CmdConfigItem = {
      *  May need to be adjusted depending on how fast the command runs.
      * @default 800
      */
-    noOutputTimeoutMs: number;
+    noOutputTimeoutMs?: number;
 };
 
 /**

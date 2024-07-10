@@ -7,8 +7,8 @@
         "distDir": "../dist"
     },
     "package": {
-        "productName": "tausveltest3",
-        "version": "0.1.0"
+        "productName": "dynio",
+        "version": "0.1.1"
     },
     "tauri": {
         "allowlist": {

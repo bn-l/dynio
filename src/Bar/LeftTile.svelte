@@ -9,9 +9,11 @@
                 if ($currentTrayView === "cmdSelector") {
                     $currentTrayView = "stdout";
                     $currentFocus = "input";
+                    $trayOpen = true;
                 }
                 else {
                     $currentTrayView = "cmdSelector";
+                    $trayOpen = true;
                 }
             }
         }
@@ -21,7 +23,7 @@
 {/key}
 
 <script lang="ts">
-    import { currentTrayView, currentFocus, currentCmd } from "$lib/stores/globals.js";
+    import { currentTrayView, currentFocus, currentCmd, trayOpen } from "$lib/stores/globals.js";
     import { blur } from 'svelte/transition';
 
     $: clampedCmdName = $currentCmd && $currentCmd?.length > 10 ? 

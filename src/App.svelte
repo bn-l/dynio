@@ -34,7 +34,8 @@
     </div>
 </div>
 
-<!-- disable ctrl+r -->
+
+<!-- run as exe test -->
 
 <!-- 
 To be done when moving to github:
@@ -55,7 +56,6 @@ When this is in place, put updater settings in tauri.conf
 
 <script lang="ts">
     import "./assets/main.css";
-    import "./assets/bar.css";
     import "virtual:uno.css";
     
     import { settings } from "$lib/stores/settings.js";
@@ -75,22 +75,11 @@ When this is in place, put updater settings in tauri.conf
     import { debounce } from "lodash-es";
     import { invoke } from "@tauri-apps/api";
     import AutoUpdater from "./Meta/AutoUpdater.svelte";
-    import { errors } from "$lib/stores/errors.ts";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { tick } from "svelte";
     import { watch } from "tauri-plugin-fs-watch-api";
     import type { UnlistenFn } from '@tauri-apps/api/event';
     import { relaunch } from '@tauri-apps/api/process';
-
-    // ! Debug, delete
-    $: console.log($query);
-
-    onMount(() => {
-        setInterval(() => {
-            errors.addError("test test test test test test test test test test test test test test test test test test test test test test test test test test test test " + Math.random(), "js");
-            stderr.update( curr => [...curr, "test test test test test test test test test test test test test test test test test test test test test test test test test test test test "]);
-        }, 2000);
-    });
 
     onMount(async () => {
         await loadValidateAndInitConfigStores();
@@ -165,7 +154,7 @@ When this is in place, put updater settings in tauri.conf
 
     onMount(() => {
         const unlisten = listen("stderr", (e: Event<string[]>) => {
-            console.log("stderr event received: ", e.payload);
+            // console.log("stderr event received: ", e.payload);
             $stderr = e.payload;
         });
         return () => { void unlisten.then( f => f()) };

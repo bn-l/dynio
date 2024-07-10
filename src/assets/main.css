@@ -100,13 +100,14 @@ body {
 }
 
 #mainWrapper {
-    box-shadow: 
+    /* box-shadow: 
         0.676rem 0.676rem 1.353rem 0 rgba(0, 0, 0, 0.2),
-        -0.676rem -0.676rem 1.353rem 0 rgba(255, 255, 255, 0.5);
+        -0.676rem -0.676rem 1.353rem 0 rgba(255, 255, 255, 0.5); */
     background-color: var(--bgColor);
     color: var(--text);
 }
 
+/* Not used but can be used to overlay noise texture */
 #mainWrapper::before {
     content: "";
     position: absolute;

@@ -73,8 +73,7 @@
         }
       },
       "required": [
-        "command",
-        "noOutputTimeoutMs"
+        "command"
       ],
       "additionalProperties": false
     },
