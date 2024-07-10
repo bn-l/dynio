@@ -9,8 +9,13 @@
     <img src="./app-icon.png" alt="header logo: dynio" width="128px" height="128px" align="left">
 </div>
 
+<br>
+<br>
 Dynamic input and output GUI. Converts any command that runs on the cli to gui.
 
+<br>
+<br>
+<br>
 
 ## Installation
 
