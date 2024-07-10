@@ -66,7 +66,7 @@
                 "minimizable": true,
                 "decorations": false,
                 "closable": true,
-                "skipTaskbar": false,
+                "skipTaskbar": true,
                 "alwaysOnTop": false,
                 "resizable": true,
                 "fileDropEnabled": true,

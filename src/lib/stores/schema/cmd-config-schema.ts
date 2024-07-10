@@ -17,6 +17,10 @@ export interface ListDisplayOptions {
      * item is the regex body and the second is the flags.
      */
     lineSplitterRegex?: string[];
+    /**
+     * Value in rem.
+     */
+    fontSize?: number;
 }
 
 export interface SingleDisplayOptions {

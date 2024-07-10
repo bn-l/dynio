@@ -34,9 +34,6 @@
     </div>
 </div>
 
-
-<!-- run as exe test -->
-
 <!-- 
 To be done when moving to github:
 Use tauri github action: https://tauri.app/v1/guides/building/cross-platform/#tauri-github-action
@@ -44,14 +41,14 @@ to generate JSON file: https://tauri.app/v1/guides/distribution/updater#static-j
 expected by updater.
 
 When this is in place, put updater settings in tauri.conf
-
 -->
+
+<!-- Current folder indicator. Drag and drop changes current folder. -->
 
 <!-- Future: -->
 <!-- make parse option an enum of text, ansi, markdown, html -->
-<!-- Add run on enter option back -->
+<!-- Add run on enter option back (for curl etc uses--e.g. openai api request) -->
 
-<!-- start minimised option -->
 
 
 <script lang="ts">

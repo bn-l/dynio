@@ -168,10 +168,12 @@ box-shadow: inset -3px -3px 7px #ffffffb0, inset 3px 3px 5px rgba(94, 104, 121, 
 
 #dragSpot {
     cursor: grab;
+
+    box-shadow: inset 0px 0px 5px 0px hsla(0, 0%, 0%, 0.041);
 }
 
 #dragSpot:active {
-    cursor: grabcmdg;
+    cursor: grab;
 }
 
 #divider {

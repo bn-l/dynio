@@ -420,7 +420,9 @@ fn main() {
 
             let settings = get_general_settings().expect("Could not get settings");
 
-            setup_main_window(app.app_handle().clone(), settings.start_minimised.unwrap_or(false));
+            println!("{:?}", settings);
+
+            setup_main_window(app.app_handle().clone(), settings.start_minimised);
 
             Ok(()) 
         })
@@ -495,7 +497,7 @@ fn setup_default_files() {
     }
     if !schema_cmdconf_path.exists() {
         std::fs::write(schema_cmdconf_path, schema_cmdconf).expect("Could not write schema cmdconf");
-    }
+    } 
 
 }
 
@@ -509,8 +511,14 @@ fn get_general_settings() -> Option<GeneralSettings> {
     } else {
         return None;
     };
+    
+    println!("{}", settings_text.as_ref().unwrap());
+    
 
-    let settings = serde_yaml::from_str::<GeneralSettings>(&settings_text.unwrap()).expect("Could not parse settings");
+
+    let settings = serde_yaml::from_str::<GeneralSettings>(settings_text.as_ref().unwrap()).expect("Could not parse settings");
+
+    println!("{:?}", settings);
 
     Some(settings)
 }
@@ -555,6 +563,7 @@ fn setup_main_window(app_handle: tauri::AppHandle, hide: bool) {
     });
 
     if hide {
+        println!("hide was true");
         let tray_item_handle = app_handle.tray_handle().get_item("togglevis");
         let _ = window.hide();
         let _ = app_handle.emit_all("main_hide_unhide", "hide");

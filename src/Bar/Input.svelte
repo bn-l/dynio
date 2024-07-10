@@ -3,7 +3,7 @@
 
 <input
     id="cmdInput"
-    class="text-3xl w-140 h-full ml--3"
+    class="text-3xl w-120 h-full ml--3"
     placeholder={$currentCmdConfig?.placeholderText}
     autoComplete="off"
     spellCheck="false"
