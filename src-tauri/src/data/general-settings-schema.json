@@ -14,11 +14,6 @@
           "description": "Whether to show the welcome info on launch. Explains how to setup the program etc.",
           "default": false
         },
-        "autoStart": {
-          "type": "boolean",
-          "description": "Whether to start the app on login automatically. Note: starts hidden.",
-          "default": true
-        },
         "timeoutSecs": {
           "type": "number",
           "description": "Max time a command can take in seconds. By default 300 (= 5 mins).",
@@ -44,6 +39,10 @@
         "autoUpdate": {
           "type": "boolean",
           "default": true
+        },
+        "startMinimised": {
+          "type": "boolean",
+          "default": false
         }
       },
       "additionalProperties": false

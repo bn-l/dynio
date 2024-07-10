@@ -1,7 +1,8 @@
 {
-    "name": "tausveltest3",
+    "name": "dynio",
     "private": true,
-    "version": "1.0.0",
+    "version": "0.1.1",
+    "description": "Dynamic input and output GUI. Converts any command that runs on the cli to gui.",
     "type": "module",
     "scripts": {
         "tauri": "tauri",
@@ -10,23 +11,22 @@
         "build": "vite build",
         "preview": "vite preview",
         "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json",
+        "tauri icon": "tauri icon",
         "tauri build": "tauri build",
         "tauri dev": "tauri dev"
     },
     "dependencies": {
+        "@sveltejs/svelte-virtual-list": "^3.0.1",
         "@tauri-apps/api": "^1",
         "ansi_up": "^6.0.2",
         "lodash-es": "^4.17.21",
         "nanoid": "^5.0.7",
-        "rambda": "^9.2.1",
         "strip-ansi": "^7.1.0",
-        "tauri-plugin-fs-watch-api": "github:tauri-apps/tauri-plugin-fs-watch#v1",
-        "virtua": "^0.33.0"
+        "tauri-plugin-fs-watch-api": "github:tauri-apps/tauri-plugin-fs-watch#v1"
     },
     "devDependencies": {
         "@antfu/eslint-config": "^2.21.1",
         "@eslint/js": "^9.5.0",
-        "@melt-ui/svelte": "^0.83.0",
         "@sveltejs/adapter-static": "^3.0.2",
         "@sveltejs/kit": "^2.5.17",
         "@sveltejs/vite-plugin-svelte": "^3.1.1",
@@ -43,7 +43,6 @@
         "globals": "^15.6.0",
         "json-refs": "^3.0.15",
         "json-schema-to-zod": "^2.1.1",
-        "prettier": "^3.3.2",
         "svelte": "^4",
         "svelte-check": "^3.8.1",
         "svelte-eslint-parser": "0.37.0",

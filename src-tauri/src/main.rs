@@ -7,7 +7,7 @@ use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_fs_watch;
 use serde::{Serialize, Deserialize};
 
-use std::collections::HashMap;
+// use std::collections::HashMap;
 // use std::sync::Arc;
 use std::process::Stdio;
 use std::sync::Mutex;
@@ -18,23 +18,16 @@ use tokio::time::Duration;
 use tauri::{Manager, Size, PhysicalSize, PhysicalPosition, Window };
 use tauri::GlobalShortcutManager;
 
-use notify::{Watcher, RecursiveMode};//, RecommendedWatcher };
+// use notify::{Watcher, RecursiveMode};//, RecommendedWatcher };
 
 // mod types { pub mod general_settings_schema; }
 // use types::general_settings_schema::GeneralSettings;
 
-use std::io::BufRead;
+// use std::io::BufRead;
 
-// use encoding_rs::;
-use encoding_rs::UTF_16LE;
-use encoding_rs::UTF_16BE;
-use encoding_rs::WINDOWS_874;
-use encoding_rs::WINDOWS_1252;
-use encoding_rs::ISO_8859_3;
-use encoding_rs::IBM866;
 
 #[cfg(target_os = "windows")]
-use winapi::um::winbase::{ CREATE_NO_WINDOW };
+use winapi::um::winbase::CREATE_NO_WINDOW;
 
 use tauri::{CustomMenuItem, SystemTrayMenu, SystemTrayMenuItem, SystemTray};
 
@@ -42,8 +35,8 @@ use std::sync::atomic::{self, AtomicBool};
 
 type VecSender = tokio::sync::watch::Sender<Vec<String>>;
 
-// mod error;
-// use error::Error;
+mod general_settings;
+use general_settings::GeneralSettings;
 
 #[derive(Debug, thiserror::Error)]
 enum SerError {
@@ -312,16 +305,16 @@ fn toggle_main_window(app_handle: &tauri::AppHandle) {
     }
 }
 
-#[tauri::command]
-async fn show_main(app_handle: tauri::AppHandle) {
-    if let Some(window) = app_handle.get_window("main") {
-        if !window.is_visible().unwrap() {
-            let _ = window.show();
-            let _ = window.set_focus();
-            let _ = app_handle.emit_all("main_hide_unhide", "unhide");
-        }
-    }
-}
+// #[tauri::command]
+// async fn show_main(app_handle: tauri::AppHandle) {
+//     if let Some(window) = app_handle.get_window("main") {
+//         if !window.is_visible().unwrap() {
+//             let _ = window.show();
+//             let _ = window.set_focus();
+//             let _ = app_handle.emit_all("main_hide_unhide", "unhide");
+//         }
+//     }
+// }
 
 #[tauri::command]
 async fn hide_main(app_handle: tauri::AppHandle) {
@@ -424,7 +417,10 @@ fn main() {
             setup_default_files();
 
             setup_splash_window(app.app_handle().clone());
-            setup_main_window(app.app_handle().clone());
+
+            let settings = get_general_settings().expect("Could not get settings");
+
+            setup_main_window(app.app_handle().clone(), settings.start_minimised.unwrap_or(false));
 
             Ok(()) 
         })
@@ -503,8 +499,24 @@ fn setup_default_files() {
 
 }
 
+fn get_general_settings() -> Option<GeneralSettings> {
+    let mut settings_path = tauri::api::path::home_dir().expect("Could not get home dir.");
+    settings_path.push(".dynio");
+    settings_path.push("general-settings.yaml");
 
-fn setup_main_window(app_handle: tauri::AppHandle) {
+    let settings_text = if settings_path.exists() {
+        Some(std::fs::read_to_string(settings_path).expect("Could not read settings"))
+    } else {
+        return None;
+    };
+
+    let settings = serde_yaml::from_str::<GeneralSettings>(&settings_text.unwrap()).expect("Could not parse settings");
+
+    Some(settings)
+}
+
+
+fn setup_main_window(app_handle: tauri::AppHandle, hide: bool) {
 
     const SCREEN_TO_WIDTH_RATIO: f64 = 0.5;
     const HEIGHT_TO_WIDTH_RATIO: f64 = 0.16;
@@ -541,6 +553,13 @@ fn setup_main_window(app_handle: tauri::AppHandle) {
         x: window.outer_position().expect("couldn't get splash pos").y,
         y: window.outer_position().expect("couldn't get splash pos").y + Y_CENTER_OFFSET,
     });
+
+    if hide {
+        let tray_item_handle = app_handle.tray_handle().get_item("togglevis");
+        let _ = window.hide();
+        let _ = app_handle.emit_all("main_hide_unhide", "hide");
+        tray_item_handle.set_title("Show").expect("Could not set title");
+    }
 }
 
 fn setup_splash_window(app_handle: tauri::AppHandle) {

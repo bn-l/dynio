@@ -9,12 +9,6 @@ export default z
         "Whether to show the welcome info on launch. Explains how to setup the program etc.",
       )
       .default(false),
-    autoStart: z
-      .boolean()
-      .describe(
-        "Whether to start the app on login automatically. Note: starts hidden.",
-      )
-      .default(true),
     timeoutSecs: z
       .number()
       .describe(
@@ -39,5 +33,6 @@ export default z
       .default(false),
     firstLaunch: z.boolean().optional(),
     autoUpdate: z.boolean().default(true),
+    startMinimised: z.boolean().default(false),
   })
   .strict();

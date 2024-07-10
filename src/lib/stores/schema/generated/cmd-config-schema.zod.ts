@@ -44,7 +44,7 @@ export default z.record(
                         .describe(
                           "Displays only this many characters plus per item.",
                         )
-                        .default(160),
+                        .default(200),
                       lineSplitter: z
                         .string()
                         .describe(
@@ -151,6 +151,12 @@ export default z.record(
           "Input placeholder text. Useful for differentiating between different commands.",
         )
         .default("Input"),
+      noOutputTimeoutMs: z
+        .number()
+        .describe(
+          "Milliseconds until the no output message is shown. Helps to prevent display flashing.  May need to be adjusted depending on how fast the command runs.",
+        )
+        .default(800),
     })
     .strict(),
 );

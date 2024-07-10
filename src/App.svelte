@@ -11,13 +11,9 @@
     on:mousedown={() => $clickInBounds = true}
     on:mouseup={() => $clickInBounds = false}
 >
-<!-- style="background-color: var(--background);"
-style:--background={$settings.darkMode ? theme.backgroundDark: theme.backgroundLight} -->
     <div
         id="mainWrapper"
-        class="text-slate-900 rounded-md shadow-lg opacity-99 absolute top-4 left-3 right-4"
-        style="background-color: var(--background);"
-        style:--background={$settings.darkMode ? theme.backgroundDark: theme.backgroundLight}
+        class="rounded-md shadow-lg opacity-99 absolute top-4 left-3 right-4"
     >
         <div
             id="inputWrapper"
@@ -38,6 +34,8 @@ style:--background={$settings.darkMode ? theme.backgroundDark: theme.backgroundL
     </div>
 </div>
 
+<!-- disable ctrl+r -->
+
 <!-- 
 To be done when moving to github:
 Use tauri github action: https://tauri.app/v1/guides/building/cross-platform/#tauri-github-action
@@ -48,34 +46,20 @@ When this is in place, put updater settings in tauri.conf
 
 -->
 
-<!-- clear cargo.toml & package.json -->
+<!-- Future: -->
+<!-- make parse option an enum of text, ansi, markdown, html -->
+<!-- Add run on enter option back -->
 
-<!-- Tile / panel gets random color based on name? -->
+<!-- start minimised option -->
 
-<!-- Set unused imports / params in tsconfig as error  -->
-
-<!-- Error indicators not shown if no error -->
-
-<!-- Style error indicators (use tailwind animations) -->
-
-<!-- Different styling on tile when currentTrayView = cmdSelector -->
-
-<!-- Visual differentiation currentTrayView != stdout -->
-
-<!-- Styling --> 
-<!--    Styling list display: -->
-<!--        - Long line should be able to wrap to x number of lines then be trunked (do this by checking the character width of the tray and dividing etc) -->
-
-<!-- Zod parsing error should add an error to the errors store -->
 
 <script lang="ts">
     import "./assets/main.css";
     import "./assets/bar.css";
     import "virtual:uno.css";
-    import theme from "$lib/theme.json"
-
+    
     import { settings } from "$lib/stores/settings.js";
-    import { fileHovering, trayOpen, running, stdoutLock, currentFocus, query, clickInBounds, stderr, currentTrayView, currentCmd, clearInput } from "$lib/stores/globals.js";
+    import { trayOpen, running, stdoutLock, query, clickInBounds, stderr, currentTrayView, currentCmd, clearInput } from "$lib/stores/globals.js";
     import Tray from "./Tray/Tray.svelte";
     import Input from "./Bar/Input.svelte";
     import LeftTile from "./Bar/LeftTile.svelte";
@@ -83,27 +67,30 @@ When this is in place, put updater settings in tauri.conf
     import StderrIndicator from "./Bar/StderrIndicator.svelte";
     import DragSpot from "./Bar/DragSpot.svelte";
     import { loadValidateAndInitConfigStores } from "./lib/utils/config-file-utils.ts";
-    import { onMount, afterUpdate, beforeUpdate } from 'svelte';
+    import { onMount } from 'svelte';
     import { listen } from "@tauri-apps/api/event";
     import type { Event } from "@tauri-apps/api/event";
     import { stdout } from "$lib/stores/globals.js";
     import { currentCmdConfig, cmdConfig } from "$lib/stores/cmd-config.ts";
     import { debounce } from "lodash-es";
-    import { getCurrent } from "@tauri-apps/api/window"
-    import { isRegistered, register, unregister } from "@tauri-apps/api/globalShortcut"
     import { invoke } from "@tauri-apps/api";
-    import UncaughtErrors from "./Meta/UncaughtErrors.svelte";
     import AutoUpdater from "./Meta/AutoUpdater.svelte";
     import { errors } from "$lib/stores/errors.ts";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { tick } from "svelte";
-    import { appWindow } from "@tauri-apps/api/window";
     import { watch } from "tauri-plugin-fs-watch-api";
     import type { UnlistenFn } from '@tauri-apps/api/event';
     import { relaunch } from '@tauri-apps/api/process';
 
     // ! Debug, delete
     $: console.log($query);
+
+    onMount(() => {
+        setInterval(() => {
+            errors.addError("test test test test test test test test test test test test test test test test test test test test test test test test test test test test " + Math.random(), "js");
+            stderr.update( curr => [...curr, "test test test test test test test test test test test test test test test test test test test test test test test test test test test test "]);
+        }, 2000);
+    });
 
     onMount(async () => {
         await loadValidateAndInitConfigStores();
@@ -114,7 +101,7 @@ When this is in place, put updater settings in tauri.conf
             const configDir = await invoke("get_config_dir") as string;
             const stopWatching = await watch(
                 configDir,
-                (event) => {
+                () => {
                     void relaunch();
                 },
                 { recursive: true },
@@ -159,7 +146,7 @@ When this is in place, put updater settings in tauri.conf
                 timeout = setTimeout(() => {
                     console.log("timer ran");
                     $stdout = [];
-                }, 1000);
+                },  $currentCmdConfig?.noOutputTimeoutMs ?? 800);
                 return;
             }
             clearTimeout(timeout);
@@ -288,13 +275,14 @@ When this is in place, put updater settings in tauri.conf
         const meta  = e.getModifierState("Meta");
         const ctrlOrCmd = ctrl || meta;
         const alt = e.getModifierState("Alt");
-        const shift  = e.getModifierState("Shift");
+        // Overriding webview hotkeys
         if (
             alt
             || alt && e.key === "Escape"
             || alt && e.key === "Space"
             || ctrlOrCmd && e.key === "u"
             || ctrlOrCmd && e.key === "p"
+            || ctrlOrCmd && e.key === "r"
             || e.key === "F5"
         ) {
             console.log("preventing default");

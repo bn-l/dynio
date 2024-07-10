@@ -10,11 +10,6 @@ export type GeneralSettings = {
      */
     showWelcome?: boolean;
     /**
-     * Whether to start the app on login automatically. Note: starts hidden.
-     * @default true
-     */
-    autoStart?: boolean;
-    /**
      * Max time a command can take in seconds. By default 300 (= 5 mins).
      * @default 300
      */
@@ -38,4 +33,8 @@ export type GeneralSettings = {
      * @default true
      */
     autoUpdate?: boolean;
+    /**
+     * @default false
+     */
+    startMinimised?: boolean;
 }

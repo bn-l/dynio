@@ -1,29 +1,30 @@
 
 {#if $errors.length > 0}
-    <div>
+    <div class="absolute right--3 top-2">
         <Indicator clickView="errors" monitorStream={errors}>
             <svg 
-                id="errorTriangleSvg" 
+                id="errorOctogonSvg"
+                class="fill-red-50 stroke-neutral-500 opacity-100"
                 xmlns="http://www.w3.org/2000/svg" 
-                viewBox="0 0 24 24"  
+                viewBox="0 0 24 24" 
                 height="1em" width="1em" 
-                fill={$settings.darkMode ? "#ef4444" : "#fee2e2"} 
+                fill=""
                 stroke="currentColor" 
-                stroke-width=2 
+                stroke-width="2" 
                 stroke-linecap="round" 
-                stroke-linejoin="round"
+                stroke-linejoin="round" 
             >
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                <line x1="12" y1="9" x2="12" y2="13"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
+            <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+
         </Indicator>
     </div>
 {/if}
 
 <script  lang="ts">
     import "./indicatorAnimation.css";
-    import { settings } from "$lib/stores/settings.js";
     import Indicator from "./Indicator.svelte";
     import { errors } from "$lib/stores/errors.ts";
 

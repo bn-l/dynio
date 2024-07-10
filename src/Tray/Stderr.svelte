@@ -1,31 +1,20 @@
 
 
-<div
-    class="nice-scroll"
+<ClearablePanel 
+    panelHeading="Stderr"
+    onClear={() => {
+        $stderr = [];
+    }}
 >
-    <!-- Panel heading -->
-    <div
-        id="panelHeading"
-        class=""
-    >
-        Stderr
-    </div>
-    <div
-        class=""
-        on:click={() => {
-            $stderr = [];
-        }}
-    >
-        clear
-    </div>
+    {#each $stderr as err}
+        <div
+            class="py-1"
+        >
+            {err}
+        </div>
+    {/each}
+</ClearablePanel>
 
-    <!-- Display using code font and new lines should break --> 
-    <div
-        class=""
-    >   
-        {processedStderr}
-    </div>
-</div>
 
 <script lang="ts">
 
@@ -35,10 +24,7 @@
     // special "errors" store.
 
     import { stderr } from "$lib/stores/globals.ts";
-    import { onMount } from "svelte";
-    import { listen } from "@tauri-apps/api/event";
-    import type { Event } from "@tauri-apps/api/event";
-
-    $: processedStderr = $stderr.join("\n");
+    
+    import ClearablePanel from "$lib/utils/ClearablePanel.svelte";
 
 </script>

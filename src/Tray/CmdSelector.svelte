@@ -1,94 +1,117 @@
 
 
-<!-- Container for top and bottom row -->
-<VList {data} let:item class="nice-scroll" {getKey} bind:this={vlist}>
+<div
+    class="px-3"
+>   
     <div
-        class={`${item.index === selectedIndex ? activeClass : ""}`}
-        on:mouseenter={() => selectedIndex = item.index}
-        on:click={() => handleActivation(data[selectedIndex].id)}
+        class="nice-scroll overflow-x-hidden h-79"
     >
-        <!-- Top -->    
+    {#each items as item, index (item.cmdName)}
         <div
+            id={`cmdselect-item-${index}`}
+            class={`${index === selectedIndex ? "bg-orange-200" : "hover:bg-orange-100 m-0 p-0"} p-3 cursor-pointer`}
+            on:click={() => handleActivation(item.cmdName)}
+        >
+            <!-- Line 1 -->    
+            <div
+                class="flex justify-between"
+            >
+                <div
+                    class="text-xl pb-2"
+                >
+                    {item.cmdName}
+                </div>
+                    <!-- Test commands with and without hotkeys -->
+                    <!-- This should take up space regardless -->
+                    <div
+                        class=""
+                    >
+                        {item.hotkeyNumber ? `Hotkey: ${item.hotkeyNumber}` : ""}
+                    </div>
+            </div>
+            <!-- Line 2 -->
+            <div
+                class=""
+            >
+                <div
+                    class=""
+                >
+                    {item.command}
+                </div>
+            </div>
+            <!-- Line 3 -->
+            <div
+                class="flex"
+            >
+                <div
+                    class="flex"
+                >
+                    <div
+                        class="mr-2"
+                    >
+                    </div>
+                    <div
+                        class=""
+                    >
+                        {item.arguments}
+                    </div>
+                </div>
+            </div>
+            <!-- Line 4 -->
+            <div
+                class="flex"
+            >
+                <div
+                    class="flex"
+                >
+                    <div
+                        class="mr-2"
+                    >
+                        Display as:
+                    </div>
+                    <div
+                        class=""
+                    >
+                        {capitaliseFirst(item.outputOptions?.display?.type)}
+                    </div>
+                </div>
+                <div
+                    class="flex ml-6"
+                >
+                    <div
+                        class="mr-2"
+                    >
+                        On activation:
+                    </div>
+                    <div
+                        class=""
+                    >
+                        {capitaliseFirst(item.activationOptions?.activateAction)}
+                    </div>
+                </div>
+            </div>
+            <!-- Bottom -->
+            <div
             class=""
-        >
-            <!-- id = command name -->
-            <div
-                class=""
-            >
-                {item.id}
-            </div>
-                <!-- Test commands with and without hotkeys -->
-                <!-- This should take up space regardless -->
-                <div
-                    class=""
-                >
-                    {item.config.hotkeyNumber ?? ""}
-                </div>
-        </div>
-        <!-- Middle -->
-        <div
-            class=""
-        >
-            <div
-                class=""
-            >
-                {item.config.command}
-            </div>
-            <div
-                class=""
-            >
-                {item.config.arguments}
-            </div>
-            <div
-                class=""
             >
                 <div
-                    class=""
+                    class="mt-2"
                 >
-                    Display as:
-                </div>
-                <div
-                    class=""
-                >
-                    {item.config.outputOptions?.display?.type || "List"}
-                </div>
-            </div>
-            <div
-                class=""
-            >
-                <div
-                    class=""
-                >
-                    On activation:
-                </div>
-                <div
-                    class=""
-                >
-                    {item.config.activationOptions?.activateAction || "Copy"}
+                    {item.description}
                 </div>
             </div>
         </div>
-        <!-- Bottom -->
-        <div
-        class=""
-        >
-            <div
-                class=""
-            >
-                {item.config.description}
-            </div>
-        </div>
+    {/each}
     </div>
-</VList>
+</div>
 
 <script lang="ts">
     import { debounce } from "lodash-es";
-    import { VList } from "virtua/svelte";
-    import { cmdConfig, currentCmdConfig } from "$lib/stores/cmd-config.ts";
+    import { cmdConfig } from "$lib/stores/cmd-config.ts";
     import { currentCmd, query, stdout, currentTrayView, currentFocus, stdoutLock } from "$lib/stores/globals.ts";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { invoke } from "@tauri-apps/api";
-    import type { CmdConfigItem } from "$lib/stores/schema/cmd-config-schema.ts";
+    import { onMount } from "svelte";
 
 
     // Sort by hotkey but don't change the order of an item if it has no hotkey
@@ -108,12 +131,10 @@
         return 0;
     });
 
-    type commandListData = { id: string, config: CmdConfigItem, index: number };
-    $: data = commandList.map(([cmdName, config], index) => {
+    $: items = commandList.map(([cmdName, config]) => {
         return {
-            id: cmdName,
-            config,
-            index
+            cmdName,
+            ...config,
         };
     });
 
@@ -127,36 +148,53 @@
         void invoke("stop_running");
     }
 
-    const getKey = (item: commandListData) => item.id;
+    function capitaliseFirst(string: string | undefined) {
+        if (!string) return "undefined";
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+    
+    let selectedIndex: number | undefined = undefined;
 
+    $: console.log("selectedIndex", selectedIndex);
 
+    onMount(() => {
+        const currentIndex = items.findIndex(item => item.cmdName === $currentCmd);
+        selectedIndex = currentIndex !== -1 ? currentIndex : 0;
+    });
 
-    let vlist: VList<commandListData>;
-    let selectedIndex = 0;
+    $: {
+        if (selectedIndex !== undefined && items.length > 0) {
+            const activeItemId = `cmdselect-item-${selectedIndex}`;
+            const element = document.getElementById(activeItemId);
+            if (element) {
+                element.scrollIntoView({
+                    behavior: 'instant',
+                    block: 'nearest'
+                });
+            }
+        }
+    }
 
-    $: $currentCmd = data[selectedIndex].id;
+    $: if(selectedIndex !== undefined && items[selectedIndex]) {
+        $currentCmd = items[selectedIndex].cmdName;
+    };
 
     const upDownListHandler = debounce(
         (e: KeyboardEvent, indexChange: number) => {
+            if(selectedIndex === undefined) return;
             e.preventDefault();
             // If we're going back (indexChange < 0), don't go to less than 0.
             //  if we're going forward (indexChange > 0), don't go to more than items.length - 1
             const index =
                 indexChange < 0
                     ? Math.max(selectedIndex + indexChange, 0)
-                    : Math.min(selectedIndex + indexChange, data.length - 1);
+                    : Math.min(selectedIndex + indexChange, items.length - 1);
 
             selectedIndex = index;
-
-            vlist.scrollToIndex(index, {
-                align: "nearest",
-            });
         },
         16,
         { leading: true, trailing: false },
     );
-
-    const activeClass = "bg-blue-300";
 
 </script>
 
@@ -168,8 +206,8 @@
                 upDownListHandler(event, -1);
             } else if (event.key === "ArrowDown") {
                 upDownListHandler(event, 1);
-            } else if (event.key === "Enter") {
-                handleActivation(data[selectedIndex].id);
+            } else if (event.key === "Enter" && selectedIndex !== undefined) {
+                handleActivation(items[selectedIndex].cmdName);
             }
         },
         keys: ["ArrowUp", "ArrowDown", "Enter"],

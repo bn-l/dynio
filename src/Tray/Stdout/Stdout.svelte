@@ -7,7 +7,7 @@
 -->
 
 {#if $stdoutLock}
-    <EmptyDisplay message="" />
+    <EmptyDisplay message="" showBackground />
 
 {:else if $stdout.length === 0 && $running}
     <EmptyDisplay message="" />
@@ -27,7 +27,7 @@
 {/if}
 
 <script lang="ts">
-    import { stdout, stdoutLock, running, exitCode, query } from "$lib/stores/globals.ts";
+    import { stdout, stdoutLock, running } from "$lib/stores/globals.ts";
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
 
     import SingleDisplay from "./SingleDisplay.svelte";

@@ -6,7 +6,7 @@ import { invoke } from '@tauri-apps/api';
 import { cmdConfig } from "$lib/stores/cmd-config.ts";
 import { settings } from "$lib/stores/settings.ts";
 import { currentCmd } from "$lib/stores/globals.js";
-
+import { errors } from '$lib/stores/errors.ts';
 import cmdConfigZod from "$lib/stores/schema/generated/cmd-config-schema.zod.js";
 import generalSettingsZod from "$lib/stores/schema/generated/general-settings-schema.zod.js";
 
@@ -38,7 +38,10 @@ export async function loadValidateAndInitConfigStores() {
             loadedCmdConfig = cmdConfigZod.parse(loadedCmdConfig);
         } catch (err) {
             // @ts-expect-error ignore
-            const newError = new Error(`Error parsing command config. Message: ${err?.message}. Stacktrace: ${err?.stack}`);
+            const msg = `Error parsing command config. Message: ${err?.message}`;
+            errors.addError(msg, "js");
+            // @ts-expect-error ignore
+            const newError = new Error(`${msg}. Stacktrace: ${err?.stack}`);
             Object.assign(newError, err);
             throw newError;
         }
@@ -54,7 +57,10 @@ export async function loadValidateAndInitConfigStores() {
             loadedGeneralSettings = generalSettingsZod.parse(loadedGeneralSettings);
         } catch (err) {
             // @ts-expect-error ignore
-            const newError = new Error(`Error parsing general settings. Message: ${err?.message}. Stacktrace: ${err?.stack}`);
+            const msg = `Error parsing general settings. Message: ${err?.message}`;
+            errors.addError(msg, "js");
+            // @ts-expect-error ignore
+            const newError = new Error(`${msg}. Stacktrace: ${err?.stack}`);
             Object.assign(newError, err);
             throw newError;
         }

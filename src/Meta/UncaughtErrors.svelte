@@ -34,8 +34,7 @@
 
 <script lang="ts">
     import { exit } from '@tauri-apps/api/process';
-    import { invoke } from "@tauri-apps/api/tauri";
-
+    
     export let error: Error;
 
     $: errorMessage = error && error instanceof Error ?

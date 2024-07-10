@@ -1,46 +1,50 @@
 
 <div 
-    class="h-79 border-2 border-solid flex flex-col"
+    id="listDisplay"
+    class="h-79 border-0 border-solid flex flex-col px-3"
 >
     <!-- Item count, consider removing -->
-    <div class="text-right p-2">
-        {data.length}
+    <div class="text-right py-1 pr-3">
+        {items.length}
     </div>
 
-    <div class="border-solid border-2 border-red-500 flex-grow">
-        <VList {data} let:item class="nice-scroll overflow-x-hidden p-0" bind:this={vlist}>
+    <div class="border-solid border-0 border-red-500 flex-grow nice-scroll overflow-x-hidden p-0">
+        {#each items as item, index (item)}
             <div
-                class={`${item.index === selectedIndex ? "bg-orange-200" : "hover:bg-orange-100 m-0 p-0"} break-all`}
+                id={`item-${index}`}
+                class={`${index === selectedIndex ? "bg-orange-200" : "hover:bg-orange-100 m-0 p-0"}`}
             >
                 <div
-                    class="flex-row-start cursor-pointer"
+                    class="flex-row-start cursor-pointer break-all p-3"
                     on:click={() => {
-                        selectedIndex = item.index;
-                        onActivation?.(item.line);
+                        selectedIndex = index;
+                        onActivation?.(item);
+                    }}
+                    on:contextmenu={(event) => {
+                        selectedIndex = index;
+                        onActivation?.(item, true);
+                        event.preventDefault();
                     }}
                 >
                     {#if $currentCmdConfig?.outputOptions?.parseAnsiColors}
-                        {@html item.line}
+                        {@html item}
                     {:else}
-                        {item.line}
+                        {item}
                     {/if}
                 </div>
             </div>
-        </VList>
+        {/each}
     </div>
 </div>
 
 <script lang="ts">
-    import { VList } from "virtua/svelte";
-    import { beforeUpdate } from "svelte";
     import { debounce } from "lodash-es";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
-    import { currentFocus, currentTrayView } from "$lib/stores/globals.ts";
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
     import { stdout } from "$lib/stores/globals.ts";
     import { activate } from "$lib/utils/activator.ts";
     import { processOutput } from "./processOutput.ts";
-
+    
     $: display = $currentCmdConfig?.outputOptions?.display; 
     $: displayOptions = display?.type === "list" ? display.options : undefined;
 
@@ -55,7 +59,6 @@
         void activate(text, $currentCmdConfig?.activationOptions, openContaining);
     }
 
-    type Indexed = { line: string; index: number };
 
     let processedOutput: string[] = [];
     const { lineSplitter, lineSplitterRegex, maxLineLength } = displayOptions ?? {};
@@ -65,13 +68,41 @@
         lineSplitterRegex,
         parseAnsiColors: $currentCmdConfig?.outputOptions?.parseAnsiColors,
     });
-    let data: Indexed[] = [];
-    $: data = processedOutput.map((line, index) => ({ line, index }));
 
-    console.log("In Listdisplay data length: ", data.length);
+    let items = []; // Items to actually display
+    // $: items = processedOutput.slice(0, displayCount); 
+    $: items = processedOutput;
 
-    let vlist: VList<Indexed>;
+    // onMount(() => {
+    //     const interval = setInterval(() => {
+    //         // Increase displayCount 10% of processedOutput, up to the length of processedOutput
+    //         if (displayCount < processedOutput.length) {
+    //             displayCount = Math.min(displayCount + processedOutput.length*0.10, processedOutput.length);
+    //         }
+    //         else {
+    //             clearInterval(interval);
+    //         }
+    //     }, 100);
+
+    //     return () => {
+    //         clearInterval(interval);
+    //     };
+    // });
+
     let selectedIndex = 0;
+
+    $: {
+        if (selectedIndex !== undefined && items.length > 0) {
+            const activeItemId = `item-${selectedIndex}`;
+            const element = document.getElementById(activeItemId);
+            if (element) {
+                element.scrollIntoView({
+                    behavior: 'instant',
+                    block: 'nearest'
+                });
+            }
+        }
+    }
 
     const upDownListHandler = debounce(
         (e: KeyboardEvent, indexChange: number) => {
@@ -81,20 +112,17 @@
             const index =
                 indexChange < 0
                     ? Math.max(selectedIndex + indexChange, 0)
-                    : Math.min(selectedIndex + indexChange, data.length - 1);
+                    : Math.min(selectedIndex + indexChange, items.length - 1);
 
             selectedIndex = index;
-
-            vlist.scrollToIndex(index, {
-                align: "nearest",
-            });
         },
         16,
         { leading: true, trailing: false },
     ); 
 
     // When the tray is not focussed show a "ghost" version of the active highlight
-    const activeClass = "bg-blue-300";
+
+
 </script>
 
 
@@ -107,7 +135,7 @@
                 upDownListHandler(event, 1);
             } else if (event.key === "Enter") {
                 console.log("enter pressed")
-                onActivation(data[selectedIndex].line);
+                onActivation(items[selectedIndex]);
             }
         },
         keys: ["ArrowUp", "ArrowDown", "Enter"],
@@ -117,11 +145,12 @@
         handler: () => {
             console.log("opening containing");
             if($currentCmdConfig?.activationOptions?.isPath) {
-                onActivation(data[selectedIndex].line, true);
+                onActivation(items[selectedIndex], true);
             }
         },
         keys: ["o"],
         modifiers: ["CmdOrCtrl"],
         enabled:  true,
     }}
+    
 />

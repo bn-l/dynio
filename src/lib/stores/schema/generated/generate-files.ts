@@ -36,7 +36,7 @@ await fsp.writeFile(generalSettingsOutBE, generalSettingsSchemaString, { encodin
 // ------------------ ZOD Schema from above JSON schema ------------- //
 
 
-async function schemaToZodToFile(schema: object, options: string, savePath: string) {
+async function schemaToZodToFile(schema: object, _options: string, savePath: string) {
     const { resolved } = await resolveRefs(schema)
     const module = jsonSchemaToZod(resolved, { module: "esm"});
     const formatted = await format(module, { parser: "typescript" })

@@ -1,9 +1,8 @@
 
 import type { CmdConfig, CmdConfigItem } from "$lib/stores/schema/cmd-config-schema.js";  
-import type { Writable, Readable } from "svelte/store";
-import { writable, derived , get } from "svelte/store";
+import type { Writable } from "svelte/store";
+import { writable, derived } from "svelte/store";
 import { currentCmd } from "$lib/stores/globals.js";
-import { merge } from "lodash-es";
 
 
 export const cmdConfig: Writable<CmdConfig> = writable({});

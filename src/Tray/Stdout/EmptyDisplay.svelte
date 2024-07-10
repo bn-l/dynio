@@ -1,21 +1,30 @@
 
 <div
-    id="noOutput"
-    class="flex flex-col justify-stretch items-stretch gap-4 pb-2 pt-3"
+    id="emptyDisplay"
+    class="text-3xl text-center h-76 flex justify-center items-center"
 >
     <div
-        id="output"
-        class="grid grid-cols-10 gap-3"
+        id="emptyDisplayMessage"
+        class=""
     >
-        <div
-            id="outputValue"
-            class="col-span-9 flex-row-start text-3xl"
-        >
+        {#if message}
             {message}
-        </div>
+        {:else}
+            <div
+                id="emptyDisplayImage"
+                class="flex items-center"
+            >
+                <img 
+                    class="h-40 w-40 grayscale-100 brightness-150 opacity-10" 
+                    src={appIcon} alt="App icon" 
+                />
+            </div>
+        {/if}
     </div>
 </div>
 
 <script lang="ts">
     export let message = "";
+    export let showBackground = false;
+    import appIcon from "../../../app-icon.png";
 </script>

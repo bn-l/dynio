@@ -156,6 +156,12 @@ export type CmdConfigItem = {
      * @default "Input"
      */
     placeholderText?: string;
+    /**
+     * Milliseconds until the no output message is shown. Helps to prevent display flashing.
+     *  May need to be adjusted depending on how fast the command runs.
+     * @default 800
+     */
+    noOutputTimeoutMs: number;
 };
 
 /**

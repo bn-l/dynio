@@ -1,73 +1,56 @@
 
-
-<div
-    class=""
-    id="errorList"
->  
-    <!-- Panel heading -->
+<ClearablePanel 
+    panelHeading="Errors"
+    onClear={() => {
+        errors.clear();
+    }}
+>
     <div
-        id="panelHeading"
-        class=""
-    >
-        Errors
-    </div>
-    <div
-        class=""
-        on:click={errors.clear}
-    >
-        clear
-    </div>
-
-    {#each $errors as {id, message, type, timestamp, count} (id)}
-        <div
-            class=""
-        >   
+        class="grid grid-cols-20 gap-2 gap-y-3 w-138"
+    >   
+        {#each $errors as {id, message, type, timestamp, count} (id)}
             <div
-                class=""
+                class="col-span-2"
                 on:click={() => errors.removeError(id)}
             >
                 <!-- round circle with x -->
-                <svg class="" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                <div 
+                    class="cursor-pointer hover:text-orange-600 text-center rounded-md" 
+                >
+                    <code>del</code>
+                </div>
             </div>
             <div
-                class=""
+                class="col-span-1"
             >
-                <div
-                    class=""
-                >
-                    {count}
-                </div>
-                <div
-                    class=""
-                >
-                    {message}
-                </div>
-                <div
-                    class=""
-                >
-                    {type}
-                </div>
-                <div
-                    class=""
-                >
-                    {formatTimestamp(timestamp)}
-                </div>
+                {count}
             </div>
-        </div>
-    {/each}
-    
-</div>
+            <div
+                class="col-span-14"
+            >
+                {message}
+            </div>
+            <div
+                class="col-span-1"
+            >
+                {type}
+            </div>
+            <div
+                class="col-span-2"
+            >
+                {formatTimestamp(timestamp)}
+            </div>
+        {/each}
+    </div>
+</ClearablePanel>
 
 <script lang="ts">
 
     import { errors } from "$lib/stores/errors.ts";
-    
+    import ClearablePanel from "$lib/utils/ClearablePanel.svelte";
 
     function formatTimestamp(timestamp: number): string {
         const date = new Date(timestamp);
-        const year = date.getFullYear();
-        const month = (`0${date.getMonth() + 1}`).slice(-2); // Months are 0 based
-        const day = (`0${date.getDate()}`).slice(-2);
         const hours = (`0${date.getHours()}`).slice(-2);
         const minutes = (`0${date.getMinutes()}`).slice(-2);
         const seconds = (`0${date.getSeconds()}`).slice(-2);

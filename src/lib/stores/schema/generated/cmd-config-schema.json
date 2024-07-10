@@ -65,10 +65,16 @@
           "type": "string",
           "description": "Input placeholder text. Useful for differentiating between different commands.",
           "default": "Input"
+        },
+        "noOutputTimeoutMs": {
+          "type": "number",
+          "description": "Milliseconds until the no output message is shown. Helps to prevent display flashing.  May need to be adjusted depending on how fast the command runs.",
+          "default": 800
         }
       },
       "required": [
-        "command"
+        "command",
+        "noOutputTimeoutMs"
       ],
       "additionalProperties": false
     },
@@ -107,7 +113,7 @@
             },
             "options": {
               "$ref": "#/definitions/ListDisplayOptions",
-              "description": "Display options",
+              "description": "Display options. Use {} for default options.",
               "default": {}
             }
           },
@@ -127,7 +133,7 @@
             },
             "options": {
               "$ref": "#/definitions/SingleDisplayOptions",
-              "description": "Display options",
+              "description": "Display options. Use {} for default options.",
               "default": {}
             }
           },
@@ -145,7 +151,7 @@
         "maxLineLength": {
           "type": "number",
           "description": "Displays only this many characters plus per item.",
-          "default": 160
+          "default": 200
         },
         "lineSplitter": {
           "type": "string",

@@ -13,7 +13,7 @@
 .ScrollAreaScrollbar {
     display: flex;
     /* ensures no selection */
-    user-select: none;
+    /* user-select: none; */
     /* disable browser handling of all panning and zooming gestures on touch devices */
     touch-action: none;
     padding: 2px;

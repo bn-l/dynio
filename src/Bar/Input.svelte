@@ -3,7 +3,7 @@
 
 <input
     id="cmdInput"
-    class="text-3xl text-slate-900 placeholder:text-gray-400 w-140 h-full ml--3"
+    class="text-3xl w-140 h-full ml--3"
     placeholder={$currentCmdConfig?.placeholderText}
     autoComplete="off"
     spellCheck="false"
@@ -15,9 +15,8 @@
 />
 
 <script lang="ts">
-    import { settings } from "$lib/stores/settings.ts";
     import { currentCmdConfig } from "$lib/stores/cmd-config.js";
-    import { running, stdoutLock, stdout, exitCode, query, currentTrayView, currentFocus, clickInBounds, stderr, clearInput } from "$lib/stores/globals.js";
+    import { running, stdoutLock, stdout, exitCode, query, currentTrayView, stderr } from "$lib/stores/globals.js";
     import { invoke } from "@tauri-apps/api/tauri";
     import { errors } from "$lib/stores/errors.js";
     import { debounce } from "lodash-es";

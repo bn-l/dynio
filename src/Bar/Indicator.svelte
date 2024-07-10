@@ -2,7 +2,7 @@
 
 <div
     id="errorIndicator"
-    class="h-1 cursor-pointer"
+    class="h-1 cursor-pointer "
     bind:this={indicatorEl}
     on:click={() => { 
         $currentTrayView = clickView;
@@ -34,7 +34,6 @@
             indicatorEl.classList.remove("indicatorAnimation");
             indicatorEl.removeEventListener("animationend", handleAnimationEnd);
         }
-        
         indicatorEl.addEventListener("animationend", handleAnimationEnd);
     }
     
