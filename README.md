@@ -17,7 +17,7 @@ Dynamic input and output GUI. Converts any command that runs on the cli to gui.
 <br>
 <br>
 
-<img src="./demo.webp alt="screen recording of usage">
+<img src="./demo.webp" alt="screen recording of usage">
 
 ## Installation
 
