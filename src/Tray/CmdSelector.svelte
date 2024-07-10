@@ -29,7 +29,7 @@
                         {item.hotkeyNumber ? `Hotkey: ${item.hotkeyNumber}` : ""}
                     </div>
             </div>
-            <!-- Line 2 -->
+            <!-- Line 2 --> 
             <div
                 class=""
             >
