@@ -149,25 +149,27 @@ async fn run_program(
     // Windows commands are run in the default shell (cmd)
     //  and this needs to be told to go into utf8 mode
     //  chcp changes the code page from 437 to utf8
-    let mut command = if cfg!(target_os = "windows") {
-        let mut temp = tokio::process::Command::new("cmd");
-        temp.creation_flags(CREATE_NO_WINDOW);
+    
+    let mut command = tokio::process::Command::new("cmd");
+
+    #[cfg(target_os = "windows")] 
+    {
+        command.creation_flags(CREATE_NO_WINDOW);
         let program_quoted = format!(r#""{}""#, program);
         let argstring = format!(r#""chcp 65001 >nul && {} {}""#, program_quoted, arguments.join(" "));
         println!("{argstring}");
-        temp.arg("/C");
-        temp.raw_arg(&argstring);    
-        temp
-    } else {
-        let mut temp = tokio::process::Command::new(program);
-        temp.args(arguments);
-        temp
-    };
+        command.arg("/C");
+        command.raw_arg(&argstring);    
+    }
+
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    {
+        command.args(arguments);
+    }
 
     if let Some(ref dir) = current_dir {
         command.current_dir(std::path::Path::new(dir));
     }
-
 
     command.stdout(Stdio::piped()).stderr(Stdio::piped());
 
