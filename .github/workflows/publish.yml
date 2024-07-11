@@ -11,6 +11,7 @@ jobs:
   publish-tauri:
     permissions:
       contents: write
+    environment: tauri
     strategy:
       fail-fast: true
       matrix:
