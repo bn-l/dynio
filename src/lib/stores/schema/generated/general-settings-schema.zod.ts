@@ -33,6 +33,9 @@ export default z
       .default(false),
     firstLaunch: z.boolean().optional(),
     autoUpdate: z.boolean().default(true),
-    startMinimised: z.boolean().default(false),
+    startMinimised: z
+      .boolean()
+      .describe("Whether to start hidden or not.")
+      .default(false),
   })
   .strict();

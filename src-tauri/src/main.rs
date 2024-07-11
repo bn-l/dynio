@@ -3,7 +3,8 @@
 
 // NB: The macos launcher part is needed for macos but is ignored on windows.
 // tauri_plugin_autostart works cross platform.
-use tauri_plugin_autostart::MacosLauncher;
+// use tauri_plugin_autostart::MacosLauncher;
+use tauri_plugin_single_instance;
 use tauri_plugin_fs_watch;
 use serde::{Serialize, Deserialize};
 
@@ -17,6 +18,7 @@ use tokio::time::Duration;
 // use tauri::{Manager, Window, State, Monitor, Size, PhysicalSize, LogicalSize, PhysicalPosition, LogicalPosition};
 use tauri::{Manager, Size, PhysicalSize, PhysicalPosition, Window };
 use tauri::GlobalShortcutManager;
+
 
 // use notify::{Watcher, RecursiveMode};//, RecommendedWatcher };
 
@@ -396,8 +398,10 @@ fn main() {
         .manage(KillChannel::default())
         .manage(Mutex::new(TrayState::default()))
         .invoke_handler(tauri::generate_handler![run_program, stop_running, open_tray, close_tray, close_splashscreen, get_config_files, hide_main, get_config_dir, trim_path])
-        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(Vec::new())))
+        // .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(Vec::new())))
         .plugin(tauri_plugin_fs_watch::init())
+        .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {
+        }))
         .on_system_tray_event(system_tray_handler())
         .setup(move |app| {
 
@@ -511,14 +515,8 @@ fn get_general_settings() -> Option<GeneralSettings> {
     } else {
         return None;
     };
-    
-    println!("{}", settings_text.as_ref().unwrap());
-    
-
 
     let settings = serde_yaml::from_str::<GeneralSettings>(settings_text.as_ref().unwrap()).expect("Could not parse settings");
-
-    println!("{:?}", settings);
 
     Some(settings)
 }

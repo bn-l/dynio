@@ -163,6 +163,10 @@
             "type": "string"
           },
           "description": "Regular expression to split the output into lines as an array where the first item is the regex body and the second is the flags."
+        },
+        "fontSize": {
+          "type": "number",
+          "description": "Value in rem."
         }
       },
       "additionalProperties": false

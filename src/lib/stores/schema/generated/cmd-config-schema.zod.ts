@@ -57,6 +57,7 @@ export default z.record(
                           "Regular expression to split the output into lines as an array where the first item is the regex body and the second is the flags.",
                         )
                         .optional(),
+                      fontSize: z.number().describe("Value in rem.").optional(),
                     })
                     .strict(),
                 })

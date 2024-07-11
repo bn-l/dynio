@@ -8,14 +8,17 @@
         {items.length}
     </div>
 
-    <div class="border-solid border-0 border-red-500 flex-grow nice-scroll overflow-x-hidden p-0">
+    <div 
+        class="border-solid border-0 border-red-500 flex-grow nice-scroll overflow-x-hidden p-0"
+        style={displayOptions?.fontSize ? `font-size: ${displayOptions.fontSize}rem` : ""}
+    >
         {#each items as item, index (item)}
             <div
                 id={`item-${index}`}
                 class={`${index === selectedIndex ? "bg-orange-200" : "hover:bg-orange-100 m-0 p-0"}`}
             >
                 <div
-                    class="flex-row-start cursor-pointer break-all p-3"
+                    class="flex-row-start cursor-pointer break-all p-[1.4ex]"
                     on:click={() => {
                         selectedIndex = index;
                         onActivation?.(item);

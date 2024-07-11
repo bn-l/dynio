@@ -34,6 +34,7 @@ export type GeneralSettings = {
      */
     autoUpdate?: boolean;
     /**
+     * Whether to start hidden or not.
      * @default false
      */
     startMinimised?: boolean;
