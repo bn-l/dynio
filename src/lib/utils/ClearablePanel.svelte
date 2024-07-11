@@ -14,7 +14,7 @@
             class="errorClearButton rounded-md"
             on:click={onClear}
         >
-            clear
+            clear all
         </button>
     </div>
     <!-- List items -->

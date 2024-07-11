@@ -21,6 +21,11 @@ export interface ListDisplayOptions {
      * Value in rem.
      */
     fontSize?: number;
+    /**
+     * Hides the number of lines received in the top left of the tray / panel under the input box
+     * @default false
+     */
+    hideCount: boolean;
 }
 
 export interface SingleDisplayOptions {
@@ -49,7 +54,7 @@ export interface EmptyDisplayOptions {
 export type Display =
     { 
         /**
-         * Display type
+         * Shows item in a list with arrow keys to change selection and enter to activate.
          */
         type: "list"; 
         /**
@@ -57,10 +62,10 @@ export type Display =
          * @default {}
          */
         options: ListDisplayOptions 
-    } |
-    { 
+    } 
+    | { 
         /**
-         * Display type
+         * WARNING: Experimental. For non-list type output. 
          */
         type: "single";
         /**

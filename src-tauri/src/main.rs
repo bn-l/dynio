@@ -65,6 +65,9 @@ fn create_collector(app_handle: tauri::AppHandle) -> (VecSender, VecSender) {
     tokio::spawn(async move {
         loop {
             let mut update = stdout_rx.borrow_and_update().clone();
+            // Absolutely no idea why it comes reversed here (at least from qalc and es does it
+            //  also happen with other programs / OSes? "One" (me) asks "oneself" (me also))
+            // update.reverse();
 
             update.dedup();
             app_handle1

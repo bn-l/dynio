@@ -3,10 +3,12 @@
     id="listDisplay"
     class="h-79 border-0 border-solid flex flex-col px-3"
 >
-    <!-- Item count, consider removing -->
-    <div class="text-right py-1 pr-3">
-        {items.length}
-    </div>
+    {#if !displayOptions?.hideCount}
+        <!-- Item count, consider removing -->
+        <div class="text-right py-1 pr-3">
+            {items.length}
+        </div>       
+    {/if}
 
     <div 
         class="border-solid border-0 border-red-500 flex-grow nice-scroll overflow-x-hidden p-0"
@@ -29,7 +31,7 @@
                         event.preventDefault();
                     }}
                 >
-                    {#if $currentCmdConfig?.outputOptions?.parseAnsiColors}
+                    {#if parseAnsiColors}
                         {@html item}
                     {:else}
                         {item}
@@ -47,7 +49,10 @@
     import { stdout } from "$lib/stores/globals.ts";
     import { activate } from "$lib/utils/activator.ts";
     import { processOutput } from "./processOutput.ts";
+    import stripAnsi from "strip-ansi";
     
+
+    $: parseAnsiColors = $currentCmdConfig?.outputOptions?.parseAnsiColors;
     $: display = $currentCmdConfig?.outputOptions?.display; 
     $: displayOptions = display?.type === "list" ? display.options : undefined;
 
@@ -58,26 +63,24 @@
     // });
 
     function onActivation(text: string, openContaining: boolean = false) {
-        console.log("calling activator")
+        console.log(`calling activator with: "${text.replace(/<.*?>/gm, '')}"`);
         void activate(text, $currentCmdConfig?.activationOptions, openContaining);
     }
 
 
-    let processedOutput: string[] = [];
+    let items: string[] = [];
     const { lineSplitter, lineSplitterRegex, maxLineLength } = displayOptions ?? {};
-    $: processedOutput = processOutput($stdout, {
+    // NB: Output reversing is done in the stdout listener in App.svelete
+    $: items = processOutput($stdout, {
         maxLineLength,
         lineSplitter,
         lineSplitterRegex,
-        parseAnsiColors: $currentCmdConfig?.outputOptions?.parseAnsiColors,
+        parseAnsiColors,
     });
+ 
 
-    let items = []; // Items to actually display
+    // let items = []; // Items to actually display
     // $: items = processedOutput.slice(0, displayCount); 
-    $: items = $currentCmdConfig?.outputOptions?.reverse ? 
-        processedOutput.slice().reverse() : 
-        processedOutput;
-
     // onMount(() => {
     //     const interval = setInterval(() => {
     //         // Increase displayCount 10% of processedOutput, up to the length of processedOutput
@@ -140,7 +143,7 @@
                 upDownListHandler(event, 1);
             } else if (event.key === "Enter") {
                 console.log("enter pressed")
-                onActivation(items[selectedIndex]);
+                onActivation(stripAnsi($stdout[selectedIndex]));
             }
         },
         keys: ["ArrowUp", "ArrowDown", "Enter"],
@@ -150,7 +153,7 @@
         handler: () => {
             console.log("opening containing");
             if($currentCmdConfig?.activationOptions?.isPath) {
-                onActivation(items[selectedIndex], true);
+                onActivation(stripAnsi($stdout[selectedIndex]), true);
             }
         },
         keys: ["o"],

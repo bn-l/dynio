@@ -49,7 +49,7 @@ export async function activate(
     catch(error) {
         const errorMsg = error instanceof Error && "message" in error ? 
             `Error message: ${error.message}` : 
-            "Error had no message property";
+            "";
         errors.addError( `Could not ${activateAction}. Received text: \"${text}\". Check regex settings. ${errorMsg}`,
             "tauri");
     }

@@ -108,7 +108,7 @@
             "type": {
               "type": "string",
               "const": "list",
-              "description": "Display type"
+              "description": "Shows item in a list with arrow keys to change selection and enter to activate."
             },
             "options": {
               "$ref": "#/definitions/ListDisplayOptions",
@@ -128,7 +128,7 @@
             "type": {
               "type": "string",
               "const": "single",
-              "description": "Display type"
+              "description": "WARNING: Experimental. For non-list type output."
             },
             "options": {
               "$ref": "#/definitions/SingleDisplayOptions",
@@ -167,8 +167,16 @@
         "fontSize": {
           "type": "number",
           "description": "Value in rem."
+        },
+        "hideCount": {
+          "type": "boolean",
+          "description": "Hides the number of lines received in the top left of the tray / panel under the input box",
+          "default": false
         }
       },
+      "required": [
+        "hideCount"
+      ],
       "additionalProperties": false
     },
     "SingleDisplayOptions": {

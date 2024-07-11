@@ -1,5 +1,5 @@
 
-{#if $stderr.length > 0}
+{#if $stderr?.length > 0}
     <div
         class="absolute right--3 top--2"
     >

@@ -36,7 +36,11 @@ export default z.record(
             .union([
               z
                 .object({
-                  type: z.literal("list").describe("Display type"),
+                  type: z
+                    .literal("list")
+                    .describe(
+                      "Shows item in a list with arrow keys to change selection and enter to activate.",
+                    ),
                   options: z
                     .object({
                       maxLineLength: z
@@ -58,13 +62,23 @@ export default z.record(
                         )
                         .optional(),
                       fontSize: z.number().describe("Value in rem.").optional(),
+                      hideCount: z
+                        .boolean()
+                        .describe(
+                          "Hides the number of lines received in the top left of the tray / panel under the input box",
+                        )
+                        .default(false),
                     })
                     .strict(),
                 })
                 .strict(),
               z
                 .object({
-                  type: z.literal("single").describe("Display type"),
+                  type: z
+                    .literal("single")
+                    .describe(
+                      "WARNING: Experimental. For non-list type output.",
+                    ),
                   options: z
                     .object({
                       sizeBreakPoint: z

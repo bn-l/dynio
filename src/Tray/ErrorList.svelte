@@ -26,12 +26,12 @@
                 {count}
             </div>
             <div
-                class="col-span-14"
+                class="col-span-13"
             >
                 {message}
             </div>
             <div
-                class="col-span-1"
+                class="col-span-2"
             >
                 {type}
             </div>
