@@ -1,6 +1,6 @@
 [package]
 name = "dynio"
-version = "0.1.1"
+version = "0.1.2"
 description = "Dynio"
 authors = ["bn-l"]
 license = "mit"
