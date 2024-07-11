@@ -11,6 +11,15 @@
         "version": "0.1.1"
     },
     "tauri": {
+        "updater": {
+            "active": false,
+            "dialog": true,
+            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU3MDczMkMwQzlGQ0JFRTQKUldUa3Z2ekp3RElIVjkvZWYrZ2ROcnpWbWpiUEM3NlpCL1lCVUV5eGw3YklTdm0zZUJ0NHVKNmMK",
+            "windows": {
+                "installMode": "passive",
+                "installerArgs": []
+            }
+        },
         "allowlist": {
             "all": false,
             "shell": {

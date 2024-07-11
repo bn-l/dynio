@@ -1,8 +1,10 @@
 
-
-{#if $settings.autoUpdate}
+<!-- Using built-in dialog: 
+https://tauri.app/v1/guides/distribution/updater/#built-in-dialog
+-->
+<!-- {#if $settings.autoUpdate}
     <AutoUpdater />
-{/if}
+{/if} -->
 
 
 <div 
@@ -59,7 +61,8 @@ When this is in place, put updater settings in tauri.conf
     import "./assets/main.css";
     import "virtual:uno.css";
     
-    import { settings } from "$lib/stores/settings.js";
+    // import { settings } from "$lib/stores/settings.js";
+    // import AutoUpdater from "./Meta/AutoUpdater.svelte";
     import { trayOpen, running, stdoutLock, query, clickInBounds, stderr, currentTrayView, currentCmd, clearInput } from "$lib/stores/globals.js";
     import Tray from "./Tray/Tray.svelte";
     import Input from "./Bar/Input.svelte";
@@ -75,7 +78,6 @@ When this is in place, put updater settings in tauri.conf
     import { currentCmdConfig, cmdConfig } from "$lib/stores/cmd-config.ts";
     import { debounce } from "lodash-es";
     import { invoke } from "@tauri-apps/api";
-    import AutoUpdater from "./Meta/AutoUpdater.svelte";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { tick } from "svelte";
     import { watch } from "tauri-plugin-fs-watch-api";
