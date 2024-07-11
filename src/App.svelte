@@ -43,10 +43,13 @@ expected by updater.
 When this is in place, put updater settings in tauri.conf
 -->
 
+<!-- Copy on activation test -->
+
 
 <!-- Future: -->
+<!-- Can set timer using cli timer -->
 <!-- Current folder indicator. Drag and drop changes current folder. -->
-<!-- make parse option an enum of text, ansi, markdown, html -->
+<!-- Make parse option an enum of text, ansi, markdown, html -->
 <!-- Add run on enter option back (for curl etc uses--e.g. openai api request) -->
 <!-- Can take cmd args to launch a filterer with the stdin supplied to it (and it treats this
  as regular stdout from commands) -->

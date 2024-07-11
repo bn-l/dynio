@@ -15,8 +15,8 @@
 {:else if $stdout.length === 0 && !$running}
     <EmptyDisplay message="No output" />
 
-{:else if displayType === "single"}
-    <SingleDisplay />
+<!-- {:else if displayType === "single"}
+    <SingleDisplay /> -->
 
 {:else if displayType === "list"}
     <ListDisplay />
@@ -30,7 +30,7 @@
     import { stdout, stdoutLock, running } from "$lib/stores/globals.ts";
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
 
-    import SingleDisplay from "./SingleDisplay.svelte";
+    // import SingleDisplay from "../../../deprecated/SingleDisplay.svelte";
     import ListDisplay from "./ListDisplay/ListDisplay.svelte";
     import EmptyDisplay from "./EmptyDisplay.svelte";
 

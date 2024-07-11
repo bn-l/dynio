@@ -34,6 +34,8 @@
     import { stdout } from "$lib/stores/globals.ts";
     import { AnsiUp } from "ansi_up";
     import stripAnsi from 'strip-ansi';
+    import { hotkeys } from "$lib/actions/hotkeys.ts";
+    import { activate } from "$lib/utils/activator.ts";
 
     const ansi_up = new AnsiUp();
 
@@ -51,3 +53,17 @@
 
 
 </script> 
+
+
+<svelte:body
+    use:hotkeys={{
+        handler(_event) {
+            // This is un-ideal. Needs to be joined with the actual split character.
+            // Single display should probably not be used because of this or should have 
+            // the activation option removed.
+            activate(processedOutput.join(" "), $currentCmdConfig?.activationOptions);
+        },
+        keys: ["Enter"],
+        enabled:  true,
+    }}
+/>

@@ -74,7 +74,9 @@
 
     let items = []; // Items to actually display
     // $: items = processedOutput.slice(0, displayCount); 
-    $: items = processedOutput;
+    $: items = $currentCmdConfig?.outputOptions?.reverse ? 
+        processedOutput.slice().reverse() : 
+        processedOutput;
 
     // onMount(() => {
     //     const interval = setInterval(() => {
