@@ -4,7 +4,7 @@
         class="absolute right--3 top--2"
     >
         <Indicator clickView="stderr" monitorStream={stderr}>
-            <svg 
+            <svg
                 id="stderrTriangleSvg"
                 class="fill-orange-50 stroke-neutral-500 opacity-100"
                 xmlns="http://www.w3.org/2000/svg" 
