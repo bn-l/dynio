@@ -2,9 +2,9 @@
 <!-- Using built-in dialog: 
 https://tauri.app/v1/guides/distribution/updater/#built-in-dialog
 -->
-<!-- {#if $settings.autoUpdate}
+{#if $settings.autoUpdate}
     <AutoUpdater />
-{/if} -->
+{/if}
 
 
 <div 
@@ -64,8 +64,8 @@ as regular stdout from commands) -->
     import "./assets/main.css";
     import "virtual:uno.css";
     
-    // import { settings } from "$lib/stores/settings.js";
-    // import AutoUpdater from "./Meta/AutoUpdater.svelte";
+    import { settings } from "$lib/stores/settings.js";
+    import AutoUpdater from "./Meta/AutoUpdater.svelte";
     import { trayOpen, running, stdoutLock, query, clickInBounds, stderr, currentTrayView, currentCmd, clearInput } from "$lib/stores/globals.js";
     import Tray from "./Tray/Tray.svelte";
     import Input from "./Bar/Input.svelte";

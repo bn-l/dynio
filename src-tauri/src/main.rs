@@ -314,7 +314,7 @@ fn toggle_main_window(app_handle: &tauri::AppHandle) {
             let _ = window.show();
             let _ = window.set_focus();
             let _ = app_handle.emit_all("main_hide_unhide", "unhide");
-            tray_item_handle.set_title("Hide").expect("Could not set title");
+            tray_item_handle.set_title("Show/Hide").expect("Could not set title");
         }
         // If Visible:
         else {
@@ -327,7 +327,7 @@ fn toggle_main_window(app_handle: &tauri::AppHandle) {
             else {                
                 let _ = window.hide();
                 let _ = app_handle.emit_all("main_hide_unhide", "hide");
-                tray_item_handle.set_title("Show").expect("Could not set title");
+                tray_item_handle.set_title("Show/Hide").expect("Could not set title");
             }
         }
     }
@@ -412,7 +412,7 @@ async fn get_config_dir() -> Result<String, SerError> {
 fn main() {
 
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");
-    let hide = CustomMenuItem::new("togglevis".to_string(), "Hide");
+    let hide = CustomMenuItem::new("togglevis".to_string(), "Show/Hide");
     let tray_menu = SystemTrayMenu::new()
         .add_item(quit)
         .add_native_item(SystemTrayMenuItem::Separator)
@@ -593,7 +593,7 @@ fn setup_main_window(app_handle: tauri::AppHandle, start_hidden: bool) {
         let tray_item_handle = app_handle.tray_handle().get_item("togglevis");
         let _ = window.hide();
         let _ = app_handle.emit_all("main_hide_unhide", "hide");
-        tray_item_handle.set_title("Show").expect("Could not set title");
+        tray_item_handle.set_title("Show/Hide").expect("Could not set title");
     }
     else {
         // Hack to actually set focus
