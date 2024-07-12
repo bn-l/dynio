@@ -6,7 +6,7 @@
     <!-- Panel heading -->
         <div
             id="panelHeading"
-            class="text-center text-xl py-3"
+            class="text-center text-lg py-3"
         >
             {panelHeading}
         </div>

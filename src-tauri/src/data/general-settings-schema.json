@@ -9,41 +9,26 @@
           "type": "boolean",
           "default": false
         },
-        "showWelcome": {
-          "type": "boolean",
-          "description": "Whether to show the welcome info on launch. Explains how to setup the program etc.",
-          "default": false
-        },
-        "timeoutSecs": {
-          "type": "number",
-          "description": "Max time a command can take in seconds. By default 300 (= 5 mins).",
-          "default": 300
-        },
         "defaultCommand": {
           "type": "string",
-          "description": "Defaults to whichever has hotkey number 1 (or if not hotkeys, the first one it finds)"
-        },
-        "hideOnLostFocus": {
-          "type": "boolean",
-          "description": "Whether clicking outside the command bar will cause it to hide.",
-          "default": true
-        },
-        "keepOnTop": {
-          "type": "boolean",
-          "description": "Keep on top of other windows?",
-          "default": false
+          "description": "Defaults to whichever has hotkey number 1 (or if no hotkeys, the first one it finds)"
         },
         "firstLaunch": {
           "type": "boolean"
         },
         "autoUpdate": {
           "type": "boolean",
-          "default": true
+          "default": false
         },
         "startMinimised": {
           "type": "boolean",
           "description": "Whether to start hidden or not.",
           "default": false
+        },
+        "inputFontSize": {
+          "type": "number",
+          "description": "Size of input font in rem.",
+          "default": 1.8
         }
       },
       "additionalProperties": false

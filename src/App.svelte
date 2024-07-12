@@ -48,12 +48,15 @@ When this is in place, put updater settings in tauri.conf
 
 <!-- Future: --> 
 <!-- Can set timer using cli timer -->
-<!-- Current folder indicator. Drag and drop changes current folder. -->
+<!-- Drag and drop should put path in input (then can grep that path) -->
 <!-- Make parse option an enum of text, ansi, markdown, html -->
-<!-- Add run on enter option back (for curl etc uses--e.g. openai api request) -->
 <!-- Can take cmd args to launch a filterer with the stdin supplied to it (and it treats this
- as regular stdout from commands) -->
+as regular stdout from commands) -->
 <!-- Convert ListDisplay list to generic component then Stderr and ErrorList become lists (so error messages can be navigated and selected) -->
+<!-- Tray expands to max height but can contract to any min -->
+<!-- Test autoupdates -->
+<!-- Separate stdout for each command. It shouldn't disappear when changing commands. -->
+<!-- Runnning indicator with command cancel button -->
 
 
 
@@ -180,6 +183,7 @@ When this is in place, put updater settings in tauri.conf
             }
             if(e.payload === "unhide") {
                 clearTimeout(clearInputTimeout);
+                document.getElementById("cmdInput")?.focus();
             }
         });
         return () => { void unlisten.then( f => f()) };
@@ -238,6 +242,12 @@ When this is in place, put updater settings in tauri.conf
         }
     }
 
+    // Hacky instead of having an event system when events happen (like changing cmd)
+    $: {
+        $currentCmd,
+        document.getElementById("cmdInput")?.focus();
+    }
+
 </script>
 
 
@@ -271,10 +281,11 @@ When this is in place, put updater settings in tauri.conf
         if (
             alt
             || alt && e.key === "Escape"
-            || alt && e.key === "Space"
+            || alt && e.key === " "
             || ctrlOrCmd && e.key === "u"
             || ctrlOrCmd && e.key === "p"
             || ctrlOrCmd && e.key === "r"
+            || ctrlOrCmd && e.key === "j"
             || e.key === "F5"
         ) {
             console.log("preventing default");

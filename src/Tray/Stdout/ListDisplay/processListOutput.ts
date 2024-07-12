@@ -10,7 +10,7 @@ interface ProcessOutputOptions {
 
 const ansi_up = new AnsiUp();
 
-export function processOutput(output: string[], options: ProcessOutputOptions) {
+export function processListOutput(output: string[], options: ProcessOutputOptions) {
 
     if(!options) return output;
     if(!output || output.length === 0) return [];

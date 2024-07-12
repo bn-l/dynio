@@ -25,7 +25,7 @@ export interface ListDisplayOptions {
      * Hides the number of lines received in the top left of the tray / panel under the input box
      * @default false
      */
-    hideCount: boolean;
+    hideCount?: boolean;
 }
 
 export interface SingleDisplayOptions {
@@ -44,6 +44,22 @@ export interface SingleDisplayOptions {
      * @default 1.2
      */
     smallSize?: number;
+    /**
+     * Whether output is JSON.
+     * @default true
+     */
+    json?: boolean;
+    /**
+     * Json path to the data you want in the form: levelOne.levelTwo.levelThree. 
+     * @default "choices.0.message.content"
+     */
+    jsonPath?: string;
+    /**
+     * Whether to parse markdown in the output. Warning you should trust the output is not 
+     * nefarious.
+     * @default false
+     */
+    markdown?: boolean;
 }
 
 
@@ -98,12 +114,13 @@ export interface OutputOptions {
 
 export interface ActivationOptions {
     /**
-     * Enter / double click action for an output. Useful for opening or copying some text 
-     * to the clipboard. By default is undefined and does nothing.
+     * Enter / double click action for a List item. Useful for opening or copying some text 
+     * to the clipboard. By default it copies.
      * If:
      * - no extractor: Will copy / open entire line.
      * - extrator: Will copy / open match.
      * - extractor + extractorGroup: Will copy / open specific match group.
+     * @default "copy"
      *
      */
     activateAction?: "copy" | "open";
@@ -171,6 +188,13 @@ export type CmdConfigItem = {
      * @default 800
      */
     noOutputTimeoutMs?: number;
+    /**
+     * Whether to run only on enter. If false (the default) the command will be run on every key
+     * stroke. **Note!**: To activate a result if runOnEnter is true, press cmd/ctrl + enter 
+     * (vs just enter when runOnEnter is false).
+     * @default false
+     */
+    runOnEnter?: boolean;
 };
 
 /**

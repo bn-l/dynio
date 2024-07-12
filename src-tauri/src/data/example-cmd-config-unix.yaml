@@ -6,8 +6,12 @@ find:
     arguments:
         - -maxdepth 3
         - -name
+    hotkeyNumber: 1
+    placeholderText: Find something
+    noOutputTimeoutMs: 100
     activationOptions:
         activateAction: open
+        isPath: true
     outputOptions:
         parseAnsiColors: true
         display:
@@ -15,4 +19,6 @@ find:
             options:
                 maxLineLength: 160
                 lineSplitter: "\n"
+                fontSize: 0.8
+        
 

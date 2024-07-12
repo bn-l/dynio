@@ -48,7 +48,7 @@
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
     import { stdout } from "$lib/stores/globals.ts";
     import { activate } from "$lib/utils/activator.ts";
-    import { processOutput } from "./processOutput.ts";
+    import { processListOutput } from "./processListOutput.ts";
     import stripAnsi from "strip-ansi";
     
 
@@ -71,7 +71,7 @@
     let items: string[] = [];
     const { lineSplitter, lineSplitterRegex, maxLineLength } = displayOptions ?? {};
     // NB: Output reversing is done in the stdout listener in App.svelete
-    $: items = processOutput($stdout, {
+    $: items = processListOutput($stdout, {
         maxLineLength,
         lineSplitter,
         lineSplitterRegex,
@@ -137,17 +137,35 @@
 <svelte:body
     use:hotkeys={{
         handler(event) {
-            if (event.key === "ArrowUp") {
-                upDownListHandler(event, -1);
-            } else if (event.key === "ArrowDown") {
-                upDownListHandler(event, 1);
-            } else if (event.key === "Enter") {
-                console.log("enter pressed")
-                onActivation(stripAnsi($stdout[selectedIndex]));
-            }
+            upDownListHandler(event, -1);
         },
-        keys: ["ArrowUp", "ArrowDown", "Enter"],
-        enabled:  true,
+        keys: ["ArrowUp"],
+        enabled: true,
+    }}
+    use:hotkeys={{
+        handler(event) {
+            upDownListHandler(event, 1);
+        },
+        keys: ["ArrowDown"],
+        enabled: true,
+    }}
+    use:hotkeys={{
+        handler() {
+            console.log("enter pressed")
+            if($currentCmdConfig?.runOnEnter) return;
+            onActivation(stripAnsi($stdout[selectedIndex]));
+        },
+        keys: ["Enter"],
+        enabled: true,
+    }}
+    use:hotkeys={{
+        handler() {
+            console.log("ctrl + enter pressed")
+            onActivation(stripAnsi($stdout[selectedIndex]));
+        },
+        keys: ["Enter"],
+        modifiers: ["CmdOrCtrl"],
+        enabled: true,
     }}
     use:hotkeys={{
         handler: () => {
@@ -158,7 +176,7 @@
         },
         keys: ["o"],
         modifiers: ["CmdOrCtrl"],
-        enabled:  true,
+        enabled: true,
     }}
     
 />

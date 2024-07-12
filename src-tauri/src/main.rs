@@ -132,6 +132,7 @@ async fn run_program(
     program: String,
     current_dir: Option<String>,
     arguments: Vec<String>,
+    input: String,
     app_handle: tauri::AppHandle,
 ) -> Result<(), SerError> {
 
@@ -155,9 +156,18 @@ async fn run_program(
     #[cfg(target_os = "windows")] 
     {
         command.creation_flags(CREATE_NO_WINDOW);
-        let program_quoted = format!(r#""{}""#, program);
-        let argstring = format!(r#""chcp 65001 >nul && {} {}""#, program_quoted, arguments.join(" "));
-        println!("{argstring}");
+        // let program_quoted = format!("\"{}\"", program);
+        // let args_escaped = arguments.iter().map(|arg| {
+        //     arg.replace("\"", "\"\"")
+        // }).collect::<Vec<String>>();
+        // let args_quoted = format!("{}", args_escaped.join(" "));
+        let argstring = format!(
+            r#""chcp 65001 >nul && {} {} {}""#, 
+            format!("\"{}\"", program), 
+            arguments.join(" "),
+            format!("\"{}\"", input)//.replace("\"", "\"\""))
+        );
+        println!("|>{argstring}<|");
         command.arg("/C");
         command.raw_arg(&argstring);    
     }
@@ -165,6 +175,7 @@ async fn run_program(
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     {
         command.args(arguments);
+        command.arg(input);
     }
 
     if let Some(ref dir) = current_dir {
@@ -298,16 +309,26 @@ fn toggle_main_window(app_handle: &tauri::AppHandle) {
     let tray_item_handle = app_handle.tray_handle().get_item("togglevis");
 
     if let Some(window) = app_handle.get_window("main") {
+        // If Hidden:
         if !window.is_visible().unwrap() {
             let _ = window.show();
             let _ = window.set_focus();
             let _ = app_handle.emit_all("main_hide_unhide", "unhide");
             tray_item_handle.set_title("Hide").expect("Could not set title");
         }
+        // If Visible:
         else {
-            let _ = window.hide();
-            let _ = app_handle.emit_all("main_hide_unhide", "hide");
-            tray_item_handle.set_title("Show").expect("Could not set title");
+            // If not focussed, focus
+            if !window.is_focused().unwrap() {
+                println!("was not focussed");
+                let _ = window.set_focus();
+            }
+            // Otherwise just hide.
+            else {                
+                let _ = window.hide();
+                let _ = app_handle.emit_all("main_hide_unhide", "hide");
+                tray_item_handle.set_title("Show").expect("Could not set title");
+            }
         }
     }
 }
@@ -433,6 +454,8 @@ fn main() {
 
             setup_main_window(app.app_handle().clone(), settings.start_minimised);
 
+            
+
             Ok(()) 
         })
         .run(tauri::generate_context!())
@@ -527,7 +550,7 @@ fn get_general_settings() -> Option<GeneralSettings> {
 }
 
 
-fn setup_main_window(app_handle: tauri::AppHandle, hide: bool) {
+fn setup_main_window(app_handle: tauri::AppHandle, start_hidden: bool) {
 
     const SCREEN_TO_WIDTH_RATIO: f64 = 0.5;
     const HEIGHT_TO_WIDTH_RATIO: f64 = 0.16;
@@ -565,12 +588,20 @@ fn setup_main_window(app_handle: tauri::AppHandle, hide: bool) {
         y: window.outer_position().expect("couldn't get splash pos").y + Y_CENTER_OFFSET,
     });
 
-    if hide {
-        println!("hide was true");
+    if start_hidden {
+        println!("start_hidden was true");
         let tray_item_handle = app_handle.tray_handle().get_item("togglevis");
         let _ = window.hide();
         let _ = app_handle.emit_all("main_hide_unhide", "hide");
         tray_item_handle.set_title("Show").expect("Could not set title");
+    }
+    else {
+        // Hack to actually set focus
+        println!("about to set main as focussed");
+        let _ = window.hide();
+        let _ = window.show();
+        let _ = window.set_focus();
+
     }
 }
 

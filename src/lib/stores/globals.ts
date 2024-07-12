@@ -12,6 +12,7 @@ export const inputLocked = writable(false);
 export const viewLocked = writable(false);
 export const criticalError = writable("");
 export const fileHovering = writable(false);
+export const windowHidden = writable(false);
 
 export const stdoutLock = writable(true);
 export const exitCode = writable<number | undefined>(0);

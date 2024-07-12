@@ -8,7 +8,7 @@
 >
     {#each $stderr as err}
         <div
-            class="py-1"
+            class="py-1 text-sm"
         >
             {err}
         </div>

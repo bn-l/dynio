@@ -25,7 +25,7 @@ pub struct GeneralSettings {
     /// Indicates if this is the first launch. This field does not have a default and is optional.
     pub first_launch: Option<bool>,
     /// Whether to automatically update. Defaults to `true`.
-    #[serde(default = "default_true")]
+    #[serde(default = "default_false")]
     pub auto_update: bool,
     /// Whether to start minimised. Defaults to `false`.
     #[serde(default = "default_false")]

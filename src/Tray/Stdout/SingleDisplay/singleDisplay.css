@@ -1,0 +1,8 @@
+#singleDisplay {
+    font-family: Inter;
+    letter-spacing: normal;
+}
+
+#singleDisplay li {
+    padding-bottom: 0.5rem;
+}

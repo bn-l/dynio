@@ -3,24 +3,38 @@
 
 <input
     id="cmdInput"
-    class="text-3xl w-120 h-full ml--3"
+    class="w-120 h-full ml--3"
+    style={`font-size: ${$settings.inputFontSize ?? 1.8}rem`}
     placeholder={$currentCmdConfig?.placeholderText}
     autoComplete="off"
     spellCheck="false"
     use:inputFocusAction
     bind:value={$query}
     on:input={() => {
-        debouncedRP($query);
+        if(!$currentCmdConfig?.runOnEnter) {
+            debouncedRP($query);
+        }
+    }}
+    on:keydown={(event) => {
+        if(
+            $currentCmdConfig?.runOnEnter 
+            && event.key === "Enter"
+        ) {
+            debouncedRP($query);
+        }
     }}
 />
 
 <script lang="ts">
     import { currentCmdConfig } from "$lib/stores/cmd-config.js";
     import { running, stdoutLock, stdout, exitCode, query, currentTrayView, stderr } from "$lib/stores/globals.js";
+    import { settings } from "$lib/stores/settings.ts";
     import { invoke } from "@tauri-apps/api/tauri";
     import { errors } from "$lib/stores/errors.js";
     import { debounce } from "lodash-es";
     import { inputFocusAction } from "./InputFocusAction.ts";
+
+    console.log(`font-size-[${$settings.inputFontSize ?? 1.8}rem] w-120 h-full ml--3`);
 
     
     function runProgram(input: string) {
@@ -47,7 +61,8 @@
             program: $currentCmdConfig.command,
             current_dir: $currentCmdConfig.currentDir,
             // The input is added as the last argument.
-            arguments: [...($currentCmdConfig.arguments ?? []), input],
+            arguments: [...($currentCmdConfig.arguments ?? [])],
+            input,
         })
         .then(() => {
             $currentTrayView = "stdout";

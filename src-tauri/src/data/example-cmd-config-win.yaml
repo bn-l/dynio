@@ -6,7 +6,10 @@ where:
     arguments:
         - /t
     activationOptions:
-        activateAction: open
+        activateAction: copy
+    hotkeyNumber: 1
+    placeholderText: Search filesS
+    noOutputTimeoutMs: 100
     outputOptions:
         parseAnsiColors: true
         display:
@@ -14,4 +17,4 @@ where:
             options:
                 maxLineLength: 160
                 lineSplitter: "\n"
-
+                fontSize: 0.8

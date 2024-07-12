@@ -99,6 +99,22 @@ export default z.record(
                           "Output string length > sizeBreakPoint. Any valid tailwind font size.",
                         )
                         .default(1.2),
+                      json: z
+                        .boolean()
+                        .describe("Whether output is JSON.")
+                        .default(true),
+                      jsonPath: z
+                        .string()
+                        .describe(
+                          "Json path to the data you want in the form: levelOne.levelTwo.levelThree.",
+                        )
+                        .default("choices.0.message.content"),
+                      markdown: z
+                        .boolean()
+                        .describe(
+                          "Whether to parse markdown in the output. Warning you should trust the output is not  nefarious.",
+                        )
+                        .default(false),
                     })
                     .strict(),
                 })
@@ -114,9 +130,9 @@ export default z.record(
           activateAction: z
             .enum(["copy", "open"])
             .describe(
-              "Enter / double click action for an output. Useful for opening or copying some text  to the clipboard. By default is undefined and does nothing. If:\n- no extractor: Will copy / open entire line.\n- extrator: Will copy / open match.\n- extractor + extractorGroup: Will copy / open specific match group.",
+              "Enter / double click action for a List item. Useful for opening or copying some text  to the clipboard. By default it copies. If:\n- no extractor: Will copy / open entire line.\n- extrator: Will copy / open match.\n- extractor + extractorGroup: Will copy / open specific match group.",
             )
-            .optional(),
+            .default("copy"),
           extractorRegexBody: z
             .string()
             .describe(
@@ -172,6 +188,12 @@ export default z.record(
           "Milliseconds until the no output message is shown. Helps to prevent display flashing.  May need to be adjusted depending on how fast the command runs.",
         )
         .default(800),
+      runOnEnter: z
+        .boolean()
+        .describe(
+          "Whether to run only on enter. If false (the default) the command will be run on every key stroke. **Note!**: To activate a result if runOnEnter is true, press cmd/ctrl + enter  (vs just enter when runOnEnter is false).",
+        )
+        .default(false),
     })
     .strict(),
 );

@@ -6,7 +6,7 @@
     }}
 >
     <div
-        class="grid grid-cols-20 gap-2 gap-y-3 w-138"
+        class="grid grid-cols-20 gap-2 gap-y-3 w-138 text-sm"
     >   
         {#each $errors as {id, message, type, timestamp, count} (id)}
             <div

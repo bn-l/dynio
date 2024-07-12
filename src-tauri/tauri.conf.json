@@ -13,7 +13,8 @@
     "tauri": {
         "updater": {
             "active": true,
-            "dialog": true,
+            "dialog": false,
+            "endpoints": ["https://github.com/bn-l/dynio/releases/latest/download/latest.json"],
             "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEUwOUM4MjM4M0ZDQ0JBMkIKUldRcnVzdy9PSUtjNEdyUzU5Vkx1TEFhR3IwQU9Ca2w5TnhORThDSTJoenJ2ZytnM0FlNmRHR0kK",
             "windows": {
                 "installMode": "passive",
@@ -68,18 +69,17 @@
                 "title": "Dynio",
                 "url": "index.html",
                 "transparent": true,
-                "focus": true,
-                "center": true,
+                "focus": false,
                 "contentProtected": false,
-                "maximizable": true,
-                "minimizable": true,
+                "maximizable": false,
+                "minimizable": false,
                 "decorations": false,
-                "closable": true,
+                "closable": false,
                 "skipTaskbar": true,
                 "alwaysOnTop": false,
-                "resizable": true,
+                "resizable": false,
                 "fileDropEnabled": true,
-                "visible": true,
+                "visible": false,
                 "fullscreen": false
             }
         ],

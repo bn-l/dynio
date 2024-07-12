@@ -1,8 +1,6 @@
 # yaml-language-server: $schema=./general-settings-schema.json
 
 darkMode: false
-timeoutSecs: 300
-autoStart: true
-showWelcome: true
-hideOnLostFocus: true
-firstLaunch: true
+startMinimised: false
+autoUpdate: false
+inputFontSize: 1.8
