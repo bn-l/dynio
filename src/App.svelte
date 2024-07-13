@@ -60,8 +60,6 @@ as regular stdout from commands) -->
 <!-- shortcut to reselect input in singledisplay mode -->
 
 
-<!-- Test update by running different dev version by copying folder, then pushing update in orig -->
-
 
 
 <script lang="ts">
