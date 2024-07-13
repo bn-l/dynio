@@ -1,7 +1,7 @@
 {
     "name": "dynio",
     "private": true,
-    "version": "0.1.6",
+    "version": "0.1.7",
     "description": "Dynamic input and output GUI. Converts any command that runs on the cli to gui.",
     "type": "module",
     "scripts": {
@@ -16,7 +16,6 @@
         "tauri dev": "tauri dev"
     },
     "dependencies": {
-        "@sveltejs/svelte-virtual-list": "^3.0.1",
         "@tauri-apps/api": "^1",
         "ansi_up": "^6.0.2",
         "lodash-es": "^4.17.21",

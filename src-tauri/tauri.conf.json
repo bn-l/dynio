@@ -8,12 +8,12 @@
     },
     "package": {
         "productName": "dynio",
-        "version": "0.1.6"
+        "version": "0.1.7"
     },
     "tauri": {
         "updater": {
             "active": true,
-            "dialog": false,
+            "dialog": true,
             "endpoints": ["https://github.com/bn-l/dynio/releases/latest/download/latest.json"],
             "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEUwOUM4MjM4M0ZDQ0JBMkIKUldRcnVzdy9PSUtjNEdyUzU5Vkx1TEFhR3IwQU9Ca2w5TnhORThDSTJoenJ2ZytnM0FlNmRHR0kK",
             "windows": {

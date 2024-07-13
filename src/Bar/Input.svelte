@@ -4,7 +4,7 @@
 <input
     id="cmdInput"
     class="w-120 h-full ml--3"
-    style={`font-size: ${$settings.inputFontSize ?? 1.8}rem`}
+    style={fontSizeString}
     placeholder={$currentCmdConfig?.placeholderText}
     autoComplete="off"
     spellCheck="false"
@@ -34,8 +34,7 @@
     import { debounce } from "lodash-es";
     import { inputFocusAction } from "./InputFocusAction.ts";
 
-    console.log(`font-size-[${$settings.inputFontSize ?? 1.8}rem] w-120 h-full ml--3`);
-
+    $: fontSizeString = "font-size: " + ($settings.inputFontSize ?? 1.8.toString()) + "rem";
     
     function runProgram(input: string) {
 
