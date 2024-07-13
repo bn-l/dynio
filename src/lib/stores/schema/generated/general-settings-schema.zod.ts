@@ -10,7 +10,6 @@ export default z
       )
       .optional(),
     firstLaunch: z.boolean().optional(),
-    autoUpdate: z.boolean().default(false),
     startMinimised: z
       .boolean()
       .describe("Whether to start hidden or not.")

@@ -10,10 +10,6 @@ export type GeneralSettings = {
     defaultCommand?: string;
     firstLaunch?: boolean;
     /**
-     * @default false
-     */
-    autoUpdate?: boolean;
-    /**
      * Whether to start hidden or not.
      * @default false
      */
@@ -25,6 +21,10 @@ export type GeneralSettings = {
     inputFontSize?: number;
 }
 
+/**
+ * @default false
+ */
+// autoUpdate?: boolean;
 
 /**
  * Whether to show the welcome info on launch. Explains how to setup the program etc.

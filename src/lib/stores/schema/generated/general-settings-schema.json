@@ -16,10 +16,6 @@
         "firstLaunch": {
           "type": "boolean"
         },
-        "autoUpdate": {
-          "type": "boolean",
-          "default": false
-        },
         "startMinimised": {
           "type": "boolean",
           "description": "Whether to start hidden or not.",

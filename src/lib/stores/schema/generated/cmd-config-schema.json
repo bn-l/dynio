@@ -45,8 +45,7 @@
         },
         "activationOptions": {
           "$ref": "#/definitions/ActivationOptions",
-          "description": "What happens when the enter key is pressed.",
-          "default": "{{}}"
+          "description": "What happens when the enter key is pressed."
         },
         "hotkeyNumber": {
           "type": "number",
@@ -119,8 +118,7 @@
             },
             "options": {
               "$ref": "#/definitions/ListDisplayOptions",
-              "description": "Display options. Use {} for default options.",
-              "default": {}
+              "description": "Display options. Use {} for default options."
             }
           },
           "required": [
@@ -139,8 +137,7 @@
             },
             "options": {
               "$ref": "#/definitions/SingleDisplayOptions",
-              "description": "Display options. Use {} for default options.",
-              "default": {}
+              "description": "Display options. Use {} for default options."
             }
           },
           "required": [
