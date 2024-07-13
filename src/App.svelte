@@ -57,9 +57,11 @@ as regular stdout from commands) -->
 <!-- Test autoupdates -->
 <!-- Separate stdout for each command. It shouldn't disappear when changing commands. -->
 <!-- Runnning indicator with command cancel button -->
+<!-- shortcut to reselect input in singledisplay mode -->
 
 
 <!-- Test update by running different dev version by copying folder, then pushing update in orig -->
+
 
 
 <script lang="ts">

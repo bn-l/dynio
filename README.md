@@ -39,6 +39,7 @@ Run installer for your OS in releases
 | `Alt + Space` | Show / Hide           |
 | `Alt + s`     | Show command selector |
 | `Alt + 1-9`   | Select command 1-9    |
+| `Escape`      | Close / Clear / Hide  |
 
 
 If your editor supports 
