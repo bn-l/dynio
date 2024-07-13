@@ -8,7 +8,7 @@
 ### Converts all commands that run on the cli in windows, linux or macos to a spotlight-like omnibar
 
 <div align="center">
-<img src="./demo.webp" alt="screen recording of usage" width="600px">
+<img src="./demo.webp" alt="screen recording of usage" width="650px">
 </div>
 
 ### Adding an LLM is trivial
@@ -17,7 +17,7 @@ Just copy and paste the curl command they give you in the api tester or write a 
 running llama3-70b (current top rated open source model) on groq. There's no need for streaming as groq runs so fast:
 
 <div align="center">
-<img src="./demo2.webp" alt="screen recording of usage" width="600px">
+<img src="./demo2.webp" alt="screen recording of usage" width="650px">
 </div>
 
 ## Installation
