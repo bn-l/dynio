@@ -9,7 +9,7 @@
 
 <div align="center">
 <img src="./demo.webp" alt="screen recording of usage" width="600px">
-</span>
+</div>
 
 ### Adding an LLM is trivial
 
@@ -18,7 +18,7 @@ running llama3-70b (current top rated open source model) on groq. There's no nee
 
 <div align="center">
 <img src="./demo2.webp" alt="screen recording of usage" width="600px">
-</span>
+</div>
 
 ## Installation
 
