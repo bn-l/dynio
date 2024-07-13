@@ -37,8 +37,8 @@ Run installer for your OS in releases
 | Shortcut      | Action                |
 | ------------- | --------------------- |
 | `Alt + Space` | Show / Hide           |
-| `Alt + 1-9`   | Select command 1-9    |
 | `Alt + s`     | Show command selector |
+| `Alt + 1-9`   | Select command 1-9    |
 
 
 If your editor supports 
