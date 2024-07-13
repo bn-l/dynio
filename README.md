@@ -22,7 +22,7 @@ running llama3-70b (current top rated open source model) on groq. There's no nee
 
 Run installer for your OS in releases
 
-## Setup
+## Setup and Usage
 
 1. Start dynio then check `~/.dynio` or `C:\Users\INSERT_YOUR_USERNAME\.dynio`. 
 2. Example general settings
@@ -33,6 +33,7 @@ intellisense or similar for editing yaml files with schema (like vscode does) th
 easy to edit both files as the descriptions for all options are in the schema.
 
 The app watches its config dir and will relaunch after any changes.
+
 
 ## Privacy
 
