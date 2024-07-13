@@ -59,7 +59,6 @@ as regular stdout from commands) -->
 <!-- Runnning indicator with command cancel button -->
 
 
-
 <script lang="ts">
     import "./assets/main.css";
     import "virtual:uno.css";
