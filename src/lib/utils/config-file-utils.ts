@@ -1,6 +1,6 @@
 
 import yaml from 'yaml';
-import type { CmdConfig } from '$lib/stores/schema/cmd-config-schema.ts';
+import type { CmdConfig, Display } from '$lib/stores/schema/cmd-config-schema.ts';
 import type { GeneralSettings } from '$lib/stores/schema/general-settings-schema.ts';
 import { invoke } from '@tauri-apps/api';
 import { cmdConfig } from "$lib/stores/cmd-config.ts";
@@ -33,7 +33,26 @@ export async function loadValidateAndInitConfigStores() {
     let loadedCmdConfig: CmdConfig = {};
     if (cmdConfigText) {
         try {
-            loadedCmdConfig = yaml.parse(cmdConfigText);
+            loadedCmdConfig = (yaml.parse(cmdConfigText) as CmdConfig);
+            Object.values(loadedCmdConfig).forEach(cmdConfigItem => {
+
+                if (cmdConfigItem.activationOptions === undefined) {
+                    cmdConfigItem.activationOptions = {};
+                }
+                if (cmdConfigItem.outputOptions === undefined) {
+                    cmdConfigItem.outputOptions = {};
+                }
+                if(cmdConfigItem.outputOptions.display === undefined) {
+                    cmdConfigItem.outputOptions.display = ({} as Display);
+                }
+                if(cmdConfigItem.outputOptions.display.options === undefined) {
+                    cmdConfigItem.outputOptions.display.options = {};
+                }
+                if(cmdConfigItem.outputOptions.emptyDisplayOptions === undefined) {
+                    cmdConfigItem.outputOptions.emptyDisplayOptions = {};
+                } 
+            })
+
             // This applies the defaults in the generated zod files
             loadedCmdConfig = cmdConfigZod.parse(loadedCmdConfig);
         } catch (err) {

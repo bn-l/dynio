@@ -75,7 +75,6 @@ export type Display =
         type: "list"; 
         /**
          * Display options. Use {} for default options.
-         * @default {}
          */
         options: ListDisplayOptions 
     } 
@@ -86,7 +85,6 @@ export type Display =
         type: "single";
         /**
          * Display options. Use {} for default options.
-         * @default {}
          */ 
         options: SingleDisplayOptions 
     };
@@ -172,6 +170,9 @@ export type CmdConfigItem = {
      */
     currentDir?: string;
     outputOptions?: OutputOptions;
+    /**
+     * What happens when the enter key is pressed.
+     */
     activationOptions?: ActivationOptions;
     /**
      * From 1-9, pressing alt+shift+hotkeyNumber will set the cmd as active.

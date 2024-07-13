@@ -31,7 +31,7 @@
             </div>
             <!-- Line 2 --> 
             <div
-                class=""
+                class="text-sm"
             >
                 <div
                     class=""
@@ -40,26 +40,28 @@
                 </div>
             </div>
             <!-- Line 3 -->
-            <div
-                class="flex"
-            >
+            {#if item.arguments !== undefined}
                 <div
-                    class="flex"
+                    class="flex text-sm"
                 >
                     <div
-                        class="mr-2"
+                        class="flex"
                     >
-                    </div>
-                    <div
-                        class=""
-                    >
-                        {item.arguments}
+                        <div
+                            class="mr-2"
+                        >
+                        </div>
+                        <div
+                            class=""
+                        >
+                            {item.arguments}
+                        </div>
                     </div>
                 </div>
-            </div>
+            {/if}
             <!-- Line 4 -->
             <div
-                class="flex"
+                class="flex text-sm"
             >
                 <div
                     class="flex"
@@ -76,7 +78,7 @@
                     </div>
                 </div>
                 <div
-                    class="flex ml-6"
+                    class="flex ml-6 "
                 >
                     <div
                         class="mr-2"
@@ -92,10 +94,10 @@
             </div>
             <!-- Bottom -->
             <div
-            class=""
+            class="text-sm"
             >
                 <div
-                    class="mt-2"
+                    class="mt-1"
                 >
                     {item.description}
                 </div>
@@ -113,6 +115,7 @@
     import { invoke } from "@tauri-apps/api";
     import { onMount } from "svelte";
 
+    console.log($cmdConfig);
 
     // Sort by hotkey but don't change the order of an item if it has no hotkey
     $: commandList = Object.entries($cmdConfig).sort((a, b) => {

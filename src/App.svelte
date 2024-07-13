@@ -52,11 +52,14 @@ When this is in place, put updater settings in tauri.conf
 <!-- Make parse option an enum of text, ansi, markdown, html -->
 <!-- Can take cmd args to launch a filterer with the stdin supplied to it (and it treats this
 as regular stdout from commands) -->
-<!-- Convert ListDisplay list to generic component then Stderr and ErrorList become lists (so error messages can be navigated and selected) -->
+<!-- Convert ListDisplay list to generic component then use in CmdSelector, Stderr, ErrorList, (so error messages can be navigated and selected) -->
 <!-- Tray expands to max height but can contract to any min -->
 <!-- Test autoupdates -->
 <!-- Separate stdout for each command. It shouldn't disappear when changing commands. -->
 <!-- Runnning indicator with command cancel button -->
+
+
+<!-- Test update by running different dev version by copying folder, then pushing update in orig -->
 
 
 <script lang="ts">
@@ -85,7 +88,7 @@ as regular stdout from commands) -->
     import { watch } from "tauri-plugin-fs-watch-api";
     import type { UnlistenFn } from '@tauri-apps/api/event';
     import { relaunch } from '@tauri-apps/api/process';
-
+    
     onMount(async () => {
         await loadValidateAndInitConfigStores();
     });

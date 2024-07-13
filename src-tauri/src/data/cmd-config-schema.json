@@ -44,7 +44,9 @@
           "$ref": "#/definitions/OutputOptions"
         },
         "activationOptions": {
-          "$ref": "#/definitions/ActivationOptions"
+          "$ref": "#/definitions/ActivationOptions",
+          "description": "What happens when the enter key is pressed.",
+          "default": "{{}}"
         },
         "hotkeyNumber": {
           "type": "number",
