@@ -3,9 +3,9 @@
 
 # Dynio
 
-</div>
-
 ### Converts all commands that run on the cli in windows, linux or macos to a spotlight-like omnibar
+
+</div>
 
 <div align="center">
 <img src="./demo.webp" alt="screen recording of usage" width="650px">
