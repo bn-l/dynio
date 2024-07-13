@@ -43,3 +43,7 @@ The app watches its config dir and will relaunch after any changes.
 
 Open source with signed builds. No data collection BS. No nasty surprises. The app can be 
 built after cloning this repo with `tauri build` (after removing the update section from tauri.conf). It makes one request on launch to releases on this repository to check for updates.
+
+## Troubleshooting
+
+If you are on an older version of windows, it should detect and install webview on windows if necessary. If there any issues it can be installed manually: https://go.microsoft.com/fwlink/p/?LinkId=2124703
