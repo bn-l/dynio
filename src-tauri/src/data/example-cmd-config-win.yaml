@@ -8,7 +8,7 @@ where:
     activationOptions:
         activateAction: copy
     hotkeyNumber: 1
-    placeholderText: Search filesS
+    placeholderText: Search files
     noOutputTimeoutMs: 100
     outputOptions:
         parseAnsiColors: true

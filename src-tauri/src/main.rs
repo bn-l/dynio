@@ -500,6 +500,9 @@ fn setup_default_files() {
     let example_settings = include_str!("./data/default-general-settings.yaml");
     let schema_cmdconf = include_str!("./data/cmd-config-schema.json");
     let schema_settings = include_str!("./data/general-settings-schema.json");
+
+    let mut base_dir = tauri::api::path::home_dir().expect("Could not get home dir.");
+    base_dir.push(".dynio");
  
     let mut settings_path = tauri::api::path::home_dir().expect("Could not get home dir.");
     settings_path.push(".dynio");
@@ -516,6 +519,10 @@ fn setup_default_files() {
     let mut schema_cmdconf_path = tauri::api::path::home_dir().expect("Could not get home dir.");
     schema_cmdconf_path.push(".dynio");
     schema_cmdconf_path.push("general-settings-schema.json");
+
+    if !base_dir.exists() { 
+        std::fs::create_dir(base_dir).expect("Could not create base dir");
+    }
 
     if !settings_path.exists() { 
         std::fs::write(settings_path, example_settings).expect("Could not write settings");
