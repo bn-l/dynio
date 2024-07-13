@@ -50,7 +50,7 @@ The app watches its config dir and will relaunch after any changes.
 
 ## Extras
 
-[Scoop](https://github.com/ScoopInstaller/Scoop) is a really nice command line package manager for windows. You can use it to install qalculate (what I'm using in the first demo). After install run `scoop bucket add extras` then `scoop install qalculate`. The everything cli can be installed with `scoop install everything-cli`. 
+[Scoop](https://github.com/ScoopInstaller/Scoop) is a really nice command line package manager for windows. You can use it to install the `qalc` command (aka Qalculate!--what I'm using in the first demo). After install run `scoop bucket add extras` then `scoop install qalculate`. The everything cli can be installed with `scoop install everything-cli` then the everything command can be added with `es` (make sure "[everything](https://www.voidtools.com/downloads/)" is installed). "Everything" has insanely fast file search on windows.
 
 ## Privacy
 
