@@ -1,9 +1,9 @@
 
-<p align="center">
+<div align="center">
 
 # Dynio
 
-</p>
+</div>
 
 ### Converts all commands that run on the cli in windows, linux or macos to a spotlight-like omnibar
 
@@ -30,8 +30,16 @@ Run installer for your OS in releases
 ## Setup and Usage
 
 1. Start dynio then check `~/.dynio` or `C:\Users\INSERT_YOUR_USERNAME\.dynio`. 
-2. Example general settings
-command config files will have been created along with their schemas.
+2. Example general settings command config files will have been created along with their schemas.
+
+### Hotkeys
+
+| Shortcut      | Action                |
+| ------------- | --------------------- |
+| `Alt + Space` | Show / Hide           |
+| `Alt + 1-9`   | Select command 1-9    |
+| `Alt + s`     | Show command selector |
+
 
 If your editor supports 
 intellisense or similar for editing yaml files with schema (like vscode does) then it's 
