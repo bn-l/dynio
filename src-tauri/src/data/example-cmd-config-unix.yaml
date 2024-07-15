@@ -1,11 +1,8 @@
 # yaml-language-server: $schema=./cmd-config-schema.json
 
 find:
-    command: find
-    description: Searches files by filename.
-    arguments:
-        - -maxdepth 3
-        - -name
+    command: echo
+    description: Echo the input
     hotkeyNumber: 1
     placeholderText: Find something
     noOutputTimeoutMs: 100
