@@ -151,6 +151,7 @@ async fn run_program(
     //  and this needs to be told to go into utf8 mode
     //  chcp changes the code page from 437 to utf8
     
+    #[cfg(target_os = "windows")] 
     let mut command = tokio::process::Command::new("cmd");
 
     #[cfg(target_os = "windows")] 
@@ -171,6 +172,9 @@ async fn run_program(
         command.arg("/C");
         command.raw_arg(&argstring);    
     }
+
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    let mut command = tokio::process::Command::new(program);
 
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     {
@@ -490,9 +494,7 @@ fn system_tray_handler() -> impl Fn(&tauri::AppHandle, tauri::SystemTrayEvent) +
 
 fn setup_default_files() {
 
-    #[cfg(target_os = "macos")]
-    let example_cmdconf = include_str!("./data/example-cmd-config-unix.yaml");
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
     let example_cmdconf = include_str!("./data/example-cmd-config-unix.yaml");
     #[cfg(target_os = "windows")]
     let example_cmdconf = include_str!("./data/example-cmd-config-win.yaml");
@@ -514,11 +516,11 @@ fn setup_default_files() {
 
     let mut schema_settings_path = tauri::api::path::home_dir().expect("Could not get home dir.");
     schema_settings_path.push(".dynio");
-    schema_settings_path.push("cmd-config-schema.json");
+    schema_settings_path.push("general-settings-schema.json");
 
     let mut schema_cmdconf_path = tauri::api::path::home_dir().expect("Could not get home dir.");
     schema_cmdconf_path.push(".dynio");
-    schema_cmdconf_path.push("general-settings-schema.json");
+    schema_cmdconf_path.push("cmd-config-schema.json");
 
     if !base_dir.exists() { 
         std::fs::create_dir(base_dir).expect("Could not create base dir");

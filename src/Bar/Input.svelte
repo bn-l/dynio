@@ -1,29 +1,36 @@
 
 
-
-<input
-    id="cmdInput"
-    class="w-120 h-full ml--3"
-    style={fontSizeString}
-    placeholder={$currentCmdConfig?.placeholderText}
-    autoComplete="off"
-    spellCheck="false"
-    use:inputFocusAction
-    bind:value={$query}
-    on:input={() => {
-        if(!$currentCmdConfig?.runOnEnter) {
-            debouncedRP($query);
-        }
-    }}
-    on:keydown={(event) => {
-        if(
-            $currentCmdConfig?.runOnEnter 
-            && event.key === "Enter"
-        ) {
-            debouncedRP($query);
-        }
-    }}
-/>
+<div>
+    <div
+        id="leftDecoration"
+        class=""
+    >
+        
+    </div>
+    <input
+        id="cmdInput"
+        class="w-120 h-full ml--3"
+        style={fontSizeString}
+        placeholder={$currentCmdConfig?.placeholderText}
+        autoComplete="off"
+        spellCheck="false"
+        use:inputFocusAction
+        bind:value={$query}
+        on:input={() => {
+            if(!$currentCmdConfig?.runOnEnter) {
+                debouncedRP($query);
+            }
+        }}
+        on:keydown={(event) => {
+            if(
+                $currentCmdConfig?.runOnEnter 
+                && event.key === "Enter"
+            ) {
+                debouncedRP($query);
+            }
+        }}
+    />
+</div>
 
 <script lang="ts">
     import { currentCmdConfig } from "$lib/stores/cmd-config.js";

@@ -58,7 +58,8 @@ as regular stdout from commands) -->
 <!-- Separate stdout for each command. It shouldn't disappear when changing commands. -->
 <!-- Runnning indicator with command cancel button -->
 <!-- shortcut to reselect input in singledisplay mode -->
-
+<!-- In addition to grab handle, make input grow as text increases and make backing div a grab handle also -->
+<!-- Window position remembering -->
 
 
 
