@@ -1,7 +1,7 @@
 {
     "name": "dynio",
     "private": true,
-    "version": "0.1.8",
+    "version": "0.1.9",
     "description": "Dynamic input and output GUI. Converts any command that runs on the cli to gui.",
     "type": "module",
     "scripts": {
