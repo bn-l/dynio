@@ -19,6 +19,11 @@ export type GeneralSettings = {
      * @default 1.8
      */
     inputFontSize?: number;
+    /**
+     * Always on top of other windows?
+     * @default false
+     */
+    alwaysOnTop?: boolean;
 }
 
 /**

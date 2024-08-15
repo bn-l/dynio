@@ -15,7 +15,7 @@ https://tauri.app/v1/guides/distribution/updater/#built-in-dialog
 >
     <div
         id="mainWrapper"
-        class="rounded-md shadow-lg opacity-99 absolute top-4 left-3 right-4"
+        class="rounded-md shadow-lg opacity-99 absolute top-4 left-3 right-4 border-solid border-1 border-zinc-300"
     >
         <div
             id="inputWrapper"
@@ -45,6 +45,15 @@ expected by updater.
 When this is in place, put updater settings in tauri.conf
 -->
 
+<!-- Errors: -->
+<!-- Keywords seprated by a space in a path in an everything search are like they're wrapped in quotation marks so search is done on both together rather than separately leading to different results vs CLI -->
+<!-- Quoted words in groq or openai will cause an error -->
+<!-- Can all commands just be run in an impromptu batch file for windows? -->
+<!-- would sending the commands to powershell help? -->
+
+<!-- !!! RENAME TO LANTERN !!! -->
+<!-- make graphic a stylised lantern -->
+
 
 <!-- Future: --> 
 <!-- Can set timer using cli timer -->
@@ -57,6 +66,7 @@ as regular stdout from commands) -->
 <!-- Test autoupdates -->
 <!-- Separate stdout for each command. It shouldn't disappear when changing commands. -->
 <!-- Runnning indicator with command cancel button -->
+<!-- Implement time out on a running command with new EmptyDisplay message "Timed out" -->
 <!-- shortcut to reselect input in singledisplay mode -->
 <!-- In addition to grab handle, make input grow as text increases and make backing div a grab handle also -->
 <!-- Window position remembering -->

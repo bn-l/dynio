@@ -25,6 +25,11 @@
           "type": "number",
           "description": "Size of input font in rem.",
           "default": 1.8
+        },
+        "alwaysOnTop": {
+          "type": "boolean",
+          "description": "Always on top of other windows?",
+          "default": false
         }
       },
       "additionalProperties": false

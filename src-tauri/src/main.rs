@@ -456,7 +456,7 @@ fn main() {
 
             println!("{:?}", settings);
 
-            setup_main_window(app.app_handle().clone(), settings.start_minimised);
+            setup_main_window(app.app_handle().clone(), settings.start_minimised, settings.always_on_top);
 
             
 
@@ -559,9 +559,9 @@ fn get_general_settings() -> Option<GeneralSettings> {
 }
 
 
-fn setup_main_window(app_handle: tauri::AppHandle, start_hidden: bool) {
+fn setup_main_window(app_handle: tauri::AppHandle, start_hidden: bool, on_top: bool) {
 
-    const SCREEN_TO_WIDTH_RATIO: f64 = 0.5;
+    const SCREEN_TO_WIDTH_RATIO: f64 = 0.42;
     const HEIGHT_TO_WIDTH_RATIO: f64 = 0.16;
     // const DEFAULT_LOGICAL_WIDTH: f64 = 640.0;
     const TRAY_TO_BAR_RATIO: f64 = 3.05;
@@ -596,6 +596,10 @@ fn setup_main_window(app_handle: tauri::AppHandle, start_hidden: bool) {
         x: window.outer_position().expect("couldn't get splash pos").y,
         y: window.outer_position().expect("couldn't get splash pos").y + Y_CENTER_OFFSET,
     });
+
+    if on_top {
+        let _ = window.set_always_on_top(on_top);
+    }
 
     if start_hidden {
         println!("start_hidden was true");
