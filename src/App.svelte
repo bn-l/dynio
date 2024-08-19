@@ -99,7 +99,8 @@ as regular stdout from commands) -->
     import { watch } from "tauri-plugin-fs-watch-api";
     import type { UnlistenFn } from '@tauri-apps/api/event';
     import { relaunch } from '@tauri-apps/api/process';
-    
+
+
     onMount(async () => {
         await loadValidateAndInitConfigStores();
     });
@@ -299,6 +300,7 @@ as regular stdout from commands) -->
             || ctrlOrCmd && e.key === "p"
             || ctrlOrCmd && e.key === "r"
             || ctrlOrCmd && e.key === "j"
+            || ctrlOrCmd && e.key === "f"
             || e.key === "F5"
         ) {
             console.log("preventing default");
