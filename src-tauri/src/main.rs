@@ -9,7 +9,6 @@ use tauri_plugin_fs_watch;
 use serde::{Serialize, Deserialize};
 use log::error;
 use std::fs::OpenOptions;
-use std::io::Write;
 use std::process::Stdio;
 use tokio::sync::Mutex;
 use tokio::io::AsyncBufReadExt;
