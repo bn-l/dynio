@@ -208,17 +208,35 @@ async fn run_program(
 
     let finish_flag_clone = finish_flag.clone();
     tokio::spawn(async move {
-        while let Some(line) = stdout.next_line().await.expect("Could not get stdout line") {
-            if finish_flag_clone.load(atomic::Ordering::Relaxed) { break; }
-            stdout_tx.send_modify(|vec| vec.push(line));
+        loop {
+            match stdout.next_line().await {
+                Ok(Some(line)) => {
+                    if finish_flag_clone.load(atomic::Ordering::Relaxed) { break; }
+                    stdout_tx.send_modify(|vec| vec.push(line));
+                },
+                Ok(None) => break,
+                Err(e) => {
+                    eprintln!("Error reading stdout: {:?}", e);
+                    break;
+                }
+            }
         }
     });
 
     let finish_flag_clone = finish_flag.clone();
     tokio::spawn(async move {
-        while let Some(line) = stderr.next_line().await.expect("Could not get stdout line") {
-            if finish_flag_clone.load(atomic::Ordering::Relaxed) { break; }
-            stderr_tx.send_modify(|vec| vec.push(line));
+        loop {
+            match stderr.next_line().await {
+                Ok(Some(line)) => {
+                    if finish_flag_clone.load(atomic::Ordering::Relaxed) { break; }
+                    stderr_tx.send_modify(|vec| vec.push(line));
+                },
+                Ok(None) => break,
+                Err(e) => {
+                    eprintln!("Error reading stderr: {:?}", e);
+                    break;
+                }
+            }
         }
     });
 
@@ -313,26 +331,20 @@ fn toggle_main_window(app_handle: &tauri::AppHandle) {
     let tray_item_handle = app_handle.tray_handle().get_item("togglevis");
 
     if let Some(window) = app_handle.get_window("main") {
-        // If Hidden:
-        if !window.is_visible().unwrap() {
+        let visible = window.is_visible().unwrap_or(false);
+        let focused = window.is_focused().unwrap_or(false);
+        if !visible {
             let _ = window.show();
             let _ = window.set_focus();
             let _ = app_handle.emit_all("main_hide_unhide", "unhide");
-            tray_item_handle.set_title("Show").expect("Could not set title");
-        }
-        // If Visible:
-        else {
-            // If not focussed, focus
-            if !window.is_focused().unwrap() {
-                println!("was not focussed");
-                let _ = window.set_focus();
-            }
-            // Otherwise just hide.
-            else {                
-                let _ = window.hide();
-                let _ = app_handle.emit_all("main_hide_unhide", "hide");
-                tray_item_handle.set_title("Show").expect("Could not set title");
-            }
+            let _ = tray_item_handle.set_title("Show");
+        } else if !focused {
+            println!("Window was not focused, setting focus");
+            let _ = window.set_focus();
+        } else {                
+            let _ = window.hide();
+            let _ = app_handle.emit_all("main_hide_unhide", "hide");
+            let _ = tray_item_handle.set_title("Show");
         }
     }
 }
