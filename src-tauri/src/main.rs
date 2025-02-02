@@ -109,7 +109,7 @@ fn create_collector(app_handle: tauri::AppHandle) -> (VecSender, VecSender) {
             if stderr_rx.changed().await.is_err() {
                 break;
             }
-            tokio::time::sleep(tokio::time::Duration::from_millis(16)).await;
+            tokio::time::sleep(Duration::from_millis(POLL_DELAY_MS)).await;
         }
     });
 
@@ -175,11 +175,6 @@ async fn run_program(
     #[cfg(target_os = "windows")] 
     {
         command.creation_flags(CREATE_NO_WINDOW);
-        // let program_quoted = format!("\"{}\"", program);
-        // let args_escaped = arguments.iter().map(|arg| {
-        //     arg.replace("\"", "\"\"")
-        // }).collect::<Vec<String>>();
-        // let args_quoted = format!("{}", args_escaped.join(" "));
         let cmd = build_windows_command(&program, &arguments, &input);
         log::debug!("|>{cmd}<|");
         command.arg("/C");
@@ -385,13 +380,9 @@ struct ConfigFiles {
 
 #[tauri::command]
 async fn get_config_files() -> Result<ConfigFiles, SerError> {
-    let settings_path = tauri::api::path::home_dir().expect("Could not get home dir.")
-        .join(".dynio")
-        .join("general-settings.yaml");
-    
-    let cmdconf_path = tauri::api::path::home_dir().expect("Could not get home dir.")
-        .join(".dynio")
-        .join("cmd-config.yaml");
+    let home = tauri::api::path::home_dir().expect("Could not get home dir.");
+    let settings_path = home.join(".dynio").join("general-settings.yaml");
+    let cmdconf_path = home.join(".dynio").join("cmd-config.yaml");
     
     let settings_content = std::fs::read_to_string(settings_path)?;
     let cmdconf_content = std::fs::read_to_string(cmdconf_path)?;
@@ -404,7 +395,8 @@ async fn get_config_files() -> Result<ConfigFiles, SerError> {
 
 #[tauri::command]
 async fn get_config_dir() -> Result<String, SerError> {
-    let path = tauri::api::path::home_dir().expect("Could not get home dir.").join(".dynio");
+    let home = tauri::api::path::home_dir().expect("Could not get home dir.");
+    let path = home.join(".dynio");
     let path_str = path.to_str().expect("Could not convert path to string").to_string();
     Ok(path_str)
 }
@@ -451,7 +443,7 @@ fn main() {
 
             let settings = get_general_settings().expect("Could not get settings");
 
-            println!("{:?}", settings);
+            log::debug!("settings: {:?}", settings);
 
             setup_main_window(app.app_handle().clone(), settings.start_minimised, settings.always_on_top);
 
@@ -560,7 +552,7 @@ fn setup_main_window(app_handle: tauri::AppHandle, start_hidden: bool, on_top: b
     let phys_tray_height = phys_height * TRAY_TO_BAR_RATIO;
 
     let guard = app_handle.state::<Mutex<TrayState>>();
-    let mut state = guard.lock().unwrap();
+    let mut state = tauri::async_runtime::block_on(guard.lock());
     *state = TrayState { 
         width: phys_width,
         tray_closed_height: phys_height, 
