@@ -7,7 +7,7 @@
 use tauri_plugin_single_instance;
 use tauri_plugin_fs_watch;
 use serde::{Serialize, Deserialize};
-use log::{debug, info, warn, error};
+use log::{debug, error};
 
 use std::process::Stdio;
 use tokio::sync::Mutex;
@@ -207,8 +207,8 @@ async fn run_program(
     // In the readers do the utf-8 -> utf-16le fallback (if utf-16le fails, ignore line 
     //  and emit error message with line.)
 
-    let mut stdout = tokio::io::BufReader::new(stdout_pipe).lines();
-    let mut stderr = tokio::io::BufReader::new(stderr_pipe).lines();
+    let stdout = tokio::io::BufReader::new(stdout_pipe).lines();
+    let stderr = tokio::io::BufReader::new(stderr_pipe).lines();
 
     // Bufreader reads bytes in buf. 
 
