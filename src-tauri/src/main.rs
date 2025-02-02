@@ -8,8 +8,6 @@ use tauri_plugin_single_instance;
 use tauri_plugin_fs_watch;
 use serde::{Serialize, Deserialize};
 
-// use std::collections::HashMap;
-// use std::sync::Arc;
 use std::process::Stdio;
 use tokio::sync::Mutex;
 use tokio::io::AsyncBufReadExt;
@@ -17,6 +15,16 @@ use tokio::time::Duration;
 // use std::fs;
 // use tauri::{Manager, Window, State, Monitor, Size, PhysicalSize, LogicalSize, PhysicalPosition, LogicalPosition};
 use tauri::{Manager, Size, PhysicalSize, PhysicalPosition, Window};
+
+#[cfg(target_os = "windows")]
+fn build_windows_command(program: &str, arguments: &[String], input: &str) -> String {
+    format!(
+        r#""chcp 65001 >nul && {} {} {}""#,
+        format!("\"{}\"", program),
+        arguments.join(" "),
+        format!("\"{}\"", input)
+    )
+}
 
 async fn read_and_send_lines<R>(
     mut lines: tokio::io::Lines<tokio::io::BufReader<R>>,
@@ -34,12 +42,6 @@ where
 use tauri::GlobalShortcutManager;
 
 
-// use notify::{Watcher, RecursiveMode};//, RecommendedWatcher };
-
-// mod types { pub mod general_settings_schema; }
-// use types::general_settings_schema::GeneralSettings;
-
-// use std::io::BufRead;
 
 
 #[cfg(target_os = "windows")]
@@ -48,6 +50,8 @@ use winapi::um::winbase::CREATE_NO_WINDOW;
 use tauri::{CustomMenuItem, SystemTrayMenu, SystemTrayMenuItem, SystemTray};
 
 use std::sync::atomic::{self, AtomicBool};
+
+const POLL_DELAY_MS: u64 = 16;
 
 type VecSender = tokio::sync::watch::Sender<Vec<String>>;
 
@@ -90,7 +94,7 @@ fn create_collector(app_handle: tauri::AppHandle) -> (VecSender, VecSender) {
             if stdout_rx.changed().await.is_err() {
                 break;
             }
-            tokio::time::sleep(Duration::from_millis(16)).await;
+            tokio::time::sleep(Duration::from_millis(POLL_DELAY_MS)).await;
         }
     });
  
@@ -150,7 +154,7 @@ async fn run_program(
     app_handle: tauri::AppHandle,
 ) -> Result<(), SerError> {
 
-    println!("In run_program");
+    log::debug!("In run_program");
 
     if let Some(sender) = app_handle
         .state::<KillChannel>()
@@ -176,15 +180,10 @@ async fn run_program(
         //     arg.replace("\"", "\"\"")
         // }).collect::<Vec<String>>();
         // let args_quoted = format!("{}", args_escaped.join(" "));
-        let argstring = format!(
-            r#""chcp 65001 >nul && {} {} {}""#, 
-            format!("\"{}\"", program), 
-            arguments.join(" "),
-            format!("\"{}\"", input)//.replace("\"", "\"\""))
-        );
-        log::debug!("|>{argstring}<|");
+        let cmd = build_windows_command(&program, &arguments, &input);
+        log::debug!("|>{cmd}<|");
         command.arg("/C");
-        command.raw_arg(&argstring);    
+        command.raw_arg(&cmd);
     }
 
     #[cfg(any(target_os = "linux", target_os = "macos"))]
@@ -299,7 +298,7 @@ async fn open_tray(app_handle: tauri::AppHandle) {
 async fn close_tray(app_handle: tauri::AppHandle) {
     let window = app_handle.get_window("main").expect("Could not get main window");
     let state = app_handle.state::<Mutex<TrayState>>();
-    let mut guard = state.lock().unwrap();
+    let mut guard = state.lock().await;
 
     if guard.currently_open {
         let _ = window.set_size(Size::Physical(PhysicalSize {
@@ -325,7 +324,7 @@ fn toggle_main_window(app_handle: &tauri::AppHandle) {
             let _ = app_handle.emit_all("main_hide_unhide", "unhide");
             let _ = tray_item_handle.set_title("Show");
         } else if !focused {
-            println!("Window was not focused, setting focus");
+            log::debug!("Window was not focused, setting focus");
             let _ = window.set_focus();
         } else {                
             let _ = window.hide();
@@ -501,24 +500,12 @@ fn setup_default_files() {
     let schema_cmdconf = include_str!("./data/cmd-config-schema.json");
     let schema_settings = include_str!("./data/general-settings-schema.json");
 
-    let mut base_dir = tauri::api::path::home_dir().expect("Could not get home dir.");
-    base_dir.push(".dynio");
- 
-    let mut settings_path = tauri::api::path::home_dir().expect("Could not get home dir.");
-    settings_path.push(".dynio");
-    settings_path.push("general-settings.yaml");
-
-    let mut cmdconf_path = tauri::api::path::home_dir().expect("Could not get home dir.");
-    cmdconf_path.push(".dynio");
-    cmdconf_path.push("cmd-config.yaml");
-
-    let mut schema_settings_path = tauri::api::path::home_dir().expect("Could not get home dir.");
-    schema_settings_path.push(".dynio");
-    schema_settings_path.push("general-settings-schema.json");
-
-    let mut schema_cmdconf_path = tauri::api::path::home_dir().expect("Could not get home dir.");
-    schema_cmdconf_path.push(".dynio");
-    schema_cmdconf_path.push("cmd-config-schema.json");
+    let home = tauri::api::path::home_dir().expect("Could not get home dir.");
+    let base_dir = home.join(".dynio");
+    let settings_path = home.join(".dynio").join("general-settings.yaml");
+    let cmdconf_path = home.join(".dynio").join("cmd-config.yaml");
+    let schema_settings_path = home.join(".dynio").join("general-settings-schema.json");
+    let schema_cmdconf_path = home.join(".dynio").join("cmd-config-schema.json");
 
     if !base_dir.exists() { 
         std::fs::create_dir(base_dir).expect("Could not create base dir");
@@ -598,7 +585,7 @@ fn setup_main_window(app_handle: tauri::AppHandle, start_hidden: bool, on_top: b
     }
 
     if start_hidden {
-        println!("start_hidden was true");
+        log::debug!("start_hidden was true");
         let tray_item_handle = app_handle.tray_handle().get_item("togglevis");
         let _ = window.hide();
         let _ = app_handle.emit_all("main_hide_unhide", "hide");
@@ -606,7 +593,7 @@ fn setup_main_window(app_handle: tauri::AppHandle, start_hidden: bool, on_top: b
     }
     else {
         // Hack to actually set focus
-        println!("about to set main as focussed");
+        log::debug!("about to set main as focused");
         let _ = window.hide();
         let _ = window.show();
         let _ = window.set_focus();
