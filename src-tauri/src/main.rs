@@ -7,6 +7,7 @@
 use tauri_plugin_single_instance;
 use tauri_plugin_fs_watch;
 use serde::{Serialize, Deserialize};
+use log::{debug, info, warn, error};
 
 use std::process::Stdio;
 use tokio::sync::Mutex;
@@ -403,6 +404,7 @@ async fn get_config_dir() -> Result<String, SerError> {
 
 
 fn main() {
+    env_logger::init();
 
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");
     let hide = CustomMenuItem::new("togglevis".to_string(), "Show");
