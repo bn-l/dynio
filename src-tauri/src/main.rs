@@ -99,12 +99,12 @@ fn create_collector(app_handle: tauri::AppHandle) -> (VecSender, VecSender) {
 }
 
 struct KillChannel {
-    kill_sender: Mutex<Option<tokio::sync::oneshot::Sender<()>>>,
+    kill_sender: tokio::sync::Mutex<Option<tokio::sync::oneshot::Sender<()>>>,
 }
 impl Default for KillChannel {
     fn default() -> Self {
         KillChannel {
-            kill_sender: Mutex::new(None),
+            kill_sender: tokio::sync::Mutex::new(None),
         }
     }
 }
@@ -142,7 +142,7 @@ async fn run_program(
         .state::<KillChannel>()
         .kill_sender
         .lock()
-        .unwrap()
+        .await
         .take() {
         let _ = sender.send(());
     }
@@ -245,7 +245,7 @@ async fn run_program(
         .state::<KillChannel>()
         .kill_sender
         .lock()
-        .unwrap()
+        .await
         .replace(kill_sender);
 
     tokio::select! {
@@ -265,12 +265,12 @@ async fn run_program(
 
 // Allows killing without running another command.
 #[tauri::command]
-fn stop_running(app_handle: tauri::AppHandle) {
+async fn stop_running(app_handle: tauri::AppHandle) {
     if let Some(sender) = app_handle
         .state::<KillChannel>()
         .kill_sender
         .lock()
-        .unwrap()
+        .await
         .take()
     {
         let _ = sender.send(());
