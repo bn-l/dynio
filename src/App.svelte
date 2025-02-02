@@ -110,10 +110,13 @@ as regular stdout from commands) -->
             const configDir = await invoke("get_config_dir") as string;
             const stopWatching = await watch(
                 configDir,
-                () => {
+                (event) => {
+                    if (event.length === 1 && event[0].path.includes(".log")) {
+                        return;
+                    }
                     void relaunch();
                 },
-                { recursive: true },
+                { recursive: true  },
             );
             return stopWatching;
         }
