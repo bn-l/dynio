@@ -8,7 +8,8 @@ use tauri_plugin_single_instance;
 use tauri_plugin_fs_watch;
 use serde::{Serialize, Deserialize};
 use log::error;
-
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::process::Stdio;
 use tokio::sync::Mutex;
 use tokio::io::AsyncBufReadExt;
@@ -404,7 +405,19 @@ async fn get_config_dir() -> Result<String, SerError> {
 
 
 fn main() {
-    env_logger::init();
+    let home_dir = tauri::api::path::home_dir().expect("Failed to get home directory");
+    let dynio_dir = home_dir.join(".dynio");
+    // Ensure the .dynio directory exists
+    std::fs::create_dir_all(&dynio_dir).expect("Failed to create .dynio directory");
+    let log_file_path = dynio_dir.join("dynio.log");
+    let log_file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(log_file_path)
+        .expect("Failed to open dynio.log file");
+    env_logger::Builder::from_default_env()
+        .target(env_logger::Target::Pipe(Box::new(log_file)))
+        .init();
 
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");
     let hide = CustomMenuItem::new("togglevis".to_string(), "Show");
