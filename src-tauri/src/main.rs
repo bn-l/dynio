@@ -16,6 +16,21 @@ use tokio::time::Duration;
 // use std::fs;
 // use tauri::{Manager, Window, State, Monitor, Size, PhysicalSize, LogicalSize, PhysicalPosition, LogicalPosition};
 use tauri::{Manager, Size, PhysicalSize, PhysicalPosition, Window};
+#[cfg(target_os = "windows")]
+use winapi::um::winbase::CREATE_NO_WINDOW;
+
+use tauri::{CustomMenuItem, SystemTrayMenu, SystemTrayMenuItem, SystemTray};
+
+use std::sync::atomic::{self, AtomicBool};
+
+mod general_settings;
+use general_settings::GeneralSettings;
+
+use tauri::GlobalShortcutManager;
+
+const POLL_DELAY_MS: u64 = 16;
+type VecSender = tokio::sync::watch::Sender<Vec<String>>;
+
 
 #[cfg(target_os = "windows")]
 fn build_windows_command(program: &str, arguments: &[String], input: &str) -> String {
@@ -27,37 +42,7 @@ fn build_windows_command(program: &str, arguments: &[String], input: &str) -> St
     )
 }
 
-async fn read_and_send_lines<R>(
-    mut lines: tokio::io::Lines<tokio::io::BufReader<R>>,
-    sender: VecSender,
-    finish_flag: std::sync::Arc<AtomicBool>,
-)
-where
-    R: tokio::io::AsyncRead + Unpin,
-{
-    while let Ok(Some(line)) = lines.next_line().await {
-        if finish_flag.load(atomic::Ordering::Relaxed) { break; }
-        sender.send_modify(|vec| vec.push(line));
-    }
-}
-use tauri::GlobalShortcutManager;
 
-
-
-
-#[cfg(target_os = "windows")]
-use winapi::um::winbase::CREATE_NO_WINDOW;
-
-use tauri::{CustomMenuItem, SystemTrayMenu, SystemTrayMenuItem, SystemTray};
-
-use std::sync::atomic::{self, AtomicBool};
-
-const POLL_DELAY_MS: u64 = 16;
-
-type VecSender = tokio::sync::watch::Sender<Vec<String>>;
-
-mod general_settings;
-use general_settings::GeneralSettings;
 
 #[derive(Debug, thiserror::Error)]
 enum SerError {
@@ -125,6 +110,20 @@ impl Default for KillChannel {
         KillChannel {
             kill_sender: tokio::sync::Mutex::new(None),
         }
+    }
+}
+
+async fn read_and_send_lines<R>(
+    mut lines: tokio::io::Lines<tokio::io::BufReader<R>>,
+    sender: VecSender,
+    finish_flag: std::sync::Arc<AtomicBool>,
+)
+where
+    R: tokio::io::AsyncRead + Unpin,
+{
+    while let Ok(Some(line)) = lines.next_line().await {
+        if finish_flag.load(atomic::Ordering::Relaxed) { break; }
+        sender.send_modify(|vec| vec.push(line));
     }
 }
 
