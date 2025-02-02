@@ -415,6 +415,7 @@ fn main() {
         .open(log_file_path)
         .expect("Failed to open dynio.log file");
     env_logger::Builder::from_default_env()
+        .filter_level(log::LevelFilter::Debug)
         .target(env_logger::Target::Pipe(Box::new(log_file)))
         .init();
 
