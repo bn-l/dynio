@@ -29,3 +29,4 @@ dist-ssr
 .svelte-kit/
 
 .aider*
+future.md
