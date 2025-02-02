@@ -88,7 +88,11 @@ fn create_collector(app_handle: tauri::AppHandle) -> (VecSender, VecSender) {
     tokio::spawn(async move {
         loop {
             let update = stderr_rx.borrow_and_update().clone();
- 
+            if update.is_empty() {
+                log::debug!("No stderr output.");
+            } else {
+                log::debug!("stderr output: {:?}", update);
+            }
             app_handle2
                 .emit_all("stderr", update)
                 .unwrap();
