@@ -7,7 +7,7 @@
 use tauri_plugin_single_instance;
 use tauri_plugin_fs_watch;
 use serde::{Serialize, Deserialize};
-use log::{debug, error};
+use log::error;
 
 use std::process::Stdio;
 use tokio::sync::Mutex;
