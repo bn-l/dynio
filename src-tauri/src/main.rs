@@ -11,12 +11,26 @@ use serde::{Serialize, Deserialize};
 // use std::collections::HashMap;
 // use std::sync::Arc;
 use std::process::Stdio;
-use std::sync::Mutex;
+use tokio::sync::Mutex;
 use tokio::io::AsyncBufReadExt;
 use tokio::time::Duration;
 // use std::fs;
 // use tauri::{Manager, Window, State, Monitor, Size, PhysicalSize, LogicalSize, PhysicalPosition, LogicalPosition};
-use tauri::{Manager, Size, PhysicalSize, PhysicalPosition, Window };
+use tauri::{Manager, Size, PhysicalSize, PhysicalPosition, Window};
+
+async fn read_and_send_lines<R>(
+    mut lines: tokio::io::Lines<tokio::io::BufReader<R>>,
+    sender: VecSender,
+    finish_flag: std::sync::Arc<AtomicBool>,
+)
+where
+    R: tokio::io::AsyncRead + Unpin,
+{
+    while let Ok(Some(line)) = lines.next_line().await {
+        if finish_flag.load(atomic::Ordering::Relaxed) { break; }
+        sender.send_modify(|vec| vec.push(line));
+    }
+}
 use tauri::GlobalShortcutManager;
 
 
@@ -168,7 +182,7 @@ async fn run_program(
             arguments.join(" "),
             format!("\"{}\"", input)//.replace("\"", "\"\""))
         );
-        println!("|>{argstring}<|");
+        log::debug!("|>{argstring}<|");
         command.arg("/C");
         command.raw_arg(&argstring);    
     }
@@ -207,38 +221,10 @@ async fn run_program(
     let finish_flag = std::sync::Arc::new(AtomicBool::new(false));
 
     let finish_flag_clone = finish_flag.clone();
-    tokio::spawn(async move {
-        loop {
-            match stdout.next_line().await {
-                Ok(Some(line)) => {
-                    if finish_flag_clone.load(atomic::Ordering::Relaxed) { break; }
-                    stdout_tx.send_modify(|vec| vec.push(line));
-                },
-                Ok(None) => break,
-                Err(e) => {
-                    eprintln!("Error reading stdout: {:?}", e);
-                    break;
-                }
-            }
-        }
-    });
+    tokio::spawn(read_and_send_lines(stdout, stdout_tx, finish_flag_clone));
 
     let finish_flag_clone = finish_flag.clone();
-    tokio::spawn(async move {
-        loop {
-            match stderr.next_line().await {
-                Ok(Some(line)) => {
-                    if finish_flag_clone.load(atomic::Ordering::Relaxed) { break; }
-                    stderr_tx.send_modify(|vec| vec.push(line));
-                },
-                Ok(None) => break,
-                Err(e) => {
-                    eprintln!("Error reading stderr: {:?}", e);
-                    break;
-                }
-            }
-        }
-    });
+    tokio::spawn(read_and_send_lines(stderr, stderr_tx, finish_flag_clone));
 
     let (kill_sender, kill_receiver) = tokio::sync::oneshot::channel::<()>();
     app_handle
@@ -298,7 +284,7 @@ impl Default for TrayState {
 async fn open_tray(app_handle: tauri::AppHandle) {
     let window = app_handle.get_window("main").expect("Could not get main window");
     let state = app_handle.state::<Mutex<TrayState>>();
-    let mut guard = state.lock().unwrap();
+    let mut guard = state.lock().await;
 
     if !guard.currently_open {
         let _ = window.set_size(Size::Physical(PhysicalSize {
@@ -326,7 +312,7 @@ async fn close_tray(app_handle: tauri::AppHandle) {
 
 fn toggle_main_window(app_handle: &tauri::AppHandle) {
 
-    println!("toggling main window");
+    log::debug!("toggling main window");
 
     let tray_item_handle = app_handle.tray_handle().get_item("togglevis");
 
@@ -554,20 +540,17 @@ fn setup_default_files() {
 
 }
 
-fn get_general_settings() -> Option<GeneralSettings> {
-    let mut settings_path = tauri::api::path::home_dir().expect("Could not get home dir.");
-    settings_path.push(".dynio");
-    settings_path.push("general-settings.yaml");
+fn get_general_settings() -> Result<GeneralSettings, Box<dyn std::error::Error>> {
+    let home = tauri::api::path::home_dir().ok_or("Could not get home dir")?;
+    let settings_path = home.join(".dynio").join("general-settings.yaml");
 
-    let settings_text = if settings_path.exists() {
-        Some(std::fs::read_to_string(settings_path).expect("Could not read settings"))
-    } else {
-        return None;
-    };
+    if !settings_path.exists() {
+        return Err("Settings file does not exist".into());
+    }
 
-    let settings = serde_yaml::from_str::<GeneralSettings>(settings_text.as_ref().unwrap()).expect("Could not parse settings");
-
-    Some(settings)
+    let settings_text = std::fs::read_to_string(settings_path)?;
+    let settings = serde_yaml::from_str(&settings_text)?;
+    Ok(settings)
 }
 
 
@@ -604,9 +587,10 @@ fn setup_main_window(app_handle: tauri::AppHandle, start_hidden: bool, on_top: b
 
     let _ = window.center();
 
+    let pos = window.outer_position().expect("couldn't get splash pos");
     let _ = window.set_position(PhysicalPosition {
-        x: window.outer_position().expect("couldn't get splash pos").y,
-        y: window.outer_position().expect("couldn't get splash pos").y + Y_CENTER_OFFSET,
+        x: pos.x,
+        y: pos.y + Y_CENTER_OFFSET,
     });
 
     if on_top {
