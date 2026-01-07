@@ -31,3 +31,14 @@ dist-ssr
 .aider*
 future.md
 z-notes-etc/
+
+**/.env
+src.md
+**/CLAUDE.md
+**/.claude
+**/AGENTS.md
+**/.agent/
+REPOMAP.md
+CODEGUIDE.md
+**/.cursor
+.mcp.json
