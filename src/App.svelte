@@ -177,7 +177,13 @@ as regular stdout from commands) -->
     onMount(() => {
         const unlisten = listen("stderr", (e: Event<string[]>) => {
             // console.log("stderr event received: ", e.payload);
-            $stderr = e.payload;
+            const filterPattern = $currentCmdConfig?.outputOptions?.stderrFilterRegex;
+            if (filterPattern) {
+                const regex = new RegExp(filterPattern);
+                $stderr = e.payload.filter(line => !regex.test(line));
+            } else {
+                $stderr = e.payload;
+            }
         });
         return () => { void unlisten.then( f => f()) };
     }); 
