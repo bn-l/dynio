@@ -39,6 +39,11 @@
     "clipboard-manager:allow-read-text",
     "clipboard-manager:allow-write-text",
     "fs:default",
-    "fs:allow-watch"
+    "fs:allow-watch",
+    "opener:default",
+    {
+      "identifier": "opener:allow-open-path",
+      "allow": [{ "path": "/**" }]
+    }
   ]
 }

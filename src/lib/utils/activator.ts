@@ -1,6 +1,6 @@
 
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
-import { open } from "@tauri-apps/plugin-shell";
+import { openPath } from "@tauri-apps/plugin-opener";
 import type { ActivationOptions } from "$lib/stores/schema/cmd-config-schema.ts";
 import { errors } from "$lib/stores/errors.ts";
 import { invoke } from "@tauri-apps/api/core";
@@ -39,7 +39,7 @@ export async function activate(
         }
     }
 
-    const action = activateAction === "copy" ? writeText : open;
+    const action = activateAction === "copy" ? writeText : openPath;
 
     if(openContaining) text = await invoke("trim_path", { path: text });
 
