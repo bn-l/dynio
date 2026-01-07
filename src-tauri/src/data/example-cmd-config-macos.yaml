@@ -1,21 +1,22 @@
 # yaml-language-server: $schema=./cmd-config-schema.json
 
 find:
-    command: echo
-    description: Echo the input
-    hotkeyNumber: 1
-    placeholderText: Find something
-    noOutputTimeoutMs: 100
+    command: mdfind
+    description: Search files using Spotlight. Use -name for filename search.
+    arguments:
+        - -name
     activationOptions:
         activateAction: open
         isPath: true
+    hotkeyNumber: 1
+    placeholderText: Search files
+    noOutputTimeoutMs: 100
     outputOptions:
         parseAnsiColors: true
+        stderrFilterRegex: "\\[UserQueryParser\\]"
         display:
             type: list
             options:
                 maxLineLength: 160
                 lineSplitter: "\n"
                 fontSize: 0.8
-        
-

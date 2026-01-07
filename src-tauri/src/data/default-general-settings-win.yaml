@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=./general-settings-schema.json
+
+darkMode: false
+startMinimised: false
+inputFontSize: 1.8
+globalShortcut: "Alt+Space"
