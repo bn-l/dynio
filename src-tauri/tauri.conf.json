@@ -1,115 +1,87 @@
 {
-    "$schema": "../node_modules/@tauri-apps/cli/schema.json",
-    "build": {
-        "beforeDevCommand": "npm run dev",
-        "beforeBuildCommand": "npm run build",
-        "devPath": "http://localhost:14222",
-        "distDir": "../dist"
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:14222"
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "deb",
+      "appimage",
+      "nsis",
+      "app",
+      "dmg"
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "silent": true,
+        "type": "downloadBootstrapper"
+      },
+      "nsis": {
+        "installMode": "currentUser"
+      }
     },
-    "package": {
-        "productName": "dynio",
-        "version": "0.1.9"
-    },
-    "tauri": {
-        "updater": {
-            "active": true,
-            "dialog": true,
-            "endpoints": ["https://github.com/bn-l/dynio/releases/latest/download/latest.json"],
-            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEUwOUM4MjM4M0ZDQ0JBMkIKUldRcnVzdy9PSUtjNEdyUzU5Vkx1TEFhR3IwQU9Ca2w5TnhORThDSTJoenJ2ZytnM0FlNmRHR0kK",
-            "windows": {
-                "installMode": "passive",
-                "installerArgs": []
-            }
-        },
-        "allowlist": {
-            "all": false,
-            "shell": {
-                "all": false,
-                "open": ".*"
-            },
-            "process": {
-                "all": false,
-                "exit": true,
-                "relaunch": true
-            },
-            "os": {
-                "all": true
-            },
-            "window": {
-                "show": true,
-                "hide": true,
-                "center": true,
-                "unminimize": true,
-                "setFocus": true,
-                "setSize": true,
-                "setMinSize": true,
-                "setMaxSize": true,
-                "setMinimizable": true,
-                "setMaximizable": true,
-                "setClosable": true,
-                "setAlwaysOnTop": true,
-                "startDragging": true
-            },
-            "globalShortcut": {
-                "all": true
-            },
-            "clipboard": {
-                "all": true,
-                "writeText": true,
-                "readText": true
-            }
-        },
-        "systemTray": {
-            "iconPath": "icons/icon.png",
-            "iconAsTemplate": true
-        },
-        "windows": [
-            {
-                "label": "main",
-                "title": "Dynio",
-                "url": "index.html",
-                "transparent": true,
-                "focus": false,
-                "contentProtected": false,
-                "maximizable": false,
-                "minimizable": false,
-                "decorations": false,
-                "closable": false,
-                "skipTaskbar": true,
-                "alwaysOnTop": false,
-                "resizable": false,
-                "fileDropEnabled": true,
-                "visible": false,
-                "fullscreen": false
-            }
-        ],
-        "macOSPrivateApi": true,
-        "security": {
-            "csp": null
-        },
-        "bundle": {
-            "active": true,
-            "targets": ["deb", "appimage", "nsis", "app", "dmg", "updater"],
-            "identifier": "com.dynio.net",
-            "icon": [
-                "icons/32x32.png",
-                "icons/128x128.png",
-                "icons/128x128@2x.png",
-                "icons/icon.icns",
-                "icons/icon.ico"
-            ],
-            "copyright": "bn-l 2024",
-            "category": "Utility",
-            "shortDescription": "Converts all commands that run on the cli in windows, linux or macos to a spotlight-like omnibar",
-            "windows": {
-                "webviewInstallMode": {
-                    "silent": true,
-                    "type": "downloadBootstrapper"
-                },
-                "nsis": {
-                    "installMode": "currentUser"
-                }
-            }
-        }
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "copyright": "bn-l 2024",
+    "category": "Utility",
+    "shortDescription": "Converts all commands that run on the cli in windows, linux or macos to a spotlight-like omnibar",
+    "createUpdaterArtifacts": "v1Compatible"
+  },
+  "productName": "dynio",
+  "mainBinaryName": "dynio",
+  "version": "0.1.9",
+  "identifier": "com.dynio.net",
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEUwOUM4MjM4M0ZDQ0JBMkIKUldRcnVzdy9PSUtjNEdyUzU5Vkx1TEFhR3IwQU9Ca2w5TnhORThDSTJoenJ2ZytnM0FlNmRHR0kK",
+      "windows": {
+        "installMode": "passive",
+        "installerArgs": []
+      },
+      "endpoints": [
+        "https://github.com/bn-l/dynio/releases/latest/download/latest.json"
+      ]
     }
+  },
+  "app": {
+    "trayIcon": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true
+    },
+    "macOSPrivateApi": true,
+    "security": {
+      "csp": null
+    },
+    "windows": [
+      {
+        "label": "main",
+        "title": "Dynio",
+        "url": "index.html",
+        "transparent": true,
+        "focus": false,
+        "shadow": false,
+        "contentProtected": false,
+        "maximizable": false,
+        "minimizable": false,
+        "decorations": false,
+        "closable": false,
+        "skipTaskbar": true,
+        "alwaysOnTop": false,
+        "resizable": false,
+        "dragDropEnabled": true,
+        "visible": false,
+        "fullscreen": false,
+        "useHttpsScheme": true
+      }
+    ]
+  }
 }

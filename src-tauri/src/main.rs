@@ -1,36 +1,33 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-// NB: The macos launcher part is needed for macos but is ignored on windows.
-// tauri_plugin_autostart works cross platform.
-// use tauri_plugin_autostart::MacosLauncher;
-use tauri_plugin_single_instance;
-use tauri_plugin_fs_watch;
 use serde::{Serialize, Deserialize};
-use log::error;
 use std::fs::OpenOptions;
 use std::process::Stdio;
 use tokio::sync::Mutex;
 use tokio::io::AsyncBufReadExt;
 use tokio::time::Duration;
-// use std::fs;
-// use tauri::{Manager, Window, State, Monitor, Size, PhysicalSize, LogicalSize, PhysicalPosition, LogicalPosition};
-use tauri::{Manager, Size, PhysicalSize, PhysicalPosition, Window};
+use tauri::{Manager, Size, PhysicalSize, PhysicalPosition, WebviewWindow, AppHandle, Emitter};
 #[cfg(target_os = "windows")]
 use winapi::um::winbase::CREATE_NO_WINDOW;
 
-use tauri::{CustomMenuItem, SystemTrayMenu, SystemTrayMenuItem, SystemTray};
+use tauri::menu::{MenuBuilder, MenuItemBuilder};
+use tauri::tray::{TrayIconBuilder, TrayIconEvent, MouseButton, MouseButtonState};
 
 use std::sync::atomic::{self, AtomicBool};
 
 mod general_settings;
 use general_settings::GeneralSettings;
 
-use tauri::GlobalShortcutManager;
+#[cfg(desktop)]
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
 const POLL_DELAY_MS: u64 = 16;
 type VecSender = tokio::sync::watch::Sender<Vec<String>>;
 
+fn home_dir() -> std::path::PathBuf {
+    dirs::home_dir().expect("Could not get home dir")
+}
 
 #[cfg(target_os = "windows")]
 fn build_windows_command(program: &str, arguments: &[String], input: &str) -> String {
@@ -41,8 +38,6 @@ fn build_windows_command(program: &str, arguments: &[String], input: &str) -> St
         format!("\"{}\"", input)
     )
 }
-
-
 
 #[derive(Debug, thiserror::Error)]
 enum SerError {
@@ -58,32 +53,23 @@ impl serde::Serialize for SerError {
     }
 }
 
-
-fn create_collector(app_handle: tauri::AppHandle) -> (VecSender, VecSender) {
+fn create_collector(app_handle: AppHandle) -> (VecSender, VecSender) {
     let (stdout_tx, mut stdout_rx) = tokio::sync::watch::channel(Vec::<String>::new());
     let (stderr_tx, mut stderr_rx) = tokio::sync::watch::channel(Vec::<String>::new());
-
-    // If sender is dropped will end these loops.
 
     let app_handle1 = app_handle.clone();
     tokio::spawn(async move {
         loop {
             let mut update = stdout_rx.borrow_and_update().clone();
-            // Absolutely no idea why it comes reversed here (at least from qalc and es does it
-            //  also happen with other programs / OSes? "One" (me) asks "oneself" (me also))
-            // update.reverse();
-
             update.dedup();
-            app_handle1
-                .emit_all("stdout", update)
-                .unwrap();
+            let _ = app_handle1.emit("stdout", update);
             if stdout_rx.changed().await.is_err() {
                 break;
             }
             tokio::time::sleep(Duration::from_millis(POLL_DELAY_MS)).await;
         }
     });
- 
+
     let app_handle2 = app_handle.clone();
     tokio::spawn(async move {
         loop {
@@ -93,9 +79,7 @@ fn create_collector(app_handle: tauri::AppHandle) -> (VecSender, VecSender) {
             } else {
                 log::debug!("stderr output: {:?}", update);
             }
-            app_handle2
-                .emit_all("stderr", update)
-                .unwrap();
+            let _ = app_handle2.emit("stderr", update);
             if stderr_rx.changed().await.is_err() {
                 break;
             }
@@ -131,31 +115,13 @@ where
     }
 }
 
-/// See the example here:  
-/// https://docs.rs/tokio/1.38.0/tokio/process/struct.Child.html#method.kill (archived)
-/// select! races the two futures and chooses the on that completes first.
-///  This allows killing the process without taking up a lock across await
-///  (because to kill, need to await) and from different tasks.
-///  Starting from the initialisation of the sender and receiver functions:
-///    1. The sender is stored in the [`KillChannel`] global state object for another task to use.
-///    2. select! is run. It races the two futures, returns when the first completes,
-///        and cancels the other branches.
-///        If child.wait completes first, great, no one wanted to kill the process.
-///        Otherwise if the reciver completes first[^1], then another instance of this
-///        function sent () on the stored receiver so we should kill.await.
-///    3. (Top of the function) Send () on the saved sender to make sure any processes
-///        still running are killed.
-///
-///   [1]: then receiver itself here has not recv method because the Future trait is
-///       implemented on the receiver itself (it can only) receive once because it's a
-///       "oneshot" channel).
 #[tauri::command]
 async fn run_program(
     program: String,
     current_dir: Option<String>,
     arguments: Vec<String>,
     input: String,
-    app_handle: tauri::AppHandle,
+    app_handle: AppHandle,
 ) -> Result<(), SerError> {
 
     log::debug!("In run_program");
@@ -169,14 +135,10 @@ async fn run_program(
         let _ = sender.send(());
     }
 
-    // Windows commands are run in the default shell (cmd)
-    //  and this needs to be told to go into utf8 mode
-    //  chcp changes the code page from 437 to utf8
-    
-    #[cfg(target_os = "windows")] 
+    #[cfg(target_os = "windows")]
     let mut command = tokio::process::Command::new("cmd");
 
-    #[cfg(target_os = "windows")] 
+    #[cfg(target_os = "windows")]
     {
         command.creation_flags(CREATE_NO_WINDOW);
         let cmd = build_windows_command(&program, &arguments, &input);
@@ -201,19 +163,12 @@ async fn run_program(
     command.stdout(Stdio::piped()).stderr(Stdio::piped());
 
     let mut child = command.spawn()?;
-    let _ = app_handle.emit_all("started", child.id());
+    let _ = app_handle.emit("started", child.id());
     let stdout_pipe = child.stdout.take().expect("Could not take stdout");
     let stderr_pipe = child.stderr.take().expect("Could not take stderr");
 
-    // Read until LF then check if CR is before it.
-    // Append everything up to the CRLF / LF.
-    // In the readers do the utf-8 -> utf-16le fallback (if utf-16le fails, ignore line 
-    //  and emit error message with line.)
-
     let stdout = tokio::io::BufReader::new(stdout_pipe).lines();
     let stderr = tokio::io::BufReader::new(stderr_pipe).lines();
-
-    // Bufreader reads bytes in buf. 
 
     let (stdout_tx, stderr_tx) = create_collector(app_handle.clone());
     let finish_flag = std::sync::Arc::new(AtomicBool::new(false));
@@ -235,10 +190,10 @@ async fn run_program(
     tokio::select! {
         exit_status = child.wait() => {
             if let Ok(exit_status) = exit_status {
-                let _ = app_handle.emit_all("exit", exit_status.code());
+                let _ = app_handle.emit("exit", exit_status.code());
             }
         }
-        _ = kill_receiver => { 
+        _ = kill_receiver => {
             finish_flag.store(true, atomic::Ordering::Relaxed);
             child.kill().await.expect("Couldn't kill process")
         }
@@ -247,9 +202,8 @@ async fn run_program(
     Ok(())
 }
 
-// Allows killing without running another command.
 #[tauri::command]
-async fn stop_running(app_handle: tauri::AppHandle) {
+async fn stop_running(app_handle: AppHandle) {
     if let Some(sender) = app_handle
         .state::<KillChannel>()
         .kill_sender
@@ -279,14 +233,14 @@ impl Default for TrayState {
 }
 
 #[tauri::command]
-async fn open_tray(app_handle: tauri::AppHandle) {
-    let window = app_handle.get_window("main").expect("Could not get main window");
+async fn open_tray(app_handle: AppHandle) {
+    let window = app_handle.get_webview_window("main").expect("Could not get main window");
     let state = app_handle.state::<Mutex<TrayState>>();
     let mut guard = state.lock().await;
 
     if !guard.currently_open {
         let _ = window.set_size(Size::Physical(PhysicalSize {
-            width: (guard.width as u32), 
+            width: (guard.width as u32),
             height: (guard.tray_open_height as u32),
         }));
         guard.currently_open = true;
@@ -294,77 +248,60 @@ async fn open_tray(app_handle: tauri::AppHandle) {
 }
 
 #[tauri::command]
-async fn close_tray(app_handle: tauri::AppHandle) {
-    let window = app_handle.get_window("main").expect("Could not get main window");
+async fn close_tray(app_handle: AppHandle) {
+    let window = app_handle.get_webview_window("main").expect("Could not get main window");
     let state = app_handle.state::<Mutex<TrayState>>();
     let mut guard = state.lock().await;
 
     if guard.currently_open {
         let _ = window.set_size(Size::Physical(PhysicalSize {
-            width: (guard.width as u32), 
+            width: (guard.width as u32),
             height: (guard.tray_closed_height as u32),
         }));
         guard.currently_open = false;
     }
 }
 
-fn toggle_main_window(app_handle: &tauri::AppHandle) {
-
+fn toggle_main_window(app_handle: &AppHandle) {
     log::debug!("toggling main window");
 
-    let tray_item_handle = app_handle.tray_handle().get_item("togglevis");
-
-    if let Some(window) = app_handle.get_window("main") {
+    if let Some(window) = app_handle.get_webview_window("main") {
         let visible = window.is_visible().unwrap_or(false);
         let focused = window.is_focused().unwrap_or(false);
         if !visible {
             let _ = window.show();
             let _ = window.set_focus();
-            let _ = app_handle.emit_all("main_hide_unhide", "unhide");
-            let _ = tray_item_handle.set_title("Show");
+            let _ = app_handle.emit("main_hide_unhide", "unhide");
         } else if !focused {
             log::debug!("Window was not focused, setting focus");
             let _ = window.set_focus();
-        } else {                
+        } else {
             let _ = window.hide();
-            let _ = app_handle.emit_all("main_hide_unhide", "hide");
-            let _ = tray_item_handle.set_title("Show");
+            let _ = app_handle.emit("main_hide_unhide", "hide");
         }
     }
 }
 
-// #[tauri::command]
-// async fn show_main(app_handle: tauri::AppHandle) {
-//     if let Some(window) = app_handle.get_window("main") {
-//         if !window.is_visible().unwrap() {
-//             let _ = window.show();
-//             let _ = window.set_focus();
-//             let _ = app_handle.emit_all("main_hide_unhide", "unhide");
-//         }
-//     }
-// }
-
 #[tauri::command]
-async fn hide_main(app_handle: tauri::AppHandle) {
-    if let Some(window) = app_handle.get_window("main") {
+async fn hide_main(app_handle: AppHandle) {
+    if let Some(window) = app_handle.get_webview_window("main") {
         let _ = window.hide();
-        let _ = app_handle.emit_all("main_hide_unhide", "hide");
+        let _ = app_handle.emit("main_hide_unhide", "hide");
     }
 }
 
 #[tauri::command]
-async fn close_splashscreen(window: Window) { 
-
+async fn close_splashscreen(window: WebviewWindow) {
     // Close splashscreen
-    if let Some(window) = window.get_window("splashscreen") {
-        let _ = window.close();
+    if let Some(splash) = window.get_webview_window("splashscreen") {
+        let _ = splash.close();
     }
 
     // Show main window
-    if let Some(window) = window.get_window("main") {
-        if !window.is_visible().unwrap() {
-            let _ = window.show();
-            let _ = window.set_focus();
+    if let Some(main) = window.get_webview_window("main") {
+        if !main.is_visible().unwrap() {
+            let _ = main.show();
+            let _ = main.set_focus();
         }
     }
 }
@@ -384,10 +321,10 @@ struct ConfigFiles {
 
 #[tauri::command]
 async fn get_config_files() -> Result<ConfigFiles, SerError> {
-    let home = tauri::api::path::home_dir().expect("Could not get home dir.");
+    let home = home_dir();
     let settings_path = home.join(".dynio").join("general-settings.yaml");
     let cmdconf_path = home.join(".dynio").join("cmd-config.yaml");
-    
+
     let settings_content = std::fs::read_to_string(settings_path)?;
     let cmdconf_content = std::fs::read_to_string(cmdconf_path)?;
 
@@ -399,17 +336,15 @@ async fn get_config_files() -> Result<ConfigFiles, SerError> {
 
 #[tauri::command]
 async fn get_config_dir() -> Result<String, SerError> {
-    let home = tauri::api::path::home_dir().expect("Could not get home dir.");
+    let home = home_dir();
     let path = home.join(".dynio");
     let path_str = path.to_str().expect("Could not convert path to string").to_string();
     Ok(path_str)
 }
 
-
 fn main() {
-    let home_dir = tauri::api::path::home_dir().expect("Failed to get home directory");
-    let dynio_dir = home_dir.join(".dynio");
-    // Ensure the .dynio directory exists
+    let home = home_dir();
+    let dynio_dir = home.join(".dynio");
     std::fs::create_dir_all(&dynio_dir).expect("Failed to create .dynio directory");
     let log_file_path = dynio_dir.join("dynio.log");
     let log_file = OpenOptions::new()
@@ -422,85 +357,100 @@ fn main() {
         .target(env_logger::Target::Pipe(Box::new(log_file)))
         .init();
 
-    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
-    let hide = CustomMenuItem::new("togglevis".to_string(), "Show");
-    let tray_menu = SystemTrayMenu::new()
-        .add_item(quit)
-        .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(hide);
-    let system_tray = SystemTray::new().with_menu(tray_menu);
-
     tauri::Builder::default()
-        .system_tray(system_tray)
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {}))
         .manage(KillChannel::default())
         .manage(Mutex::new(TrayState::default()))
-        .invoke_handler(tauri::generate_handler![run_program, stop_running, open_tray, close_tray, close_splashscreen, get_config_files, hide_main, get_config_dir, trim_path])
-        // .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(Vec::new())))
-        .plugin(tauri_plugin_fs_watch::init())
-        .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {
-        }))
-        .on_system_tray_event(system_tray_handler())
-        .setup(move |app| {
+        .invoke_handler(tauri::generate_handler![
+            run_program,
+            stop_running,
+            open_tray,
+            close_tray,
+            close_splashscreen,
+            get_config_files,
+            hide_main,
+            get_config_dir,
+            trim_path
+        ])
+        .setup(|app| {
+            // Setup tray icon
+            let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
+            let toggle = MenuItemBuilder::with_id("togglevis", "Show").build(app)?;
+            let menu = MenuBuilder::new(app)
+                .item(&quit)
+                .separator()
+                .item(&toggle)
+                .build()?;
 
-            // Global shortcuts / "accelerators" setup
-            // Alt + Space
-            let app_handle_clone = app.app_handle().clone();
+            let _tray = TrayIconBuilder::new()
+                .icon(app.default_window_icon().unwrap().clone())
+                .menu(&menu)
+                .on_menu_event(|app, event| {
+                    match event.id().as_ref() {
+                        "quit" => {
+                            app.exit(0);
+                        }
+                        "togglevis" => {
+                            toggle_main_window(app);
+                        }
+                        _ => {}
+                    }
+                })
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        let app = tray.app_handle();
+                        toggle_main_window(app);
+                    }
+                })
+                .build(app)?;
 
-            let _ = app.global_shortcut_manager().unregister_all();
+            // Global shortcut setup (Alt+Space)
+            #[cfg(desktop)]
+            {
+                use tauri_plugin_global_shortcut::ShortcutState;
 
-            if !app.global_shortcut_manager().is_registered("Alt+Space").expect("Could not get hotkey reg status") {
+                let app_handle = app.handle().clone();
+                app.handle().plugin(
+                    tauri_plugin_global_shortcut::Builder::new()
+                        .with_handler(move |_app, shortcut, event| {
+                            if event.state() == ShortcutState::Pressed {
+                                let shortcut_str = shortcut.to_string();
+                                if shortcut_str.contains("Alt") && shortcut_str.contains("Space") {
+                                    toggle_main_window(&app_handle);
+                                }
+                            }
+                        })
+                        .build(),
+                )?;
 
-                let _ = app.global_shortcut_manager().register("Alt+Space", move || {
-                    toggle_main_window(&app_handle_clone);
-                });
+                let shortcut: Shortcut = "Alt+Space".parse().expect("Failed to parse shortcut");
+                app.global_shortcut().register(shortcut)?;
             }
 
             setup_default_files();
-
-            setup_splash_window(app.app_handle().clone());
+            setup_splash_window(app.handle().clone());
 
             let settings = get_general_settings().expect("Could not get settings");
-
             log::debug!("settings: {:?}", settings);
 
-            setup_main_window(app.app_handle().clone(), settings.start_minimised, settings.always_on_top);
+            setup_main_window(app.handle().clone(), settings.start_minimised, settings.always_on_top);
 
-            
-
-            Ok(()) 
+            Ok(())
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
 
-
-fn system_tray_handler() -> impl Fn(&tauri::AppHandle, tauri::SystemTrayEvent) + 'static {
-    move |app, event| {
-        match event {
-            tauri::SystemTrayEvent::MenuItemClick { id, .. } => {
-
-              match id.as_str() {
-                "quit" =>{
-                    app.exit(0);
-                }
-                "togglevis" => {
-                    toggle_main_window(&app);
-                }
-                _ => {}
-              }
-            }
-            _ => {}
-        }
-    }
-}
-
-
-// Check default files exist (if not create them) then load them
-// Set up watcher (debounce by 2 seconds to restart on change)
-
-
 fn setup_default_files() {
-
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     let example_cmdconf = include_str!("./data/example-cmd-config-unix.yaml");
     #[cfg(target_os = "windows")]
@@ -510,18 +460,18 @@ fn setup_default_files() {
     let schema_cmdconf = include_str!("./data/cmd-config-schema.json");
     let schema_settings = include_str!("./data/general-settings-schema.json");
 
-    let home = tauri::api::path::home_dir().expect("Could not get home dir.");
+    let home = home_dir();
     let base_dir = home.join(".dynio");
     let settings_path = home.join(".dynio").join("general-settings.yaml");
     let cmdconf_path = home.join(".dynio").join("cmd-config.yaml");
     let schema_settings_path = home.join(".dynio").join("general-settings-schema.json");
     let schema_cmdconf_path = home.join(".dynio").join("cmd-config-schema.json");
 
-    if !base_dir.exists() { 
+    if !base_dir.exists() {
         std::fs::create_dir(base_dir).expect("Could not create base dir");
     }
 
-    if !settings_path.exists() { 
+    if !settings_path.exists() {
         std::fs::write(settings_path, example_settings).expect("Could not write settings");
     }
     if !cmdconf_path.exists() {
@@ -533,12 +483,11 @@ fn setup_default_files() {
     }
     if !schema_cmdconf_path.exists() {
         std::fs::write(schema_cmdconf_path, schema_cmdconf).expect("Could not write schema cmdconf");
-    } 
-
+    }
 }
 
 fn get_general_settings() -> Result<GeneralSettings, Box<dyn std::error::Error>> {
-    let home = tauri::api::path::home_dir().ok_or("Could not get home dir")?;
+    let home = home_dir();
     let settings_path = home.join(".dynio").join("general-settings.yaml");
 
     if !settings_path.exists() {
@@ -550,17 +499,13 @@ fn get_general_settings() -> Result<GeneralSettings, Box<dyn std::error::Error>>
     Ok(settings)
 }
 
-
-fn setup_main_window(app_handle: tauri::AppHandle, start_hidden: bool, on_top: bool) {
-
+fn setup_main_window(app_handle: AppHandle, start_hidden: bool, on_top: bool) {
     const SCREEN_TO_WIDTH_RATIO: f64 = 0.42;
     const HEIGHT_TO_WIDTH_RATIO: f64 = 0.16;
-    // const DEFAULT_LOGICAL_WIDTH: f64 = 640.0;
     const TRAY_TO_BAR_RATIO: f64 = 3.05;
-    // How far the bar should start from the center. 0 = center.
     const Y_CENTER_OFFSET: i32 = -100;
 
-    let window = app_handle.get_window("main").unwrap();
+    let window = app_handle.get_webview_window("main").unwrap();
     let monitor = window.primary_monitor().unwrap_or_else(|_err| {
         window.current_monitor().expect("Couldn't get current monitor")
     }).expect("Couldn't get monitor");
@@ -571,15 +516,15 @@ fn setup_main_window(app_handle: tauri::AppHandle, start_hidden: bool, on_top: b
 
     let guard = app_handle.state::<Mutex<TrayState>>();
     let mut state = tauri::async_runtime::block_on(guard.lock());
-    *state = TrayState { 
+    *state = TrayState {
         width: phys_width,
-        tray_closed_height: phys_height, 
-        tray_open_height: phys_tray_height + phys_height, 
+        tray_closed_height: phys_height,
+        tray_open_height: phys_tray_height + phys_height,
         currently_open: false,
     };
-    
+
     let _ = window.set_size(Size::Physical(PhysicalSize {
-        width: (phys_width as u32), height: (phys_height as u32), 
+        width: (phys_width as u32), height: (phys_height as u32),
     }));
 
     let _ = window.center();
@@ -596,39 +541,33 @@ fn setup_main_window(app_handle: tauri::AppHandle, start_hidden: bool, on_top: b
 
     if start_hidden {
         log::debug!("start_hidden was true");
-        let tray_item_handle = app_handle.tray_handle().get_item("togglevis");
         let _ = window.hide();
-        let _ = app_handle.emit_all("main_hide_unhide", "hide");
-        tray_item_handle.set_title("Show").expect("Could not set title");
+        let _ = app_handle.emit("main_hide_unhide", "hide");
     }
     else {
-        // Hack to actually set focus
         log::debug!("about to set main as focused");
         let _ = window.hide();
         let _ = window.show();
         let _ = window.set_focus();
-
     }
 }
 
-fn setup_splash_window(app_handle: tauri::AppHandle) {
-
+fn setup_splash_window(app_handle: AppHandle) {
     const SCREEN_TO_HEIGHT_RATIO: f64 = 0.6;
     const WIDTH_TO_HEIGHT_RATIO: f64 = 0.7;
 
-    let window = app_handle.get_window("main").unwrap();
+    let window = app_handle.get_webview_window("main").unwrap();
     let monitor = window.primary_monitor().unwrap_or_else(|_err| {
         window.current_monitor().expect("Couldn't get current monitor")
     }).expect("Couldn't get monitor");
 
     let phys_height = (monitor.size().height as f64) * SCREEN_TO_HEIGHT_RATIO;
     let phys_width = phys_height * WIDTH_TO_HEIGHT_RATIO;
-    
+
     let _ = window.set_size(Size::Physical(PhysicalSize {
-        width: (phys_width as u32), height: (phys_height as u32), 
+        width: (phys_width as u32), height: (phys_height as u32),
     }));
 
     let _ = window.center();
-
     let _ = window.set_focus();
 }
