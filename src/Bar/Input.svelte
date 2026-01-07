@@ -36,7 +36,7 @@
     import { currentCmdConfig } from "$lib/stores/cmd-config.js";
     import { running, stdoutLock, stdout, exitCode, query, currentTrayView, stderr } from "$lib/stores/globals.js";
     import { settings } from "$lib/stores/settings.ts";
-    import { invoke } from "@tauri-apps/api/tauri";
+    import { invoke } from "@tauri-apps/api/core";
     import { errors } from "$lib/stores/errors.js";
     import { debounce } from "lodash-es";
     import { inputFocusAction } from "./InputFocusAction.ts";

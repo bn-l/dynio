@@ -1,9 +1,9 @@
 
-import { writeText } from "@tauri-apps/api/clipboard";
-import { open } from "@tauri-apps/api/shell";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
+import { open } from "@tauri-apps/plugin-shell";
 import type { ActivationOptions } from "$lib/stores/schema/cmd-config-schema.ts";
 import { errors } from "$lib/stores/errors.ts";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 
 const defaultActivationOptions: ActivationOptions = {
     activateAction: "copy",

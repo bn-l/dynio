@@ -112,7 +112,7 @@
     import { cmdConfig } from "$lib/stores/cmd-config.ts";
     import { currentCmd, query, stdout, currentTrayView, currentFocus, stdoutLock } from "$lib/stores/globals.ts";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
-    import { invoke } from "@tauri-apps/api";
+    import { invoke } from "@tauri-apps/api/core";
     import { onMount } from "svelte";
 
     console.log($cmdConfig);

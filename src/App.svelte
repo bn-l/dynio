@@ -93,13 +93,12 @@ as regular stdout from commands) -->
     import { stdout } from "$lib/stores/globals.js";
     import { currentCmdConfig, cmdConfig } from "$lib/stores/cmd-config.ts";
     import { debounce } from "lodash-es";
-    import { invoke } from "@tauri-apps/api";
+    import { invoke } from "@tauri-apps/api/core";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { tick } from "svelte";
-    import { watch } from "tauri-plugin-fs-watch-api";
+    import { watch, type WatchEvent } from "@tauri-apps/plugin-fs";
     import type { UnlistenFn } from '@tauri-apps/api/event';
-    import { relaunch } from '@tauri-apps/api/process';
-
+    import { relaunch } from '@tauri-apps/plugin-process';
 
     onMount(async () => {
         await loadValidateAndInitConfigStores();
@@ -110,8 +109,8 @@ as regular stdout from commands) -->
             const configDir = await invoke("get_config_dir") as string;
             const stopWatching = await watch(
                 configDir,
-                (event) => {
-                    if (event.length === 1 && event[0].path.includes(".log")) {
+                (event: WatchEvent) => {
+                    if (event.paths.length === 1 && event.paths[0].includes(".log")) {
                         return;
                     }
                     void relaunch();

@@ -2,7 +2,7 @@
 import yaml from 'yaml';
 import type { CmdConfig, Display } from '$lib/stores/schema/cmd-config-schema.ts';
 import type { GeneralSettings } from '$lib/stores/schema/general-settings-schema.ts';
-import { invoke } from '@tauri-apps/api';
+import { invoke } from '@tauri-apps/api/core';
 import { cmdConfig } from "$lib/stores/cmd-config.ts";
 import { settings } from "$lib/stores/settings.ts";
 import { currentCmd } from "$lib/stores/globals.js";

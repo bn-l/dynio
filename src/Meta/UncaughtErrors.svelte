@@ -33,7 +33,7 @@
 
 
 <script lang="ts">
-    import { exit } from '@tauri-apps/api/process';
+    import { exit } from '@tauri-apps/plugin-process';
     
     export let error: Error;
 

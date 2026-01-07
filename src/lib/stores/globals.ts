@@ -1,6 +1,6 @@
 
 import { writable } from "svelte/store";
-import { invoke } from "@tauri-apps/api";
+import { invoke } from "@tauri-apps/api/core";
 
 export type TrayViewType = "stdout" | "stderr" | "errors" | "info" | "cmdSelector";
 export type Focusable = "input" | undefined;
