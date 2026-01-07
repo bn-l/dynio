@@ -22,6 +22,24 @@ use general_settings::GeneralSettings;
 #[cfg(desktop)]
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
+#[cfg(target_os = "macos")]
+use tauri_nspanel::{
+    objc2::{ClassType, Message},
+    objc2_app_kit::NSWindowCollectionBehavior,
+    objc2_foundation::NSObjectProtocol,
+    panel, ManagerExt, StyleMask, WebviewWindowExt,
+};
+
+// Define a panel type that can become key window (to receive keyboard input)
+// but doesn't activate the application
+#[cfg(target_os = "macos")]
+panel!(DynioPanel {
+    config: {
+        can_become_key_window: true,
+        can_become_main_window: false,
+    }
+});
+
 const POLL_DELAY_MS: u64 = 16;
 type VecSender = tokio::sync::watch::Sender<Vec<String>>;
 
@@ -221,6 +239,8 @@ struct TrayState {
     tray_closed_height: f64,
     tray_open_height: f64,
     currently_open: bool,
+    x: i32,
+    y: i32,
 }
 impl Default for TrayState {
     fn default() -> Self {
@@ -229,6 +249,8 @@ impl Default for TrayState {
             tray_closed_height: 0.0,
             tray_open_height: 0.0,
             currently_open: false,
+            x: 0,
+            y: 0,
         }
     }
 }
@@ -246,6 +268,10 @@ async fn open_tray(app_handle: AppHandle) {
             width: (guard.width as u32),
             height: (guard.tray_open_height as u32),
         }));
+        let _ = window.set_position(PhysicalPosition {
+            x: guard.x,
+            y: guard.y,
+        });
         guard.currently_open = true;
     }
 }
@@ -263,6 +289,10 @@ async fn close_tray(app_handle: AppHandle) {
             width: (guard.width as u32),
             height: (guard.tray_closed_height as u32),
         }));
+        let _ = window.set_position(PhysicalPosition {
+            x: guard.x,
+            y: guard.y,
+        });
         guard.currently_open = false;
     }
 }
@@ -270,19 +300,40 @@ async fn close_tray(app_handle: AppHandle) {
 fn toggle_main_window(app_handle: &AppHandle) {
     log::debug!("toggling main window");
 
-    if let Some(window) = app_handle.get_webview_window("main") {
-        let visible = window.is_visible().unwrap_or(false);
-        let focused = window.is_focused().unwrap_or(false);
-        if !visible {
-            let _ = window.show();
-            let _ = window.set_focus();
-            let _ = app_handle.emit("main_hide_unhide", "unhide");
-        } else if !focused {
-            log::debug!("Window was not focused, setting focus");
-            let _ = window.set_focus();
+    #[cfg(target_os = "macos")]
+    {
+        // On macOS, use the panel API to avoid focus stealing
+        if let Ok(panel) = app_handle.get_webview_panel("main") {
+            if panel.is_visible() {
+                panel.hide();
+                let _ = app_handle.emit("main_hide_unhide", "hide");
+            } else {
+                // show_and_make_key shows the panel and makes it key window
+                // (receives keyboard input) without activating the app
+                panel.show_and_make_key();
+                let _ = app_handle.emit("main_hide_unhide", "unhide");
+            }
         } else {
-            let _ = window.hide();
-            let _ = app_handle.emit("main_hide_unhide", "hide");
+            log::error!("Could not get main panel");
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        if let Some(window) = app_handle.get_webview_window("main") {
+            let visible = window.is_visible().unwrap_or(false);
+            let focused = window.is_focused().unwrap_or(false);
+            if !visible {
+                let _ = window.show();
+                let _ = window.set_focus();
+                let _ = app_handle.emit("main_hide_unhide", "unhide");
+            } else if !focused {
+                log::debug!("Window was not focused, setting focus");
+                let _ = window.set_focus();
+            } else {
+                let _ = window.hide();
+                let _ = app_handle.emit("main_hide_unhide", "hide");
+            }
         }
     }
 }
@@ -368,13 +419,20 @@ fn main() {
         .target(env_logger::Target::Pipe(Box::new(log_file)))
         .init();
 
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_fs::init())
-        .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {}))
+        .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {}));
+
+    #[cfg(target_os = "macos")]
+    {
+        builder = builder.plugin(tauri_nspanel::init());
+    }
+
+    builder
         .manage(KillChannel::default())
         .manage(Mutex::new(TrayState::default()))
         .invoke_handler(tauri::generate_handler![
@@ -555,6 +613,10 @@ fn setup_main_window(app_handle: AppHandle, start_hidden: bool, on_top: bool) {
     let phys_height = phys_width * HEIGHT_TO_WIDTH_RATIO;
     let phys_tray_height = phys_height * TRAY_TO_BAR_RATIO;
 
+    // Calculate position directly in physical coordinates to avoid logical/physical mismatch
+    let x = ((screen_width - phys_width) / 2.0) as i32;
+    let y = ((screen_height - phys_height) / 2.0 - (screen_height * Y_OFFSET_RATIO)) as i32;
+
     let guard = app_handle.state::<Mutex<TrayState>>();
     let mut state = tauri::async_runtime::block_on(guard.lock());
     *state = TrayState {
@@ -562,31 +624,92 @@ fn setup_main_window(app_handle: AppHandle, start_hidden: bool, on_top: bool) {
         tray_closed_height: phys_height,
         tray_open_height: phys_tray_height + phys_height,
         currently_open: false,
+        x,
+        y,
     };
 
     let _ = window.set_size(Size::Physical(PhysicalSize {
         width: phys_width as u32,
         height: phys_height as u32,
     }));
-
-    // Calculate position directly in physical coordinates to avoid logical/physical mismatch
-    let x = ((screen_width - phys_width) / 2.0) as i32;
-    let y = ((screen_height - phys_height) / 2.0 - (screen_height * Y_OFFSET_RATIO)) as i32;
     let _ = window.set_position(PhysicalPosition { x, y });
 
     if on_top {
         let _ = window.set_always_on_top(on_top);
     }
 
-    if start_hidden {
-        log::debug!("start_hidden was true");
-        let _ = window.hide();
-        let _ = app_handle.emit("main_hide_unhide", "hide");
-    } else {
-        log::debug!("about to set main as focused");
-        let _ = window.hide();
-        let _ = window.show();
-        let _ = window.set_focus();
+    // On macOS, convert the window to an NSPanel with non-activating behavior
+    // This prevents the app from stealing focus when the panel is shown
+    #[cfg(target_os = "macos")]
+    {
+        // Use to_panel() instead of DynioPanel::from_window() to properly register
+        // the panel with the WebviewPanelManager so get_webview_panel() works later
+        match window.to_panel::<DynioPanel>() {
+            Ok(panel) => {
+                log::debug!("Successfully converted window to panel and registered it");
+
+                // Set the style mask to include NonactivatingPanel
+                // This is the key to preventing focus stealing
+                let style_mask = StyleMask::empty()
+                    .nonactivating_panel()
+                    .full_size_content_view();
+                panel.set_style_mask(style_mask.into());
+
+                // Set collection behavior for proper workspace handling
+                // - Transient: panel doesn't have its own space
+                // - MoveToActiveSpace: follows user to active space
+                // - FullScreenAuxiliary: works with fullscreen apps
+                panel.set_collection_behavior(
+                    NSWindowCollectionBehavior::Transient
+                        | NSWindowCollectionBehavior::MoveToActiveSpace
+                        | NSWindowCollectionBehavior::FullScreenAuxiliary,
+                );
+
+                // Set panel level above normal windows (like Spotlight)
+                // NSMainMenuWindowLevel = 24, we go one above
+                panel.set_level(25);
+
+                // Don't hide when app deactivates (we want it to stay visible)
+                panel.set_hides_on_deactivate(false);
+
+                // Panel should float above other windows
+                panel.set_floating_panel(true);
+
+                if start_hidden {
+                    log::debug!("start_hidden was true, hiding panel");
+                    panel.hide();
+                    let _ = app_handle.emit("main_hide_unhide", "hide");
+                } else {
+                    log::debug!("showing panel");
+                    panel.show_and_make_key();
+                }
+            }
+            Err(e) => {
+                log::error!("Failed to convert window to panel: {:?}", e);
+                // Fall back to regular window behavior
+                if start_hidden {
+                    let _ = window.hide();
+                    let _ = app_handle.emit("main_hide_unhide", "hide");
+                } else {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        if start_hidden {
+            log::debug!("start_hidden was true");
+            let _ = window.hide();
+            let _ = app_handle.emit("main_hide_unhide", "hide");
+        } else {
+            log::debug!("about to set main as focused");
+            let _ = window.hide();
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
     }
 }
 
