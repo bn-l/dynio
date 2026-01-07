@@ -100,12 +100,16 @@ export interface OutputOptions {
      * Whether to reverse the output
      * @default false
      */
-    reverse?: boolean; 
+    reverse?: boolean;
     /**
      * Display type
      */
     display?: Display;
     emptyDisplayOptions?: EmptyDisplayOptions;
+    /**
+     * Regex pattern to filter out matching stderr lines. Lines matching this pattern will be hidden.
+     */
+    stderrFilterRegex?: string;
 }
 
 

@@ -102,6 +102,10 @@
         },
         "emptyDisplayOptions": {
           "$ref": "#/definitions/EmptyDisplayOptions"
+        },
+        "stderrFilterRegex": {
+          "type": "string",
+          "description": "Regex pattern to filter out matching stderr lines. Lines matching this pattern will be hidden."
         }
       },
       "additionalProperties": false

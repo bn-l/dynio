@@ -22,5 +22,11 @@ export default z
       .boolean()
       .describe("Always on top of other windows?")
       .default(false),
+    globalShortcut: z
+      .string()
+      .describe(
+        "Global shortcut to toggle window visibility (e.g., Alt+Space, Option+Space, Cmd+Space). Defaults: Windows=Alt+Space, macOS=Option+Space, Linux=Alt+Space",
+      )
+      .optional(),
   })
   .strict();

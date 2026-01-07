@@ -24,6 +24,11 @@ export type GeneralSettings = {
      * @default false
      */
     alwaysOnTop?: boolean;
+    /**
+     * Global shortcut to toggle window visibility (e.g., Alt+Space, Option+Space, Cmd+Space).
+     * Defaults: Windows=Alt+Space, macOS=Option+Space, Linux=Alt+Space
+     */
+    globalShortcut?: string;
 }
 
 /**

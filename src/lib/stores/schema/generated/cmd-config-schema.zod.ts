@@ -122,6 +122,12 @@ export default z.record(
             ])
             .optional(),
           emptyDisplayOptions: z.record(z.never()).optional(),
+          stderrFilterRegex: z
+            .string()
+            .describe(
+              "Regex pattern to filter out matching stderr lines. Lines matching this pattern will be hidden.",
+            )
+            .optional(),
         })
         .strict()
         .optional(),

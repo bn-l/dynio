@@ -30,6 +30,10 @@
           "type": "boolean",
           "description": "Always on top of other windows?",
           "default": false
+        },
+        "globalShortcut": {
+          "type": "string",
+          "description": "Global shortcut to toggle window visibility (e.g., Alt+Space, Option+Space, Cmd+Space). Defaults: Windows=Alt+Space, macOS=Option+Space, Linux=Alt+Space"
         }
       },
       "additionalProperties": false
