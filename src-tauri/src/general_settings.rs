@@ -1,4 +1,3 @@
-
 use serde::{Deserialize, Serialize};
 
 /// General settings for the application.
@@ -16,14 +15,12 @@ pub struct GeneralSettings {
     // /// Max time a command can take in seconds. Defaults to 300 (5 mins).
     // #[serde(default = "default_timeout_secs")]
     // pub timeout_secs: u32,
-
     /// Defaults to whichever has hotkey number 1 (or if not hotkeys, the first one it finds).
     pub default_command: Option<String>,
 
     // /// Whether clicking outside the command bar will cause it to hide. Defaults to `true`.
     // #[serde(default = "default_true")]
     // pub hide_on_lost_focus: bool,
-
     /// Indicates if this is the first launch. This field does not have a default and is optional.
     pub first_launch: Option<bool>,
 
@@ -38,10 +35,12 @@ pub struct GeneralSettings {
     #[serde(default = "default_false")]
     pub always_on_top: bool,
 
+    /// Global shortcut to toggle window visibility.
+    /// Defaults: Windows=Alt+Space, macOS=Option+Space, Linux=Alt+Space
+    pub global_shortcut: Option<String>,
     // /// Whether to automatically update. Defaults to `true`.
     // #[serde(default = "default_false")]
     // pub auto_update: bool,
-
 }
 
 fn default_false() -> bool {

@@ -1,18 +1,18 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 use std::process::Stdio;
-use tokio::sync::Mutex;
+use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Size, WebviewWindow};
 use tokio::io::AsyncBufReadExt;
+use tokio::sync::Mutex;
 use tokio::time::Duration;
-use tauri::{Manager, Size, PhysicalSize, PhysicalPosition, WebviewWindow, AppHandle, Emitter};
 #[cfg(target_os = "windows")]
 use winapi::um::winbase::CREATE_NO_WINDOW;
 
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
-use tauri::tray::{TrayIconBuilder, TrayIconEvent, MouseButton, MouseButtonState};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 
 use std::sync::atomic::{self, AtomicBool};
 
@@ -105,12 +105,13 @@ async fn read_and_send_lines<R>(
     mut lines: tokio::io::Lines<tokio::io::BufReader<R>>,
     sender: VecSender,
     finish_flag: std::sync::Arc<AtomicBool>,
-)
-where
+) where
     R: tokio::io::AsyncRead + Unpin,
 {
     while let Ok(Some(line)) = lines.next_line().await {
-        if finish_flag.load(atomic::Ordering::Relaxed) { break; }
+        if finish_flag.load(atomic::Ordering::Relaxed) {
+            break;
+        }
         sender.send_modify(|vec| vec.push(line));
     }
 }
@@ -123,7 +124,6 @@ async fn run_program(
     input: String,
     app_handle: AppHandle,
 ) -> Result<(), SerError> {
-
     log::debug!("In run_program");
 
     if let Some(sender) = app_handle
@@ -131,7 +131,8 @@ async fn run_program(
         .kill_sender
         .lock()
         .await
-        .take() {
+        .take()
+    {
         let _ = sender.send(());
     }
 
@@ -234,7 +235,9 @@ impl Default for TrayState {
 
 #[tauri::command]
 async fn open_tray(app_handle: AppHandle) {
-    let window = app_handle.get_webview_window("main").expect("Could not get main window");
+    let window = app_handle
+        .get_webview_window("main")
+        .expect("Could not get main window");
     let state = app_handle.state::<Mutex<TrayState>>();
     let mut guard = state.lock().await;
 
@@ -249,7 +252,9 @@ async fn open_tray(app_handle: AppHandle) {
 
 #[tauri::command]
 async fn close_tray(app_handle: AppHandle) {
-    let window = app_handle.get_webview_window("main").expect("Could not get main window");
+    let window = app_handle
+        .get_webview_window("main")
+        .expect("Could not get main window");
     let state = app_handle.state::<Mutex<TrayState>>();
     let mut guard = state.lock().await;
 
@@ -310,7 +315,10 @@ async fn close_splashscreen(window: WebviewWindow) {
 async fn trim_path(path: String) -> Result<String, SerError> {
     let path = std::path::Path::new(&path);
     let parent_path = path.parent().expect("Could not get parent path");
-    Ok(parent_path.to_str().expect("Could not convert path to string").to_string())
+    Ok(parent_path
+        .to_str()
+        .expect("Could not convert path to string")
+        .to_string())
 }
 
 #[derive(Serialize, Deserialize)]
@@ -338,7 +346,10 @@ async fn get_config_files() -> Result<ConfigFiles, SerError> {
 async fn get_config_dir() -> Result<String, SerError> {
     let home = home_dir();
     let path = home.join(".dynio");
-    let path_str = path.to_str().expect("Could not convert path to string").to_string();
+    let path_str = path
+        .to_str()
+        .expect("Could not convert path to string")
+        .to_string();
     Ok(path_str)
 }
 
@@ -358,6 +369,7 @@ fn main() {
         .init();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_os::init())
@@ -388,17 +400,16 @@ fn main() {
 
             let _tray = TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
+                .icon_as_template(true)
                 .menu(&menu)
-                .on_menu_event(|app, event| {
-                    match event.id().as_ref() {
-                        "quit" => {
-                            app.exit(0);
-                        }
-                        "togglevis" => {
-                            toggle_main_window(app);
-                        }
-                        _ => {}
+                .on_menu_event(|app, event| match event.id().as_ref() {
+                    "quit" => {
+                        app.exit(0);
                     }
+                    "togglevis" => {
+                        toggle_main_window(app);
+                    }
+                    _ => {}
                 })
                 .on_tray_icon_event(|tray, event| {
                     if let TrayIconEvent::Click {
@@ -413,7 +424,12 @@ fn main() {
                 })
                 .build(app)?;
 
-            // Global shortcut setup (Alt+Space)
+            setup_default_files();
+
+            let settings = get_general_settings().expect("Could not get settings");
+            log::debug!("settings: {:?}", settings);
+
+            // Global shortcut setup
             #[cfg(desktop)]
             {
                 use tauri_plugin_global_shortcut::ShortcutState;
@@ -421,28 +437,36 @@ fn main() {
                 let app_handle = app.handle().clone();
                 app.handle().plugin(
                     tauri_plugin_global_shortcut::Builder::new()
-                        .with_handler(move |_app, shortcut, event| {
+                        .with_handler(move |_app, _shortcut, event| {
                             if event.state() == ShortcutState::Pressed {
-                                let shortcut_str = shortcut.to_string();
-                                if shortcut_str.contains("Alt") && shortcut_str.contains("Space") {
-                                    toggle_main_window(&app_handle);
-                                }
+                                toggle_main_window(&app_handle);
                             }
                         })
                         .build(),
                 )?;
 
-                let shortcut: Shortcut = "Alt+Space".parse().expect("Failed to parse shortcut");
+                #[cfg(target_os = "windows")]
+                let default_shortcut = "Alt+Space";
+                #[cfg(target_os = "macos")]
+                let default_shortcut = "Option+Space";
+                #[cfg(target_os = "linux")]
+                let default_shortcut = "Alt+Space";
+
+                let shortcut_str = settings
+                    .global_shortcut
+                    .as_deref()
+                    .unwrap_or(default_shortcut);
+                let shortcut: Shortcut = shortcut_str.parse().expect("Failed to parse shortcut");
                 app.global_shortcut().register(shortcut)?;
             }
 
-            setup_default_files();
             setup_splash_window(app.handle().clone());
 
-            let settings = get_general_settings().expect("Could not get settings");
-            log::debug!("settings: {:?}", settings);
-
-            setup_main_window(app.handle().clone(), settings.start_minimised, settings.always_on_top);
+            setup_main_window(
+                app.handle().clone(),
+                settings.start_minimised,
+                settings.always_on_top,
+            );
 
             Ok(())
         })
@@ -451,12 +475,19 @@ fn main() {
 }
 
 fn setup_default_files() {
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
-    let example_cmdconf = include_str!("./data/example-cmd-config-unix.yaml");
     #[cfg(target_os = "windows")]
     let example_cmdconf = include_str!("./data/example-cmd-config-win.yaml");
+    #[cfg(target_os = "macos")]
+    let example_cmdconf = include_str!("./data/example-cmd-config-macos.yaml");
+    #[cfg(target_os = "linux")]
+    let example_cmdconf = include_str!("./data/example-cmd-config-linux.yaml");
 
-    let example_settings = include_str!("./data/default-general-settings.yaml");
+    #[cfg(target_os = "windows")]
+    let example_settings = include_str!("./data/default-general-settings-win.yaml");
+    #[cfg(target_os = "macos")]
+    let example_settings = include_str!("./data/default-general-settings-macos.yaml");
+    #[cfg(target_os = "linux")]
+    let example_settings = include_str!("./data/default-general-settings-linux.yaml");
     let schema_cmdconf = include_str!("./data/cmd-config-schema.json");
     let schema_settings = include_str!("./data/general-settings-schema.json");
 
@@ -479,10 +510,12 @@ fn setup_default_files() {
     }
 
     if !schema_settings_path.exists() {
-        std::fs::write(schema_settings_path, schema_settings).expect("Could not write schema settings");
+        std::fs::write(schema_settings_path, schema_settings)
+            .expect("Could not write schema settings");
     }
     if !schema_cmdconf_path.exists() {
-        std::fs::write(schema_cmdconf_path, schema_cmdconf).expect("Could not write schema cmdconf");
+        std::fs::write(schema_cmdconf_path, schema_cmdconf)
+            .expect("Could not write schema cmdconf");
     }
 }
 
@@ -503,14 +536,22 @@ fn setup_main_window(app_handle: AppHandle, start_hidden: bool, on_top: bool) {
     const SCREEN_TO_WIDTH_RATIO: f64 = 0.42;
     const HEIGHT_TO_WIDTH_RATIO: f64 = 0.16;
     const TRAY_TO_BAR_RATIO: f64 = 3.05;
-    const Y_CENTER_OFFSET: i32 = -100;
+    const Y_OFFSET_RATIO: f64 = 0.05; // 5% of screen height above center
 
     let window = app_handle.get_webview_window("main").unwrap();
-    let monitor = window.primary_monitor().unwrap_or_else(|_err| {
-        window.current_monitor().expect("Couldn't get current monitor")
-    }).expect("Couldn't get monitor");
+    let monitor = window
+        .primary_monitor()
+        .unwrap_or_else(|_err| {
+            window
+                .current_monitor()
+                .expect("Couldn't get current monitor")
+        })
+        .expect("Couldn't get monitor");
 
-    let phys_width = (monitor.size().width as f64) * SCREEN_TO_WIDTH_RATIO;
+    let screen_width = monitor.size().width as f64;
+    let screen_height = monitor.size().height as f64;
+
+    let phys_width = screen_width * SCREEN_TO_WIDTH_RATIO;
     let phys_height = phys_width * HEIGHT_TO_WIDTH_RATIO;
     let phys_tray_height = phys_height * TRAY_TO_BAR_RATIO;
 
@@ -524,16 +565,14 @@ fn setup_main_window(app_handle: AppHandle, start_hidden: bool, on_top: bool) {
     };
 
     let _ = window.set_size(Size::Physical(PhysicalSize {
-        width: (phys_width as u32), height: (phys_height as u32),
+        width: phys_width as u32,
+        height: phys_height as u32,
     }));
 
-    let _ = window.center();
-
-    let pos = window.outer_position().expect("couldn't get splash pos");
-    let _ = window.set_position(PhysicalPosition {
-        x: pos.x,
-        y: pos.y + Y_CENTER_OFFSET,
-    });
+    // Calculate position directly in physical coordinates to avoid logical/physical mismatch
+    let x = ((screen_width - phys_width) / 2.0) as i32;
+    let y = ((screen_height - phys_height) / 2.0 - (screen_height * Y_OFFSET_RATIO)) as i32;
+    let _ = window.set_position(PhysicalPosition { x, y });
 
     if on_top {
         let _ = window.set_always_on_top(on_top);
@@ -543,8 +582,7 @@ fn setup_main_window(app_handle: AppHandle, start_hidden: bool, on_top: bool) {
         log::debug!("start_hidden was true");
         let _ = window.hide();
         let _ = app_handle.emit("main_hide_unhide", "hide");
-    }
-    else {
+    } else {
         log::debug!("about to set main as focused");
         let _ = window.hide();
         let _ = window.show();
@@ -557,15 +595,21 @@ fn setup_splash_window(app_handle: AppHandle) {
     const WIDTH_TO_HEIGHT_RATIO: f64 = 0.7;
 
     let window = app_handle.get_webview_window("main").unwrap();
-    let monitor = window.primary_monitor().unwrap_or_else(|_err| {
-        window.current_monitor().expect("Couldn't get current monitor")
-    }).expect("Couldn't get monitor");
+    let monitor = window
+        .primary_monitor()
+        .unwrap_or_else(|_err| {
+            window
+                .current_monitor()
+                .expect("Couldn't get current monitor")
+        })
+        .expect("Couldn't get monitor");
 
     let phys_height = (monitor.size().height as f64) * SCREEN_TO_HEIGHT_RATIO;
     let phys_width = phys_height * WIDTH_TO_HEIGHT_RATIO;
 
     let _ = window.set_size(Size::Physical(PhysicalSize {
-        width: (phys_width as u32), height: (phys_height as u32),
+        width: (phys_width as u32),
+        height: (phys_height as u32),
     }));
 
     let _ = window.center();
