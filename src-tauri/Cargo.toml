@@ -23,7 +23,7 @@ tauri-plugin-autostart = { version = "2" }
 tokio = { version = "1.38.0", features = ["time", "sync", "process", "macros"] }
 serde_yaml = "0.9.34+deprecated"
 winapi = "0.3.9"
-tauri-plugin-fs = { version = "2" }
+tauri-plugin-fs = { version = "2", features = ["watch"] }
 tauri-plugin-single-instance = { version = "2" }
 log = "0.4"
 env_logger = "0.9"
