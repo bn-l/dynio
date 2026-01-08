@@ -47,6 +47,13 @@ fn home_dir() -> std::path::PathBuf {
     dirs::home_dir().expect("Could not get home dir")
 }
 
+fn config_dir() -> std::path::PathBuf {
+    match std::env::var("XDG_CONFIG_HOME") {
+        Ok(xdg) => std::path::PathBuf::from(xdg).join("dynio"),
+        Err(_) => home_dir().join(".config").join("dynio"),
+    }
+}
+
 #[cfg(target_os = "windows")]
 fn build_windows_command(program: &str, arguments: &[String], input: &str) -> String {
     format!(
@@ -380,9 +387,9 @@ struct ConfigFiles {
 
 #[tauri::command]
 async fn get_config_files() -> Result<ConfigFiles, SerError> {
-    let home = home_dir();
-    let settings_path = home.join(".dynio").join("general-settings.yaml");
-    let cmdconf_path = home.join(".dynio").join("cmd-config.yaml");
+    let cfg = config_dir();
+    let settings_path = cfg.join("general-settings.yaml");
+    let cmdconf_path = cfg.join("cmd-config.yaml");
 
     let settings_content = std::fs::read_to_string(settings_path)?;
     let cmdconf_content = std::fs::read_to_string(cmdconf_path)?;
@@ -395,9 +402,7 @@ async fn get_config_files() -> Result<ConfigFiles, SerError> {
 
 #[tauri::command]
 async fn get_config_dir() -> Result<String, SerError> {
-    let home = home_dir();
-    let path = home.join(".dynio");
-    let path_str = path
+    let path_str = config_dir()
         .to_str()
         .expect("Could not convert path to string")
         .to_string();
@@ -405,9 +410,8 @@ async fn get_config_dir() -> Result<String, SerError> {
 }
 
 fn main() {
-    let home = home_dir();
-    let dynio_dir = home.join(".dynio");
-    std::fs::create_dir_all(&dynio_dir).expect("Failed to create .dynio directory");
+    let dynio_dir = config_dir();
+    std::fs::create_dir_all(&dynio_dir).expect("Failed to create config directory");
     let log_file_path = dynio_dir.join("dynio.log");
     let log_file = OpenOptions::new()
         .create(true)
@@ -549,15 +553,14 @@ fn setup_default_files() {
     let schema_cmdconf = include_str!("./data/cmd-config-schema.json");
     let schema_settings = include_str!("./data/general-settings-schema.json");
 
-    let home = home_dir();
-    let base_dir = home.join(".dynio");
-    let settings_path = home.join(".dynio").join("general-settings.yaml");
-    let cmdconf_path = home.join(".dynio").join("cmd-config.yaml");
-    let schema_settings_path = home.join(".dynio").join("general-settings-schema.json");
-    let schema_cmdconf_path = home.join(".dynio").join("cmd-config-schema.json");
+    let base_dir = config_dir();
+    let settings_path = base_dir.join("general-settings.yaml");
+    let cmdconf_path = base_dir.join("cmd-config.yaml");
+    let schema_settings_path = base_dir.join("general-settings-schema.json");
+    let schema_cmdconf_path = base_dir.join("cmd-config-schema.json");
 
     if !base_dir.exists() {
-        std::fs::create_dir(base_dir).expect("Could not create base dir");
+        std::fs::create_dir_all(&base_dir).expect("Could not create config dir");
     }
 
     if !settings_path.exists() {
@@ -578,8 +581,7 @@ fn setup_default_files() {
 }
 
 fn get_general_settings() -> Result<GeneralSettings, Box<dyn std::error::Error>> {
-    let home = home_dir();
-    let settings_path = home.join(".dynio").join("general-settings.yaml");
+    let settings_path = config_dir().join("general-settings.yaml");
 
     if !settings_path.exists() {
         return Err("Settings file does not exist".into());

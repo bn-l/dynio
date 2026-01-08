@@ -29,7 +29,7 @@ Run installer for your OS in releases
 
 ## Setup and Usage
 
-1. Start dynio then check `~/.dynio` or `C:\Users\INSERT_YOUR_USERNAME\.dynio`. 
+1. Start dynio then check `~/.config/dynio` (or `$XDG_CONFIG_HOME/dynio` if set). 
 2. Example general settings command config files will have been created along with their schemas.
 
 ### Hotkeys
