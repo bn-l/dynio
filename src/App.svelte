@@ -15,7 +15,7 @@ https://tauri.app/v1/guides/distribution/updater/#built-in-dialog
 >
     <div
         id="mainWrapper"
-        class="rounded-md shadow-lg opacity-99 absolute top-4 left-3 right-4 border-solid border-1 border-zinc-300"
+        class="rounded-xl absolute top-4 left-3 right-4"
     >
         <div
             id="inputWrapper"
@@ -282,13 +282,13 @@ as regular stdout from commands) -->
     use:hotkeys={{
         handler: cmdHotkeyHandler,
         keys: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-        modifiers: ["Alt"],
+        modifiers: ["Control"],
         enabled:  true,
     }}
     use:hotkeys={{
         handler: tileHotkeyHandler,
         keys: ["S"],
-        modifiers: ["Alt"],
+        modifiers: ["Control"],
         enabled:  true,
     }}
 />
