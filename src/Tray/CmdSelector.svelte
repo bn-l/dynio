@@ -1,121 +1,70 @@
 
 
-<div
-    class="px-3"
->   
-    <div
-        class="nice-scroll overflow-x-hidden h-79"
-    >
-    {#each items as item, index (item.cmdName)}
-        <div
-            id={`cmdselect-item-${index}`}
-            class={`${index === selectedIndex ? "bg-orange-200" : "hover:bg-orange-100 m-0 p-0"} p-3 cursor-pointer`}
-            on:click={() => handleActivation(item.cmdName)}
-        >
-            <!-- Line 1 -->    
+<div class="px-2 pt-2 h-full">
+    <div class="nice-scroll overflow-x-hidden overflow-y-auto h-full pb-2">
+        {#each items as item, index (item.cmdName)}
             <div
-                class="flex justify-between"
+                id={`cmdselect-item-${index}`}
+                class="cmd-item list-item {index === selectedIndex ? 'item-selected' : 'item-hover'}"
+                on:click={() => handleActivation(item.cmdName)}
             >
-                <div
-                    class="text-xl pb-2"
-                >
-                    {item.cmdName}
-                </div>
-                    <!-- Test commands with and without hotkeys -->
-                    <!-- This should take up space regardless -->
-                    <div
-                        class=""
-                    >
-                        {item.hotkeyNumber ? `Hotkey: ${item.hotkeyNumber}` : ""}
+                <div class="list-item-inner cursor-pointer">
+                    <!-- Header row -->
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="cmd-name">{item.cmdName}</span>
+                        {#if item.hotkeyNumber}
+                            <span class="hotkey-badge">{keySymbols.ctrl}+{item.hotkeyNumber}</span>
+                        {/if}
                     </div>
-            </div>
-            <!-- Line 2 --> 
-            <div
-                class="text-sm"
-            >
-                <div
-                    class=""
-                >
-                    {item.command}
-                </div>
-            </div>
-            <!-- Line 3 -->
-            {#if item.arguments !== undefined}
-                <div
-                    class="flex text-sm"
-                >
-                    <div
-                        class="flex"
-                    >
-                        <div
-                            class="mr-2"
-                        >
-                        </div>
-                        <div
-                            class=""
-                        >
-                            {item.arguments}
-                        </div>
+
+                    <!-- Command -->
+                    <div class="cmd-command">{item.command}</div>
+
+                    <!-- Arguments -->
+                    {#if item.arguments}
+                        <div class="cmd-args">{item.arguments}</div>
+                    {/if}
+
+                    <!-- Meta row -->
+                    <div class="cmd-meta">
+                        <span class="meta-item">
+                            <span class="meta-label">Display:</span>
+                            {capitaliseFirst(item.outputOptions?.display?.type)}
+                        </span>
+                        <span class="meta-item">
+                            <span class="meta-label">Action:</span>
+                            {capitaliseFirst(item.activationOptions?.activateAction)}
+                        </span>
                     </div>
-                </div>
-            {/if}
-            <!-- Line 4 -->
-            <div
-                class="flex text-sm"
-            >
-                <div
-                    class="flex"
-                >
-                    <div
-                        class="mr-2"
-                    >
-                        Display as:
-                    </div>
-                    <div
-                        class=""
-                    >
-                        {capitaliseFirst(item.outputOptions?.display?.type)}
-                    </div>
-                </div>
-                <div
-                    class="flex ml-6 "
-                >
-                    <div
-                        class="mr-2"
-                    >
-                        On activation:
-                    </div>
-                    <div
-                        class=""
-                    >
-                        {capitaliseFirst(item.activationOptions?.activateAction)}
-                    </div>
+
+                    <!-- Description -->
+                    {#if item.description}
+                        <div class="cmd-desc">{item.description}</div>
+                    {/if}
                 </div>
             </div>
-            <!-- Bottom -->
-            <div
-            class="text-sm"
-            >
-                <div
-                    class="mt-1"
-                >
-                    {item.description}
-                </div>
-            </div>
-        </div>
-    {/each}
+        {/each}
     </div>
 </div>
 
 <script lang="ts">
     import { debounce } from "lodash-es";
+    import { onDestroy, onMount } from "svelte";
     import { cmdConfig } from "$lib/stores/cmd-config.ts";
-    import { currentCmd, query, stdout, currentTrayView, currentFocus, stdoutLock } from "$lib/stores/globals.ts";
+    import { currentCmd, query, stdout, currentTrayView, currentFocus, stdoutLock, statusBar, keySymbols } from "$lib/stores/globals.ts";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { invoke } from "@tauri-apps/api/core";
-    import { onMount } from "svelte";
 
     console.log($cmdConfig);
+
+    $: $statusBar = {
+        actions: [{ key: "↵", label: "select" }],
+        count: `${items.length} commands`
+    };
+
+    onDestroy(() => {
+        $statusBar = { actions: [], count: "" };
+    });
 
     // Sort by hotkey but don't change the order of an item if it has no hotkey
     $: commandList = Object.entries($cmdConfig).sort((a, b) => {

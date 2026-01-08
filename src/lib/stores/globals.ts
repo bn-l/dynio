@@ -2,6 +2,18 @@
 import { writable } from "svelte/store";
 import { invoke } from "@tauri-apps/api/core";
 
+// Platform detection
+export const isMac = navigator.platform.toUpperCase().includes("MAC");
+
+// Key symbols based on platform
+export const keySymbols = {
+    cmd: isMac ? "⌘" : "Ctrl",
+    ctrl: isMac ? "⌃" : "Ctrl",
+    alt: isMac ? "⌥" : "Alt",
+    shift: "⇧",
+    enter: "↵",
+};
+
 export type TrayViewType = "stdout" | "stderr" | "errors" | "info" | "cmdSelector";
 export type Focusable = "input" | undefined;
 
@@ -73,3 +85,16 @@ export function clearInput() {
     stdout.set([]);
     stderr.set([]);
 }
+
+// Status bar content
+export interface StatusBarAction {
+    key: string;
+    label: string;
+}
+
+export interface StatusBarState {
+    actions: StatusBarAction[];
+    count: string;
+}
+
+export const statusBar = writable<StatusBarState>({ actions: [], count: "" });

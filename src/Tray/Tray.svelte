@@ -1,14 +1,26 @@
 
 
-<div
-    id="tray"
-    class="border-0 border-t-2 border-gray-300 relative overflow-hidden rounded-b-md h-[20rem] nice-scroll"
->
-    <svelte:component this={currentTray.component} {...currentTray.props} />
+<div id="tray" class="relative overflow-hidden rounded-b-xl flex flex-col h-[20rem]">
+    <div class="tray-content flex-grow overflow-hidden">
+        <svelte:component this={currentTray.component} {...currentTray.props} />
+    </div>
+    {#if $statusBar.actions.length > 0 || $statusBar.count}
+        <div class="status-bar">
+            <div class="status-bar-actions">
+                {#each $statusBar.actions as action}
+                    <span class="status-bar-action">
+                        <span class="key-badge">{action.key}</span>
+                        <span>{action.label}</span>
+                    </span>
+                {/each}
+            </div>
+            <span class="status-bar-count">{$statusBar.count}</span>
+        </div>
+    {/if}
 </div>
 
 <script lang="ts">
-    import { currentTrayView } from "$lib/stores/globals.ts";
+    import { currentTrayView, statusBar } from "$lib/stores/globals.ts";
     import Stdout from "./Stdout/Stdout.svelte";
     import Stderr from "./Stderr.svelte";
     import CmdSelector from "./CmdSelector.svelte";

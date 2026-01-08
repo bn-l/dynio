@@ -1,26 +1,19 @@
 
-<div 
+<div
     id="listDisplay"
-    class="h-79 border-0 border-solid flex flex-col px-3"
+    class="h-full flex flex-col"
 >
-    {#if !displayOptions?.hideCount}
-        <!-- Item count, consider removing -->
-        <div class="text-right py-1 pr-3">
-            {items.length}
-        </div>       
-    {/if}
-
-    <div 
-        class="border-solid border-0 border-red-500 flex-grow nice-scroll overflow-x-hidden p-0"
+    <div
+        class="flex-grow nice-scroll overflow-x-hidden overflow-y-auto px-2 pt-2"
         style={displayOptions?.fontSize ? `font-size: ${displayOptions.fontSize}rem` : ""}
     >
-        {#each items as item, index (item)}
+        {#each items as item, index (index)}
             <div
                 id={`item-${index}`}
-                class={`${index === selectedIndex ? "bg-orange-200" : "hover:bg-orange-100 m-0 p-0"}`}
+                class="list-item {index === selectedIndex ? 'item-selected' : 'item-hover'}"
             >
                 <div
-                    class="flex-row-start cursor-pointer break-all p-[1.4ex]"
+                    class="list-item-inner cursor-pointer break-all"
                     on:click={() => {
                         selectedIndex = index;
                         onActivation?.(item);
@@ -44,17 +37,45 @@
 
 <script lang="ts">
     import { debounce } from "lodash-es";
+    import { onDestroy } from "svelte";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
-    import { stdout } from "$lib/stores/globals.ts";
+    import { stdout, statusBar, keySymbols } from "$lib/stores/globals.ts";
+    import type { StatusBarAction } from "$lib/stores/globals.ts";
     import { activate } from "$lib/utils/activator.ts";
     import { processListOutput } from "./processListOutput.ts";
     import stripAnsi from "strip-ansi";
-    
+
 
     $: parseAnsiColors = $currentCmdConfig?.outputOptions?.parseAnsiColors;
-    $: display = $currentCmdConfig?.outputOptions?.display; 
+    $: display = $currentCmdConfig?.outputOptions?.display;
     $: displayOptions = display?.type === "list" ? display.options : undefined;
+    $: activationOptions = $currentCmdConfig?.activationOptions;
+    $: runOnEnter = $currentCmdConfig?.runOnEnter;
+
+    $: {
+        const actions: StatusBarAction[] = [];
+        const activateAction = activationOptions?.activateAction ?? "copy";
+
+        if (runOnEnter) {
+            actions.push({ key: `${keySymbols.cmd}+${keySymbols.enter}`, label: activateAction });
+        } else {
+            actions.push({ key: keySymbols.enter, label: activateAction });
+        }
+
+        if (activationOptions?.isPath) {
+            actions.push({ key: `${keySymbols.cmd}+O`, label: "reveal" });
+        }
+
+        $statusBar = {
+            actions,
+            count: !displayOptions?.hideCount && items.length > 0 ? `${items.length} items` : ""
+        };
+    }
+
+    onDestroy(() => {
+        $statusBar = { actions: [], count: "" };
+    });
 
 
     // If list doesn't go back to 0 on new output
