@@ -14,8 +14,8 @@
                 on:click={() => errors.removeError(id)}
             >
                 <!-- round circle with x -->
-                <div 
-                    class="cursor-pointer hover:text-orange-600 text-center rounded-md" 
+                <div
+                    class="cursor-pointer accent-text-hover text-center rounded-md transition-colors duration-100"
                 >
                     <code>del</code>
                 </div>
