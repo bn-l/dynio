@@ -2,7 +2,11 @@
 import { writable } from "svelte/store";
 import { invoke } from "@tauri-apps/api/core";
 
-// Platform detection
+// navigator.platform is deprecated but we're keeping it because:
+// 1. The modern replacement (navigator.userAgentData.platform) is experimental
+//    and only works in Chromium browsers (no Safari/Firefox support as of 2025)
+// 2. Showing platform-appropriate keyboard modifier symbols (⌘ vs Ctrl) is one
+//    of the few legitimate use cases for platform detection per MDN
 export const isMac = navigator.platform.toUpperCase().includes("MAC");
 
 // Key symbols based on platform
