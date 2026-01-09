@@ -25,21 +25,22 @@ export function hotkeys(
         if (isEditing && !enabledWhenEditing) return;
 
         // Check if the event.key is one of the specified keys
-        if (!keys.map(key => key.toLowerCase()).includes(event.key.toLowerCase())) return; 
+        if (!keys.map(key => key.toLowerCase()).includes(event.key.toLowerCase())) return;
 
-        for (const mod of possibleModifiers) {
-
-            if( 
-                modifiers.includes("CmdOrCtrl") && 
-                event.getModifierState("Control") || event.getModifierState("Meta")
-            ) {
-                console.log("break");
-                break;
-            }
-            else if (modifiers.includes(mod) && !event.getModifierState(mod)) {
+        // Handle CmdOrCtrl specially - requires either Ctrl or Meta
+        if (modifiers.includes("CmdOrCtrl")) {
+            if (!event.getModifierState("Control") && !event.getModifierState("Meta")) {
                 return;
             }
-        }   
+        }
+
+        // Check all standard modifiers (skip CmdOrCtrl since it's handled above)
+        for (const mod of possibleModifiers) {
+            if (mod === "CmdOrCtrl") continue;
+            if (modifiers.includes(mod) && !event.getModifierState(mod)) {
+                return;
+            }
+        }
 
         handler(event);
     }
