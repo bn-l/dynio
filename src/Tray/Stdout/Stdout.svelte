@@ -15,13 +15,13 @@
 {:else if $stdout.length === 0 && !$running}
     <EmptyDisplay message="No output" />
 
-{:else if displayType === "single"}
+{:else if cmdMode === "single"}
     <SingleDisplay />
 
-{:else if displayType === "llm"}
+{:else if cmdMode === "llm"}
     <LlmDisplay />
 
-{:else if displayType === "list"}
+{:else if cmdMode === "list"}
     <ListDisplay />
 
 {:else}
@@ -38,7 +38,7 @@
     import LlmDisplay from "./LlmDisplay/LlmDisplay.svelte";
     import EmptyDisplay from "./EmptyDisplay.svelte";
 
-    $: displayType = $currentCmdConfig?.outputOptions?.display?.type;
+    $: cmdMode = $currentCmdConfig?.modeConfig?.mode;
 
     $: console.log("in stdout.svelte", "stdoutLock", $stdoutLock, "stdout.length", $stdout.length, "running", $running)
 

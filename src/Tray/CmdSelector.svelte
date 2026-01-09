@@ -28,13 +28,15 @@
                     <!-- Meta row -->
                     <div class="cmd-meta">
                         <span class="meta-item">
-                            <span class="meta-label">Display:</span>
-                            {capitaliseFirst(item.outputOptions?.display?.type)}
+                            <span class="meta-label">Mode:</span>
+                            {capitaliseFirst(item.modeConfig?.mode)}
                         </span>
+                        {#if item.modeConfig?.mode === "list" || item.modeConfig?.mode === "single"}
                         <span class="meta-item">
                             <span class="meta-label">Action:</span>
-                            {capitaliseFirst(item.activationOptions?.activateAction)}
+                            {capitaliseFirst(item.modeConfig.activationOptions?.activateAction)}
                         </span>
+                        {/if}
                     </div>
 
                     <!-- Description -->

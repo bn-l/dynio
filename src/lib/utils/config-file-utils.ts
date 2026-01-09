@@ -1,6 +1,6 @@
 
 import yaml from 'yaml';
-import type { CmdConfig, Display } from '$lib/stores/schema/cmd-config-schema.ts';
+import type { CmdConfig } from '$lib/stores/schema/cmd-config-schema.ts';
 import type { GeneralSettings } from '$lib/stores/schema/general-settings-schema.ts';
 import { invoke } from '@tauri-apps/api/core';
 import { cmdConfig } from "$lib/stores/cmd-config.ts";
@@ -35,22 +35,31 @@ export async function loadValidateAndInitConfigStores() {
         try {
             loadedCmdConfig = (yaml.parse(cmdConfigText) as CmdConfig);
             Object.values(loadedCmdConfig).forEach(cmdConfigItem => {
-
-                if (cmdConfigItem.activationOptions === undefined) {
-                    cmdConfigItem.activationOptions = {};
+                // Ensure modeConfig exists with a default list mode if not specified
+                if (!cmdConfigItem.modeConfig) {
+                    cmdConfigItem.modeConfig = {
+                        mode: "list",
+                        displayOptions: {},
+                        activationOptions: {}
+                    };
+                    return;
                 }
-                if (cmdConfigItem.outputOptions === undefined) {
-                    cmdConfigItem.outputOptions = {};
+                // Ensure displayOptions exists
+                if (!cmdConfigItem.modeConfig.displayOptions) {
+                    cmdConfigItem.modeConfig.displayOptions = {};
                 }
-                if(cmdConfigItem.outputOptions.display === undefined) {
-                    cmdConfigItem.outputOptions.display = ({} as Display);
+                // Ensure emptyDisplayOptions exists
+                if (!cmdConfigItem.modeConfig.displayOptions.emptyDisplayOptions) {
+                    cmdConfigItem.modeConfig.displayOptions.emptyDisplayOptions = {};
                 }
-                if(cmdConfigItem.outputOptions.display.options === undefined) {
-                    cmdConfigItem.outputOptions.display.options = {};
+                // Ensure activationOptions exists for list/single modes
+                const modeConfig = cmdConfigItem.modeConfig;
+                if (modeConfig.mode === "list" && !modeConfig.activationOptions) {
+                    modeConfig.activationOptions = {};
                 }
-                if(cmdConfigItem.outputOptions.emptyDisplayOptions === undefined) {
-                    cmdConfigItem.outputOptions.emptyDisplayOptions = {};
-                } 
+                if (modeConfig.mode === "single" && !modeConfig.activationOptions) {
+                    modeConfig.activationOptions = {};
+                }
             })
 
             // This applies the defaults in the generated zod files

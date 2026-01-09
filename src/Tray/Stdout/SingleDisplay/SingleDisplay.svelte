@@ -14,7 +14,7 @@
             <div
                 class=" m-1 mb-2 hyphens-auto"
             >   
-                {#if $currentCmdConfig?.outputOptions?.parseAnsiColors}
+                {#if parseAnsiColors}
                     {@html processedOutput}
                 {:else}
                     {processedOutput}
@@ -36,11 +36,11 @@
     import { processSingleOutput } from "./processSingleOuput.ts";
 
 
-    let displayOptions = $currentCmdConfig?.outputOptions?.display?.type === "single" ?
-        $currentCmdConfig?.outputOptions?.display?.options: 
-        undefined;
+    $: modeConfig = $currentCmdConfig?.modeConfig;
+    $: displayOptions = modeConfig?.mode === "single" ? modeConfig.displayOptions : undefined;
+    $: parseAnsiColors = modeConfig?.displayOptions?.parseAnsiColors;
 
-    $: processedOutput = processSingleOutput($stdout, $currentCmdConfig?.outputOptions);
+    $: processedOutput = processSingleOutput($stdout, displayOptions);
 
     $: console.log(processedOutput);
 

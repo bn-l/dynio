@@ -3,17 +3,16 @@
 find:
     command: locate
     description: Search files by name using locate database.
-    activationOptions:
-        activateAction: open
-        isPath: true
     hotkeyNumber: 1
     placeholderText: Search files
     noOutputTimeoutMs: 100
-    outputOptions:
-        parseAnsiColors: true
-        display:
-            type: list
-            options:
-                maxLineLength: 160
-                lineSplitter: "\n"
-                fontSize: 0.8
+    modeConfig:
+        mode: list
+        displayOptions:
+            parseAnsiColors: true
+            maxLineLength: 160
+            lineSplitter: "\n"
+            fontSize: 0.8
+        activationOptions:
+            activateAction: open
+            isPath: true

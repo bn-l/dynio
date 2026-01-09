@@ -64,13 +64,10 @@
     import { stdout } from "$lib/stores/globals.ts";
     import { processLlmOutput } from "./processLlmOutput.ts";
     import { renderMarkdown } from "$lib/utils/markdown.ts";
-    import type { LlmDisplayOptions, ThinkingDisplay } from "$lib/stores/schema/cmd-config-schema.ts";
+    $: modeConfig = $currentCmdConfig?.modeConfig;
+    $: displayOptions = modeConfig?.mode === "llm" ? modeConfig.displayOptions : undefined;
 
-    $: displayOptions = $currentCmdConfig?.outputOptions?.display?.type === "llm"
-        ? $currentCmdConfig?.outputOptions?.display?.options as LlmDisplayOptions
-        : undefined;
-
-    $: thinkingDisplay = (displayOptions?.thinkingDisplay ?? "none") as ThinkingDisplay;
+    $: thinkingDisplay = displayOptions?.thinkingDisplay ?? "none";
 
     $: processed = processLlmOutput(
         $stdout,

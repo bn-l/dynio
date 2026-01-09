@@ -5,16 +5,15 @@ where:
     description: Searches files by filename. Use * as a wildcard. E.g. *test*.
     arguments:
         - /t
-    activationOptions:
-        activateAction: copy
     hotkeyNumber: 1
     placeholderText: Search files
     noOutputTimeoutMs: 100
-    outputOptions:
-        parseAnsiColors: true
-        display:
-            type: list
-            options:
-                maxLineLength: 160
-                lineSplitter: "\n"
-                fontSize: 0.8
+    modeConfig:
+        mode: list
+        displayOptions:
+            parseAnsiColors: true
+            maxLineLength: 160
+            lineSplitter: "\n"
+            fontSize: 0.8
+        activationOptions:
+            activateAction: copy

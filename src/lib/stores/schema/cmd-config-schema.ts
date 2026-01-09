@@ -56,8 +56,6 @@ export interface SingleDisplayOptions {
     jsonPath?: string;
 }
 
-export type ThinkingDisplay = "none" | "keepHidden" | "showWhileThinking" | "show";
-
 export interface LlmDisplayOptions {
     /**
      * Font size for short outputs (rem).
@@ -82,7 +80,7 @@ export interface LlmDisplayOptions {
      * - "show": Show thinking greyed/italic AND normal tokens
      * @default "none"
      */
-    thinkingDisplay?: ThinkingDisplay;
+    thinkingDisplay?: "none" | "keepHidden" | "showWhileThinking" | "show";
     /**
      * Regex pattern to match opening thinking tag.
      * @default "<thinking>|<think>|<\\|thinking\\|>|\\[thinking\\]"
@@ -100,40 +98,8 @@ export interface EmptyDisplayOptions {
     
 }
 
-export type Display =
-    {
-        /**
-         * Shows item in a list with arrow keys to change selection and enter to activate.
-         */
-        type: "list";
-        /**
-         * Display options. Use {} for default options.
-         */
-        options: ListDisplayOptions
-    }
-    | {
-        /**
-         * For non-list type output (e.g. JSON responses).
-         */
-        type: "single";
-        /**
-         * Display options. Use {} for default options.
-         */
-        options: SingleDisplayOptions
-    }
-    | {
-        /**
-         * For LLM output with markdown rendering and thinking block support.
-         */
-        type: "llm";
-        /**
-         * Display options. Use {} for default options.
-         */
-        options: LlmDisplayOptions
-    };
 
-
-export interface OutputOptions {
+export interface GeneralDisplayOptions {
     /**
      * Whether to parse ansii colors (nb: color might not be accurate)
      * @default true
@@ -144,10 +110,7 @@ export interface OutputOptions {
      * @default false
      */
     reverse?: boolean;
-    /**
-     * Display type
-     */
-    display?: Display;
+
     emptyDisplayOptions?: EmptyDisplayOptions;
     /**
      * Regex pattern to filter out matching stderr lines. Lines matching this pattern will be hidden.
@@ -193,6 +156,40 @@ export interface ActivationOptions {
     isPath?: boolean;
 }
 
+export type ModeConfig =
+    {
+        /**
+         * Shows item in a list with arrow keys to change selection and enter to activate.
+         */
+        mode: "list";
+        /**
+         * Display options. Use {} for default options.
+         */
+        displayOptions: ListDisplayOptions & GeneralDisplayOptions;
+        activationOptions: ActivationOptions;
+    }
+    | {
+        /**
+         * For non-list type output (e.g. JSON responses).
+         */
+        mode: "single";
+        /**
+         * Display options. Use {} for default options.
+         */
+        displayOptions: SingleDisplayOptions & GeneralDisplayOptions;
+        activationOptions: ActivationOptions;
+    }
+    | {
+        /**
+         * For LLM output with markdown rendering and thinking block support.
+         */
+        mode: "llm";
+        /**
+         * Display options. Use {} for default options.
+         */
+        displayOptions: LlmDisplayOptions & GeneralDisplayOptions;
+    };
+
 
 export type CmdConfigItem = {
     /**
@@ -203,6 +200,7 @@ export type CmdConfigItem = {
      * "/somepath/tosome/program"
      */
     command: string;
+    modeConfig: ModeConfig;
     /**
      * Short description of what the program does
      */
@@ -216,11 +214,6 @@ export type CmdConfigItem = {
      * Current directory where the command executes
      */
     currentDir?: string;
-    outputOptions?: OutputOptions;
-    /**
-     * What happens when the enter key is pressed.
-     */
-    activationOptions?: ActivationOptions;
     /**
      * From 1-9, pressing alt+shift+hotkeyNumber will set the cmd as active.
      */

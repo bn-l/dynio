@@ -16,18 +16,18 @@
                     class="list-item-inner cursor-pointer break-all"
                     on:click={() => {
                         selectedIndex = index;
-                        onActivation?.(item);
+                        onActivation?.(item.raw);
                     }}
                     on:contextmenu={(event) => {
                         selectedIndex = index;
-                        onActivation?.(item, true);
+                        onActivation?.(item.raw, true);
                         event.preventDefault();
                     }}
                 >
                     {#if parseAnsiColors}
-                        {@html item}
+                        {@html item.display}
                     {:else}
-                        {item}
+                        {item.display}
                     {/if}
                 </div>
             </div>
@@ -43,14 +43,13 @@
     import { stdout, statusBar, keySymbols } from "$lib/stores/globals.ts";
     import type { StatusBarAction } from "$lib/stores/globals.ts";
     import { activate } from "$lib/utils/activator.ts";
-    import { processListOutput } from "./processListOutput.ts";
-    import stripAnsi from "strip-ansi";
+    import { processListOutput, type ProcessedItem } from "./processListOutput.ts";
 
 
-    $: parseAnsiColors = $currentCmdConfig?.outputOptions?.parseAnsiColors;
-    $: display = $currentCmdConfig?.outputOptions?.display;
-    $: displayOptions = display?.type === "list" ? display.options : undefined;
-    $: activationOptions = $currentCmdConfig?.activationOptions;
+    $: modeConfig = $currentCmdConfig?.modeConfig;
+    $: parseAnsiColors = modeConfig?.displayOptions?.parseAnsiColors;
+    $: displayOptions = modeConfig?.mode === "list" ? modeConfig.displayOptions : undefined;
+    $: activationOptions = modeConfig?.mode === "list" ? modeConfig.activationOptions : undefined;
     $: runOnEnter = $currentCmdConfig?.runOnEnter;
 
     $: {
@@ -85,17 +84,16 @@
 
     function onActivation(text: string, openContaining: boolean = false) {
         console.log(`calling activator with: "${text.replace(/<.*?>/gm, '')}"`);
-        void activate(text, $currentCmdConfig?.activationOptions, openContaining);
+        void activate(text, activationOptions, openContaining);
     }
 
 
-    let items: string[] = [];
-    const { lineSplitter, lineSplitterRegex, maxLineLength } = displayOptions ?? {};
+    let items: ProcessedItem[] = [];
     // NB: Output reversing is done in the stdout listener in App.svelete
     $: items = processListOutput($stdout, {
-        maxLineLength,
-        lineSplitter,
-        lineSplitterRegex,
+        maxLineLength: displayOptions?.maxLineLength,
+        lineSplitter: displayOptions?.lineSplitter,
+        lineSplitterRegex: displayOptions?.lineSplitterRegex,
         parseAnsiColors,
     });
  
@@ -174,7 +172,7 @@
         handler() {
             console.log("enter pressed")
             if($currentCmdConfig?.runOnEnter) return;
-            onActivation(stripAnsi($stdout[selectedIndex]));
+            onActivation(items[selectedIndex].raw);
         },
         keys: ["Enter"],
         enabled: true,
@@ -182,7 +180,7 @@
     use:hotkeys={{
         handler() {
             console.log("ctrl + enter pressed")
-            onActivation(stripAnsi($stdout[selectedIndex]));
+            onActivation(items[selectedIndex].raw);
         },
         keys: ["Enter"],
         modifiers: ["CmdOrCtrl"],
@@ -191,13 +189,13 @@
     use:hotkeys={{
         handler: () => {
             console.log("opening containing");
-            if($currentCmdConfig?.activationOptions?.isPath) {
-                onActivation(stripAnsi($stdout[selectedIndex]), true);
+            if(activationOptions?.isPath) {
+                onActivation(items[selectedIndex].raw, true);
             }
         },
         keys: ["o"],
         modifiers: ["CmdOrCtrl"],
         enabled: true,
     }}
-    
+
 />

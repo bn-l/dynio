@@ -164,7 +164,7 @@ as regular stdout from commands) -->
             emptyStdCounter = 0;
 
             console.log("setting stdout to value")
-            $stdout = $currentCmdConfig?.outputOptions?.reverse ?
+            $stdout = $currentCmdConfig?.modeConfig?.displayOptions?.reverse ?
                 e.payload.reverse() :
                 e.payload;
 
@@ -177,7 +177,7 @@ as regular stdout from commands) -->
     onMount(() => {
         const unlisten = listen("stderr", (e: Event<string[]>) => {
             // console.log("stderr event received: ", e.payload);
-            const filterPattern = $currentCmdConfig?.outputOptions?.stderrFilterRegex;
+            const filterPattern = $currentCmdConfig?.modeConfig?.displayOptions?.stderrFilterRegex;
             if (filterPattern) {
                 const regex = new RegExp(filterPattern);
                 $stderr = e.payload.filter(line => !regex.test(line));

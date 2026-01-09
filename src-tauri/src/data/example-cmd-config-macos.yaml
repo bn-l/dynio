@@ -5,18 +5,17 @@ find:
     description: Search files using Spotlight. Use -name for filename search.
     arguments:
         - -name
-    activationOptions:
-        activateAction: open
-        isPath: true
     hotkeyNumber: 1
     placeholderText: Search files
     noOutputTimeoutMs: 100
-    outputOptions:
-        parseAnsiColors: true
-        stderrFilterRegex: "\\[UserQueryParser\\]"
-        display:
-            type: list
-            options:
-                maxLineLength: 160
-                lineSplitter: "\n"
-                fontSize: 0.8
+    modeConfig:
+        mode: list
+        displayOptions:
+            parseAnsiColors: true
+            stderrFilterRegex: "\\[UserQueryParser\\]"
+            maxLineLength: 160
+            lineSplitter: "\n"
+            fontSize: 0.8
+        activationOptions:
+            activateAction: open
+            isPath: true
