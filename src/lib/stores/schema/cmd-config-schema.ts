@@ -50,16 +50,49 @@ export interface SingleDisplayOptions {
      */
     json?: boolean;
     /**
-     * Json path to the data you want in the form: levelOne.levelTwo.levelThree. 
+     * Json path to the data you want in the form: levelOne.levelTwo.levelThree.
      * @default "choices.0.message.content"
      */
     jsonPath?: string;
+}
+
+export type ThinkingDisplay = "none" | "keepHidden" | "showWhileThinking" | "show";
+
+export interface LlmDisplayOptions {
     /**
-     * Whether to parse markdown in the output. Warning you should trust the output is not 
-     * nefarious.
-     * @default false
+     * Font size for short outputs (rem).
+     * @default 1.5
      */
-    markdown?: boolean;
+    largeSize?: number;
+    /**
+     * Font size for longer outputs (rem).
+     * @default 1.0
+     */
+    smallSize?: number;
+    /**
+     * Output length threshold for font size switching.
+     * @default 100
+     */
+    sizeBreakPoint?: number;
+    /**
+     * How to handle thinking blocks.
+     * - "none": Render as-is (no special handling)
+     * - "keepHidden": Show "🧠 thinking... <count>" while thinking, disappear when normal tokens arrive
+     * - "showWhileThinking": Show thinking content greyed/italic, disappear when normal tokens arrive
+     * - "show": Show thinking greyed/italic AND normal tokens
+     * @default "none"
+     */
+    thinkingDisplay?: ThinkingDisplay;
+    /**
+     * Regex pattern to match opening thinking tag.
+     * @default "<thinking>|<think>|<\\|thinking\\|>|\\[thinking\\]"
+     */
+    thinkingOpenPattern?: string;
+    /**
+     * Regex pattern to match closing thinking tag.
+     * @default "</thinking>|</think>|<\\|/thinking\\|>|\\[/thinking\\]"
+     */
+    thinkingClosePattern?: string;
 }
 
 
@@ -68,25 +101,35 @@ export interface EmptyDisplayOptions {
 }
 
 export type Display =
-    { 
+    {
         /**
          * Shows item in a list with arrow keys to change selection and enter to activate.
          */
-        type: "list"; 
+        type: "list";
         /**
          * Display options. Use {} for default options.
          */
-        options: ListDisplayOptions 
-    } 
-    | { 
+        options: ListDisplayOptions
+    }
+    | {
         /**
-         * WARNING: Experimental. For non-list type output. 
+         * For non-list type output (e.g. JSON responses).
          */
         type: "single";
         /**
          * Display options. Use {} for default options.
-         */ 
-        options: SingleDisplayOptions 
+         */
+        options: SingleDisplayOptions
+    }
+    | {
+        /**
+         * For LLM output with markdown rendering and thinking block support.
+         */
+        type: "llm";
+        /**
+         * Display options. Use {} for default options.
+         */
+        options: LlmDisplayOptions
     };
 
 

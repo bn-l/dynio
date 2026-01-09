@@ -137,10 +137,29 @@
             "type": {
               "type": "string",
               "const": "single",
-              "description": "WARNING: Experimental. For non-list type output."
+              "description": "For non-list type output (e.g. JSON responses)."
             },
             "options": {
               "$ref": "#/definitions/SingleDisplayOptions",
+              "description": "Display options. Use {} for default options."
+            }
+          },
+          "required": [
+            "type",
+            "options"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "const": "llm",
+              "description": "For LLM output with markdown rendering and thinking block support."
+            },
+            "options": {
+              "$ref": "#/definitions/LlmDisplayOptions",
               "description": "Display options. Use {} for default options."
             }
           },
@@ -211,14 +230,54 @@
           "type": "string",
           "description": "Json path to the data you want in the form: levelOne.levelTwo.levelThree.",
           "default": "choices.0.message.content"
-        },
-        "markdown": {
-          "type": "boolean",
-          "description": "Whether to parse markdown in the output. Warning you should trust the output is not  nefarious.",
-          "default": false
         }
       },
       "additionalProperties": false
+    },
+    "LlmDisplayOptions": {
+      "type": "object",
+      "properties": {
+        "largeSize": {
+          "type": "number",
+          "description": "Font size for short outputs (rem).",
+          "default": 1.5
+        },
+        "smallSize": {
+          "type": "number",
+          "description": "Font size for longer outputs (rem).",
+          "default": 1
+        },
+        "sizeBreakPoint": {
+          "type": "number",
+          "description": "Output length threshold for font size switching.",
+          "default": 100
+        },
+        "thinkingDisplay": {
+          "$ref": "#/definitions/ThinkingDisplay",
+          "description": "How to handle thinking blocks.\n- \"none\": Render as-is (no special handling)\n- \"keepHidden\": Show \"🧠 thinking... <count>\" while thinking, disappear when normal tokens arrive\n- \"showWhileThinking\": Show thinking content greyed/italic, disappear when normal tokens arrive\n- \"show\": Show thinking greyed/italic AND normal tokens",
+          "default": "none"
+        },
+        "thinkingOpenPattern": {
+          "type": "string",
+          "description": "Regex pattern to match opening thinking tag.",
+          "default": "<thinking>|<think>|<\\|thinking\\|>|\\[thinking\\]"
+        },
+        "thinkingClosePattern": {
+          "type": "string",
+          "description": "Regex pattern to match closing thinking tag.",
+          "default": "</thinking>|</think>|<\\|/thinking\\|>|\\[/thinking\\]"
+        }
+      },
+      "additionalProperties": false
+    },
+    "ThinkingDisplay": {
+      "type": "string",
+      "enum": [
+        "none",
+        "keepHidden",
+        "showWhileThinking",
+        "show"
+      ]
     },
     "EmptyDisplayOptions": {
       "type": "object",

@@ -18,6 +18,9 @@
 {:else if displayType === "single"}
     <SingleDisplay />
 
+{:else if displayType === "llm"}
+    <LlmDisplay />
+
 {:else if displayType === "list"}
     <ListDisplay />
 
@@ -32,6 +35,7 @@
 
     import SingleDisplay from "./SingleDisplay/SingleDisplay.svelte";
     import ListDisplay from "./ListDisplay/ListDisplay.svelte";
+    import LlmDisplay from "./LlmDisplay/LlmDisplay.svelte";
     import EmptyDisplay from "./EmptyDisplay.svelte";
 
     $: displayType = $currentCmdConfig?.outputOptions?.display?.type;

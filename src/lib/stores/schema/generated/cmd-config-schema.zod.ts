@@ -77,7 +77,7 @@ export default z.record(
                   type: z
                     .literal("single")
                     .describe(
-                      "WARNING: Experimental. For non-list type output.",
+                      "For non-list type output (e.g. JSON responses).",
                     ),
                   options: z
                     .object({
@@ -109,12 +109,57 @@ export default z.record(
                           "Json path to the data you want in the form: levelOne.levelTwo.levelThree.",
                         )
                         .default("choices.0.message.content"),
-                      markdown: z
-                        .boolean()
+                    })
+                    .strict(),
+                })
+                .strict(),
+              z
+                .object({
+                  type: z
+                    .literal("llm")
+                    .describe(
+                      "For LLM output with markdown rendering and thinking block support.",
+                    ),
+                  options: z
+                    .object({
+                      largeSize: z
+                        .number()
+                        .describe("Font size for short outputs (rem).")
+                        .default(1.5),
+                      smallSize: z
+                        .number()
+                        .describe("Font size for longer outputs (rem).")
+                        .default(1),
+                      sizeBreakPoint: z
+                        .number()
                         .describe(
-                          "Whether to parse markdown in the output. Warning you should trust the output is not  nefarious.",
+                          "Output length threshold for font size switching.",
                         )
-                        .default(false),
+                        .default(100),
+                      thinkingDisplay: z
+                        .enum([
+                          "none",
+                          "keepHidden",
+                          "showWhileThinking",
+                          "show",
+                        ])
+                        .optional(),
+                      thinkingOpenPattern: z
+                        .string()
+                        .describe(
+                          "Regex pattern to match opening thinking tag.",
+                        )
+                        .default(
+                          "<thinking>|<think>|<\\|thinking\\|>|\\[thinking\\]",
+                        ),
+                      thinkingClosePattern: z
+                        .string()
+                        .describe(
+                          "Regex pattern to match closing thinking tag.",
+                        )
+                        .default(
+                          "</thinking>|</think>|<\\|/thinking\\|>|\\[/thinking\\]",
+                        ),
                     })
                     .strict(),
                 })

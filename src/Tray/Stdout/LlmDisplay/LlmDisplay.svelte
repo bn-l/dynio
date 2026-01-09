@@ -1,0 +1,85 @@
+<div
+    id="llmDisplay"
+    class="flex flex-col justify-stretch items-stretch p-4 h-71 nice-scroll overflow-x-hidden"
+>
+    <div
+        id="llmDisplayContainer"
+        style={`font-size: ${fontSize}rem`}
+    >
+        {#if thinkingDisplay === "none"}
+            <div class="prose m-1 mb-2">
+                {@html renderMarkdown(processed.raw)}
+            </div>
+        {:else if thinkingDisplay === "show"}
+            {#if processed.thinkOut}
+                <div class="llm-thinking-content m-1 mb-2">
+                    {@html renderMarkdown(processed.thinkOut)}
+                </div>
+            {/if}
+            {#if processed.postThinkOut}
+                <div class="prose m-1 mb-2">
+                    {@html renderMarkdown(processed.postThinkOut)}
+                </div>
+            {/if}
+        {:else if thinkingDisplay === "keepHidden"}
+            {#key processed.isThinkDone}
+                {#if !processed.isThinkDone && processed.isThinking}
+                    <div class="llm-thinking-indicator m-1 mb-2" transition:fade={{ duration: 300 }}>
+                        🧠 thinking... {processed.thinkCharCount}
+                    </div>
+                {:else if processed.isThinkDone}
+                    <div class="prose m-1 mb-2" transition:fade={{ duration: 300 }}>
+                        {@html renderMarkdown(processed.postThinkOut)}
+                    </div>
+                {:else}
+                    <div class="prose m-1 mb-2" transition:fade={{ duration: 300 }}>
+                        {@html renderMarkdown(processed.raw)}
+                    </div>
+                {/if}
+            {/key}
+        {:else if thinkingDisplay === "showWhileThinking"}
+            {#key processed.isThinkDone}
+                {#if !processed.isThinkDone && processed.isThinking}
+                    <div class="llm-thinking-content m-1 mb-2" transition:fade={{ duration: 300 }}>
+                        {@html renderMarkdown(processed.thinkOut)}
+                    </div>
+                {:else if processed.isThinkDone}
+                    <div class="prose m-1 mb-2" transition:fade={{ duration: 300 }}>
+                        {@html renderMarkdown(processed.postThinkOut)}
+                    </div>
+                {:else}
+                    <div class="prose m-1 mb-2" transition:fade={{ duration: 300 }}>
+                        {@html renderMarkdown(processed.raw)}
+                    </div>
+                {/if}
+            {/key}
+        {/if}
+    </div>
+</div>
+
+<script lang="ts">
+    import "./llmDisplay.css";
+    import { fade } from "svelte/transition";
+    import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
+    import { stdout } from "$lib/stores/globals.ts";
+    import { processLlmOutput } from "./processLlmOutput.ts";
+    import { renderMarkdown } from "$lib/utils/markdown.ts";
+    import type { LlmDisplayOptions, ThinkingDisplay } from "$lib/stores/schema/cmd-config-schema.ts";
+
+    $: displayOptions = $currentCmdConfig?.outputOptions?.display?.type === "llm"
+        ? $currentCmdConfig?.outputOptions?.display?.options as LlmDisplayOptions
+        : undefined;
+
+    $: thinkingDisplay = (displayOptions?.thinkingDisplay ?? "none") as ThinkingDisplay;
+
+    $: processed = processLlmOutput(
+        $stdout,
+        displayOptions?.thinkingOpenPattern,
+        displayOptions?.thinkingClosePattern
+    );
+
+    $: fontSize = displayOptions?.sizeBreakPoint &&
+        processed.raw.length < displayOptions.sizeBreakPoint
+            ? displayOptions?.largeSize ?? 1.5
+            : displayOptions?.smallSize ?? 1.0;
+</script>
