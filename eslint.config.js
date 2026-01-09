@@ -35,6 +35,7 @@ export default antfu(
             "**/.factor/**",
             ".pnpmfile.cjs",
             "**/*.json",
+            "**/*.md",
         ],
     },
     {
