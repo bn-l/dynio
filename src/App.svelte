@@ -79,7 +79,7 @@ as regular stdout from commands) -->
     
     // import { settings } from "$lib/stores/settings.js";
     // import AutoUpdater from "./Meta/AutoUpdater.svelte";
-    import { trayOpen, running, stdoutLock, query, clickInBounds, stderr, currentTrayView, currentCmd, clearInput } from "$lib/stores/globals.js";
+    import { trayOpen, running, stdoutLock, query, clickInBounds, stderr, currentTrayView, currentCmd, clearInput, isMac } from "$lib/stores/globals.js";
     import Tray from "./Tray/Tray.svelte";
     import Input from "./Bar/Input.svelte";
     import LeftTile from "./Bar/LeftTile.svelte";
@@ -282,13 +282,13 @@ as regular stdout from commands) -->
     use:hotkeys={{
         handler: cmdHotkeyHandler,
         keys: ["1", "2", "3", "4", "5", "6", "7", "8", "9"],
-        modifiers: ["Control"],
+        modifiers: isMac ? ["Meta"] : ["Control"],
         enabled:  true,
     }}
     use:hotkeys={{
         handler: tileHotkeyHandler,
         keys: ["S"],
-        modifiers: ["Control"],
+        modifiers: isMac ? ["Meta"] : ["Control"],
         enabled:  true,
     }}
 />

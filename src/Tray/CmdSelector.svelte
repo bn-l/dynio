@@ -13,7 +13,7 @@
                     <div class="flex justify-between items-center mb-1">
                         <span class="cmd-name">{item.cmdName}</span>
                         {#if item.hotkeyNumber}
-                            <span class="hotkey-badge">{keySymbols.ctrl}+{item.hotkeyNumber}</span>
+                            <span class="hotkey-badge">{keySymbols.cmd}+{item.hotkeyNumber}</span>
                         {/if}
                     </div>
 
