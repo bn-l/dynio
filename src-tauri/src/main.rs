@@ -372,11 +372,13 @@ async fn close_splashscreen(window: WebviewWindow) {
 #[tauri::command]
 async fn trim_path(path: String) -> Result<String, SerError> {
     let path = std::path::Path::new(&path);
-    let parent_path = path.parent().expect("Could not get parent path");
-    Ok(parent_path
-        .to_str()
-        .expect("Could not convert path to string")
-        .to_string())
+    let parent_path = path.parent().ok_or_else(|| {
+        std::io::Error::new(std::io::ErrorKind::InvalidInput, "Path has no parent directory")
+    })?;
+    let parent_str = parent_path.to_str().ok_or_else(|| {
+        std::io::Error::new(std::io::ErrorKind::InvalidData, "Path contains invalid UTF-8")
+    })?;
+    Ok(parent_str.to_string())
 }
 
 #[derive(Serialize, Deserialize)]
