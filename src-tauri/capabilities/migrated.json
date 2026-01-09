@@ -39,7 +39,13 @@
     "clipboard-manager:allow-read-text",
     "clipboard-manager:allow-write-text",
     "fs:default",
-    "fs:allow-watch",
+    {
+      "identifier": "fs:allow-watch",
+      "allow": [
+        { "path": "$HOME/.config/dynio" },
+        { "path": "$HOME/.config/dynio/**" }
+      ]
+    },
     "opener:default",
     {
       "identifier": "opener:allow-open-path",
