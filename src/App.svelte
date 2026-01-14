@@ -148,14 +148,20 @@ as regular stdout from commands) -->
 
     onMount(() => {
         const unlisten = listen("stderr", (e: Event<string[]>) => {
-            // console.log("stderr event received: ", e.payload);
             const filterPattern = $currentCmdConfig?.modeConfig?.displayOptions?.stderrFilterRegex;
             let lines = e.payload;
             if (filterPattern) {
                 const regex = new RegExp(filterPattern);
                 lines = lines.filter(line => !regex.test(line));
             }
-            $stderr = lines.join("\n").trim();
+            const stderrText = lines.join("\n").trim();
+            $stderr = stderrText;
+            if (stderrText.length > 0) {
+                $trayOpen = true;
+                if ($stdout.length === 0) {
+                    $currentTrayView = "stderr";
+                }
+            }
         });
         return () => { void unlisten.then( f => f()) };
     }); 
@@ -245,12 +251,14 @@ as regular stdout from commands) -->
         document.getElementById("cmdInput")?.focus();
     }
 
-    // Auto-switch to errors view when new errors arrive and input is empty
+    // Auto-switch to errors view when new errors arrive
     let prevErrorsLen = 0;
     $: {
-        if ($errors.length > prevErrorsLen && $query.trim().length === 0) {
+        if ($errors.length > prevErrorsLen) {
             $trayOpen = true;
-            $currentTrayView = "errors";
+            if ($stdout.length === 0) {
+                $currentTrayView = "errors";
+            }
         }
         prevErrorsLen = $errors.length;
     }
