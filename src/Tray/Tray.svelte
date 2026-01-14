@@ -1,6 +1,6 @@
 
-<div id="tray" class="relative overflow-hidden rounded-b-xl flex flex-col h-[20rem]">
-    <div class="tray-content flex-grow overflow-hidden">
+<div id="tray" class="relative overflow-hidden rounded-b-xl grid grid-rows-[1fr_auto] h-[20rem] w-full">
+    <div class="tray-content overflow-hidden w-full">
         <svelte:component this={currentTray.component} {...currentTray.props} />
     </div>
     {#if showStatusBar}
