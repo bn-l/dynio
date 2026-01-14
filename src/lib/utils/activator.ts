@@ -45,10 +45,14 @@ export async function activate(
 
     try {
         await action(text);
-    } 
+
+        if (options.hideOnActivation ?? true) {
+            await invoke("hide_main");
+        }
+    }
     catch(error) {
-        const errorMsg = error instanceof Error && "message" in error ? 
-            `Error message: ${error.message}` : 
+        const errorMsg = error instanceof Error && "message" in error ?
+            `Error message: ${error.message}` :
             "";
         errors.addError( `Could not ${activateAction}. Received text: \"${text}\". Check regex settings. ${errorMsg}`,
             "tauri");
