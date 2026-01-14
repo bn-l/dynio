@@ -336,16 +336,17 @@ as regular stdout from commands) -->
             return;
         }
 
-        // Overriding webview hotkeys
+        // Overriding webview hotkeys (use e.code for letters because on macOS
+        // Ctrl+letter in inputs produces control characters for e.key)
         if (
             alt && e.key === "Escape"
             || alt && e.key === " "
             || ctrlOrCmd && e.code === "KeyU"
             || ctrlOrCmd && e.code === "KeyD"
-            || ctrlOrCmd && e.key === "p"
-            || ctrlOrCmd && e.key === "r"
-            || ctrlOrCmd && e.key === "j"
-            || ctrlOrCmd && e.key === "f"
+            || ctrlOrCmd && e.code === "KeyP"
+            || ctrlOrCmd && e.code === "KeyR"
+            || ctrlOrCmd && e.code === "KeyJ"
+            || ctrlOrCmd && e.code === "KeyF"
             || e.key === "F5"
         ) {
             console.log("preventing default");
