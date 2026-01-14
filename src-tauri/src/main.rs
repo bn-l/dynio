@@ -24,7 +24,7 @@ use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
 #[cfg(target_os = "macos")]
 use tauri_nspanel::{
-    objc2::{ClassType, Message},
+    objc2::{msg_send, ClassType, Message},
     objc2_app_kit::NSWindowCollectionBehavior,
     objc2_foundation::NSObjectProtocol,
     panel, ManagerExt, StyleMask, WebviewWindowExt,
@@ -550,6 +550,28 @@ async fn trim_path(path: String) -> Result<String, SerError> {
     Ok(parent_str.to_string())
 }
 
+#[tauri::command]
+fn spawn_detached(
+    program: String,
+    arguments: Vec<String>,
+    current_dir: Option<String>,
+) -> Result<(), String> {
+    let mut cmd = std::process::Command::new(&program);
+
+    cmd.args(&arguments)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+
+    if let Some(dir) = current_dir {
+        cmd.current_dir(dir);
+    }
+
+    cmd.spawn()
+        .map(|_| ())
+        .map_err(|e| format!("Failed to spawn {}: {}", program, e))
+}
+
 #[derive(Serialize, Deserialize)]
 struct ConfigFiles {
     cmd_config: String,
@@ -619,7 +641,8 @@ fn main() {
             get_config_files,
             hide_main,
             get_config_dir,
-            trim_path
+            trim_path,
+            spawn_detached
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]
@@ -843,6 +866,13 @@ fn setup_main_window(app_handle: AppHandle, start_hidden: bool, on_top: bool) {
 
                 // Panel should float above other windows
                 panel.set_floating_panel(true);
+
+                // Disable window animation for instant show/hide
+                // NSWindowAnimationBehaviorNone = 2
+                unsafe {
+                    let ns_panel = panel.as_panel();
+                    let _: () = msg_send![ns_panel, setAnimationBehavior: 2_isize];
+                }
 
                 if start_hidden {
                     log::debug!("start_hidden was true, hiding panel");
