@@ -320,8 +320,6 @@ struct TrayState {
     tray_closed_height: f64,
     tray_open_height: f64,
     currently_open: bool,
-    x: i32,
-    y: i32,
 }
 impl Default for TrayState {
     fn default() -> Self {
@@ -330,8 +328,6 @@ impl Default for TrayState {
             tray_closed_height: 0.0,
             tray_open_height: 0.0,
             currently_open: false,
-            x: 0,
-            y: 0,
         }
     }
 }
@@ -345,14 +341,13 @@ async fn open_tray(app_handle: AppHandle) {
     let mut guard = state.lock().await;
 
     if !guard.currently_open {
+        // Capture current position before resize to preserve user-set position
+        let current_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
         let _ = window.set_size(Size::Physical(PhysicalSize {
-            width: (guard.width as u32),
-            height: (guard.tray_open_height as u32),
+            width: guard.width as u32,
+            height: guard.tray_open_height as u32,
         }));
-        let _ = window.set_position(PhysicalPosition {
-            x: guard.x,
-            y: guard.y,
-        });
+        let _ = window.set_position(current_pos);
         guard.currently_open = true;
     }
 }
@@ -366,14 +361,13 @@ async fn close_tray(app_handle: AppHandle) {
     let mut guard = state.lock().await;
 
     if guard.currently_open {
+        // Capture current position before resize to preserve user-set position
+        let current_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
         let _ = window.set_size(Size::Physical(PhysicalSize {
-            width: (guard.width as u32),
-            height: (guard.tray_closed_height as u32),
+            width: guard.width as u32,
+            height: guard.tray_closed_height as u32,
         }));
-        let _ = window.set_position(PhysicalPosition {
-            x: guard.x,
-            y: guard.y,
-        });
+        let _ = window.set_position(current_pos);
         guard.currently_open = false;
     }
 }
@@ -705,8 +699,6 @@ fn setup_main_window(app_handle: AppHandle, start_hidden: bool, on_top: bool) {
         tray_closed_height: phys_height,
         tray_open_height: phys_tray_height + phys_height,
         currently_open: false,
-        x,
-        y,
     };
 
     let _ = window.set_size(Size::Physical(PhysicalSize {
