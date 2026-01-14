@@ -72,20 +72,18 @@
         $scrollContainer = null;
     });
 
-    // Sort by hotkey but don't change the order of an item if it has no hotkey
+    // Sort by hotkey number: items with hotkeys come first (sorted by number), then items without
     $: commandList = Object.entries($cmdConfig).sort((a, b) => {
-        const [_cmdNameA, configItemA] = a;
-        const [_cmdNameB, configItemB] = b;
-        if (
-            "hotkeyNumber" in configItemA 
-            && "hotkeyNumber" in configItemB
-            && configItemA.hotkeyNumber
-            && configItemB.hotkeyNumber
-            && !Number.isNaN(configItemA.hotkeyNumber)
-            && !Number.isNaN(configItemB.hotkeyNumber)
-        ) {
-            return configItemA.hotkeyNumber - configItemB.hotkeyNumber;
+        const [, configItemA] = a;
+        const [, configItemB] = b;
+        const aHasHotkey = "hotkeyNumber" in configItemA && configItemA.hotkeyNumber && !Number.isNaN(configItemA.hotkeyNumber);
+        const bHasHotkey = "hotkeyNumber" in configItemB && configItemB.hotkeyNumber && !Number.isNaN(configItemB.hotkeyNumber);
+
+        if (aHasHotkey && bHasHotkey) {
+            return configItemA.hotkeyNumber! - configItemB.hotkeyNumber!;
         }
+        if (aHasHotkey) return -1;
+        if (bHasHotkey) return 1;
         return 0;
     });
 
