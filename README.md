@@ -57,6 +57,13 @@ The app watches its config dir and will relaunch after any changes.
 Open source with signed builds. No data collection BS. No nasty surprises. The app can be 
 built after cloning this repo with `tauri build` (after removing the update section from tauri.conf). It makes one request on launch to releases on this repository to check for updates.
 
+## Line-Oriented Processing
+
+Dynio reads command output line-by-line. Data is only displayed when a newline character (`\n`) is received. This means:
+
+- Commands that output text without newlines will appear to buffer until the process ends
+- For **LLM streaming scripts**: ensure each streamed chunk is followed by a newline, otherwise the entire response will appear at once when the process exits rather than streaming in progressively
+
 ## Troubleshooting
 
 If you are on an older version of windows, it should detect and install webview on windows if necessary. If there any issues it can be installed manually: https://go.microsoft.com/fwlink/p/?LinkId=2124703
