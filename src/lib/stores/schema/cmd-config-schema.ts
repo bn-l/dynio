@@ -58,20 +58,10 @@ export interface SingleDisplayOptions {
 
 export interface LlmDisplayOptions {
     /**
-     * Font size for short outputs (rem).
-     * @default 1.5
+     * Font size (rem).
+     * @default 0.8
      */
-    largeSize?: number;
-    /**
-     * Font size for longer outputs (rem).
-     * @default 1.0
-     */
-    smallSize?: number;
-    /**
-     * Output length threshold for font size switching.
-     * @default 100
-     */
-    sizeBreakPoint?: number;
+    fontSize?: number;
     /**
      * How to handle thinking blocks.
      * - "none": Render as-is (no special handling)
