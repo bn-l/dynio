@@ -37,7 +37,7 @@ export const query = writable("");
 export const unhiding = writable(true);
 export const clickInBounds = writable(false);
 
-export const stderr = writable<string[]>([]);
+export const stderr = writable<string>("");
 
 
 
@@ -51,7 +51,6 @@ function createStdoutStore() {
         subscribe,
 
         set: (value: string[]) => {
-            console.log("in globals, setting stdout")
             _set(value);
         }
     }
@@ -82,12 +81,13 @@ function createTrayOpenStore() {
 export const trayOpen = createTrayOpenStore();
 
 export function clearInput() {
+    void invoke("stop_running");
     query.set("");
     stdoutLock.set(true);
     exitCode.set(undefined);
     running.set(false);
     stdout.set([]);
-    stderr.set([]);
+    stderr.set("");
 }
 
 // Status bar content

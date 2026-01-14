@@ -1,18 +1,10 @@
-
-
-<ClearablePanel 
+<ClearablePanel
     panelHeading="Stderr"
     onClear={() => {
-        $stderr = [];
+        $stderr = "";
     }}
 >
-    {#each $stderr as err}
-        <div
-            class="py-1 text-sm"
-        >
-            {err}
-        </div>
-    {/each}
+    <pre class="stderr-content">{$stderr}</pre>
 </ClearablePanel>
 
 
@@ -24,7 +16,16 @@
     // special "errors" store.
 
     import { stderr } from "$lib/stores/globals.ts";
-    
     import ClearablePanel from "$lib/utils/ClearablePanel.svelte";
-
 </script>
+
+<style>
+    .stderr-content {
+        margin: 0;
+        padding: 0.25rem 0;
+        font-size: 0.875rem;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: inherit;
+    }
+</style>
