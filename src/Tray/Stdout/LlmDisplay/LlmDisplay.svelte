@@ -3,6 +3,7 @@
     class="h-71 pr-2"
 >
 <div
+    bind:this={scrollEl}
     class="nice-scroll overflow-x-hidden overflow-y-auto h-full pl-4 pt-4 pb-4 pr-6"
 >
     <div
@@ -64,11 +65,20 @@
 <script lang="ts">
     import "./llmDisplay.css";
     import { fade } from "svelte/transition";
+    import { onDestroy } from "svelte";
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
-    import { stdout, running } from "$lib/stores/globals.ts";
+    import { stdout, running, scrollContainer } from "$lib/stores/globals.ts";
     import { errors } from "$lib/stores/errors.ts";
     import { processLlmOutput } from "./processLlmOutput.ts";
     import { renderMarkdown } from "$lib/utils/markdown.ts";
+
+    let scrollEl: HTMLElement;
+    $: $scrollContainer = scrollEl;
+
+    onDestroy(() => {
+        $scrollContainer = null;
+    });
+
     $: modeConfig = $currentCmdConfig?.modeConfig;
     $: displayOptions = modeConfig?.mode === "llm" ? modeConfig.displayOptions : undefined;
 

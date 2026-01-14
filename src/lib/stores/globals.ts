@@ -102,3 +102,6 @@ export interface StatusBarState {
 }
 
 export const statusBar = writable<StatusBarState>({ actions: [], count: "" });
+
+// Scroll container for half-page scrolling (Ctrl+U/D)
+export const scrollContainer = writable<HTMLElement | null>(null);

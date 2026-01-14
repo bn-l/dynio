@@ -77,7 +77,7 @@ as regular stdout from commands) -->
     
     // import { settings } from "$lib/stores/settings.js";
     // import AutoUpdater from "./Meta/AutoUpdater.svelte";
-    import { trayOpen, running, stdoutLock, query, clickInBounds, stderr, currentTrayView, currentCmd, clearInput, isMac, statusBar } from "$lib/stores/globals.js";
+    import { trayOpen, running, stdoutLock, query, clickInBounds, stderr, currentTrayView, currentCmd, clearInput, isMac, statusBar, scrollContainer } from "$lib/stores/globals.js";
     import { errors } from "$lib/stores/errors.ts";
     import Tray from "./Tray/Tray.svelte";
     import Input from "./Bar/Input.svelte";
@@ -287,6 +287,16 @@ as regular stdout from commands) -->
         }
     }
 
+    // ------------------- Half-page scrolling ------------------- //
+
+    function halfPageScroll(direction: 1 | -1) {
+        if (!$scrollContainer) return;
+        $scrollContainer.scrollBy({
+            top: direction * ($scrollContainer.clientHeight / 2),
+            behavior: 'smooth'
+        });
+    }
+
 </script>
 
 
@@ -311,17 +321,27 @@ as regular stdout from commands) -->
     }}
 />
 
-<svelte:window 
+<svelte:window
     on:keydown={(e) => {
         const ctrl = e.getModifierState("Control");
         const meta  = e.getModifierState("Meta");
         const ctrlOrCmd = ctrl || meta;
         const alt = e.getModifierState("Alt");
+
+        // Half-page scrolling with Ctrl+U/D (use event.code because on macOS
+        // Ctrl+letter in inputs produces control characters for event.key)
+        if (ctrl && $trayOpen && (e.code === "KeyU" || e.code === "KeyD")) {
+            e.preventDefault();
+            halfPageScroll(e.code === "KeyU" ? -1 : 1);
+            return;
+        }
+
         // Overriding webview hotkeys
         if (
             alt && e.key === "Escape"
             || alt && e.key === " "
-            || ctrlOrCmd && e.key === "u"
+            || ctrlOrCmd && e.code === "KeyU"
+            || ctrlOrCmd && e.code === "KeyD"
             || ctrlOrCmd && e.key === "p"
             || ctrlOrCmd && e.key === "r"
             || ctrlOrCmd && e.key === "j"

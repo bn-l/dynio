@@ -1,6 +1,7 @@
 
 
 <div
+    bind:this={scrollEl}
     id="singleDisplay"
     class="flex flex-col justify-stretch items-stretch p-4 h-71 nice-scroll overflow-x-hidden"
 >
@@ -29,12 +30,19 @@
 <script lang="ts">
 
     import "./singleDisplay.css";
+    import { onDestroy } from "svelte";
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
-    import { stdout } from "$lib/stores/globals.ts";
+    import { stdout, scrollContainer } from "$lib/stores/globals.ts";
     import stripAnsi from 'strip-ansi';
     // import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { processSingleOutput } from "./processSingleOuput.ts";
 
+    let scrollEl: HTMLElement;
+    $: $scrollContainer = scrollEl;
+
+    onDestroy(() => {
+        $scrollContainer = null;
+    });
 
     $: modeConfig = $currentCmdConfig?.modeConfig;
     $: displayOptions = modeConfig?.mode === "single" ? modeConfig.displayOptions : undefined;

@@ -1,7 +1,7 @@
 
 
 <div class="h-[97%] pr-2">
-    <div class="nice-scroll overflow-x-hidden overflow-y-auto h-[97%] px-2 pt-2 pb-2">
+    <div bind:this={scrollEl} class="nice-scroll overflow-x-hidden overflow-y-auto h-[97%] px-2 pt-2 pb-2">
         {#each items as item, index (item.cmdName)}
             <div
                 id={`cmdselect-item-${index}`}
@@ -53,9 +53,12 @@
     import { debounce } from "lodash-es";
     import { onDestroy, onMount } from "svelte";
     import { cmdConfig } from "$lib/stores/cmd-config.ts";
-    import { currentCmd, query, stdout, currentTrayView, currentFocus, stdoutLock, statusBar, keySymbols } from "$lib/stores/globals.ts";
+    import { currentCmd, query, stdout, currentTrayView, currentFocus, stdoutLock, statusBar, keySymbols, scrollContainer } from "$lib/stores/globals.ts";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { invoke } from "@tauri-apps/api/core";
+
+    let scrollEl: HTMLElement;
+    $: $scrollContainer = scrollEl;
 
     console.log($cmdConfig);
 
@@ -66,6 +69,7 @@
 
     onDestroy(() => {
         $statusBar = { actions: [], count: "" };
+        $scrollContainer = null;
     });
 
     // Sort by hotkey but don't change the order of an item if it has no hotkey
