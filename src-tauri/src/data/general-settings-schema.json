@@ -34,6 +34,11 @@
         "globalShortcut": {
           "type": "string",
           "description": "Global shortcut to toggle window visibility (e.g., Alt+Space, Option+Space, Cmd+Space). Defaults: Windows=Alt+Space, macOS=Option+Space, Linux=Alt+Space"
+        },
+        "hideOnLostFocus": {
+          "type": "boolean",
+          "description": "Whether clicking outside the app will cause it to hide.",
+          "default": true
         }
       },
       "additionalProperties": false

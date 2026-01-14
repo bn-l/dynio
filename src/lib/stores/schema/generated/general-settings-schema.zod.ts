@@ -28,5 +28,9 @@ export default z
         "Global shortcut to toggle window visibility (e.g., Alt+Space, Option+Space, Cmd+Space). Defaults: Windows=Alt+Space, macOS=Option+Space, Linux=Alt+Space",
       )
       .optional(),
+    hideOnLostFocus: z
+      .boolean()
+      .describe("Whether clicking outside the app will cause it to hide.")
+      .default(true),
   })
   .strict();

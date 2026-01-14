@@ -29,6 +29,11 @@ export type GeneralSettings = {
      * Defaults: Windows=Alt+Space, macOS=Option+Space, Linux=Alt+Space
      */
     globalShortcut?: string;
+    /**
+     * Whether clicking outside the app will cause it to hide.
+     * @default true
+     */
+    hideOnLostFocus?: boolean;
 }
 
 /**

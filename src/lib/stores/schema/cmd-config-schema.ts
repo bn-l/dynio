@@ -151,9 +151,14 @@ export interface ActivationOptions {
     /**
      * Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent
      *  folder of the extracted text or error if the extract text is not a path.
-     * @default false 
+     * @default false
      */
     isPath?: boolean;
+    /**
+     * Hide window after activation (copy, open, or reveal).
+     * @default true
+     */
+    hideOnActivation?: boolean;
 }
 
 export type ModeConfig =

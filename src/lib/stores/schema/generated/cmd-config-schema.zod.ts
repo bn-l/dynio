@@ -93,6 +93,12 @@ export default z.record(
                     "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent  folder of the extracted text or error if the extract text is not a path.",
                   )
                   .default(false),
+                hideOnActivation: z
+                  .boolean()
+                  .describe(
+                    "Hide window after activation (copy, open, or reveal).",
+                  )
+                  .default(true),
               })
               .strict(),
           })
@@ -184,6 +190,12 @@ export default z.record(
                     "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent  folder of the extracted text or error if the extract text is not a path.",
                   )
                   .default(false),
+                hideOnActivation: z
+                  .boolean()
+                  .describe(
+                    "Hide window after activation (copy, open, or reveal).",
+                  )
+                  .default(true),
               })
               .strict(),
           })
