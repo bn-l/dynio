@@ -1,6 +1,9 @@
 <div
     id="llmDisplay"
-    class="flex flex-col justify-stretch items-stretch p-4 h-71 nice-scroll overflow-x-hidden"
+    class="h-71 pr-2"
+>
+<div
+    class="nice-scroll overflow-x-hidden overflow-y-auto h-full pl-4 pt-4 pb-4 pr-6"
 >
     <div
         id="llmDisplayContainer"
@@ -56,12 +59,14 @@
         {/if}
     </div>
 </div>
+</div>
 
 <script lang="ts">
     import "./llmDisplay.css";
     import { fade } from "svelte/transition";
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
-    import { stdout } from "$lib/stores/globals.ts";
+    import { stdout, running } from "$lib/stores/globals.ts";
+    import { errors } from "$lib/stores/errors.ts";
     import { processLlmOutput } from "./processLlmOutput.ts";
     import { renderMarkdown } from "$lib/utils/markdown.ts";
     $: modeConfig = $currentCmdConfig?.modeConfig;
@@ -75,8 +80,21 @@
         displayOptions?.thinkingClosePattern
     );
 
-    $: fontSize = displayOptions?.sizeBreakPoint &&
-        processed.raw.length < displayOptions.sizeBreakPoint
-            ? displayOptions?.largeSize ?? 1.5
-            : displayOptions?.smallSize ?? 1.0;
+    $: fontSize = displayOptions?.fontSize ?? 0.8;
+
+    // Detect when command finishes with only thinking tokens (no actual output)
+    let wasRunning = false;
+    $: {
+        if (wasRunning && !$running) {
+            if (
+                thinkingDisplay !== "none" &&
+                processed.isThinkDone &&
+                !processed.postThinkOut.trim() &&
+                !processed.preThinkOut.trim()
+            ) {
+                errors.addError("There were no non-thinking tokens", "shell");
+            }
+        }
+        wasRunning = $running;
+    }
 </script>
