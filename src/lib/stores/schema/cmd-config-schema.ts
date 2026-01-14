@@ -120,18 +120,10 @@ export interface GeneralDisplayOptions {
 
 
 
-export interface ActivationOptions {
-    /**
-     * Enter / double click action for a List item. Useful for opening or copying some text 
-     * to the clipboard. By default it copies.
-     * If:
-     * - no extractor: Will copy / open entire line.
-     * - extrator: Will copy / open match.
-     * - extractor + extractorGroup: Will copy / open specific match group.
-     * @default "copy"
-     *
-     */
-    activateAction?: "copy" | "open";
+/**
+ * Shared options that apply to all activation actions.
+ */
+interface BaseActivationOptions {
     /**
      * Regex to extract text from each split line for use in the enterAction in this config.
      * Don't pre/post-fix with /.
@@ -150,16 +142,53 @@ export interface ActivationOptions {
     extractorGroup?: number;
     /**
      * Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent
-     *  folder of the extracted text or error if the extract text is not a path.
+     * folder of the extracted text or error if the extract text is not a path.
      * @default false
      */
     isPath?: boolean;
     /**
-     * Hide window after activation (copy, open, or reveal).
+     * Hide window after activation (copy, open, command, or reveal).
      * @default true
      */
     hideOnActivation?: boolean;
 }
+
+/**
+ * Discriminated union for activation options based on activateAction.
+ */
+export type ActivationOptions =
+    | (BaseActivationOptions & {
+        /**
+         * Copy extracted text to clipboard.
+         * @default "copy"
+         */
+        activateAction?: "copy";
+    })
+    | (BaseActivationOptions & {
+        /**
+         * Open extracted text as a path or URL in the default application.
+         */
+        activateAction: "open";
+    })
+    | (BaseActivationOptions & {
+        /**
+         * Run a command with the extracted text as an argument.
+         */
+        activateAction: "command";
+        /**
+         * Path to the command executable.
+         */
+        commandPath: string;
+        /**
+         * Arguments for the command. The extracted text is appended as the final argument.
+         * @example ["--file"]
+         */
+        commandArguments?: string[];
+        /**
+         * Working directory for the command.
+         */
+        commandCurrentDir?: string;
+    });
 
 export type ModeConfig =
     {

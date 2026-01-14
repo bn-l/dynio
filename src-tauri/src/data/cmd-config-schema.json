@@ -300,18 +300,9 @@
       "type": "object",
       "additionalProperties": false
     },
-    "ActivationOptions": {
+    "BaseActivationOptions": {
       "type": "object",
       "properties": {
-        "activateAction": {
-          "type": "string",
-          "enum": [
-            "copy",
-            "open"
-          ],
-          "description": "Enter / double click action for a List item. Useful for opening or copying some text  to the clipboard. By default it copies. If:\n- no extractor: Will copy / open entire line.\n- extrator: Will copy / open match.\n- extractor + extractorGroup: Will copy / open specific match group.",
-          "default": "copy"
-        },
         "extractorRegexBody": {
           "type": "string",
           "description": "Regex to extract text from each split line for use in the enterAction in this config. Don't pre/post-fix with /."
@@ -329,16 +320,99 @@
         },
         "isPath": {
           "type": "boolean",
-          "description": "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent  folder of the extracted text or error if the extract text is not a path.",
+          "description": "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent folder of the extracted text or error if the extract text is not a path.",
           "default": false
         },
         "hideOnActivation": {
           "type": "boolean",
-          "description": "Hide window after activation (copy, open, or reveal).",
+          "description": "Hide window after activation (copy, open, command, or reveal).",
           "default": true
         }
-      },
-      "additionalProperties": false
+      }
+    },
+    "ActivationOptions": {
+      "oneOf": [
+        {
+          "type": "object",
+          "description": "Copy extracted text to clipboard (default action).",
+          "allOf": [
+            { "$ref": "#/definitions/BaseActivationOptions" }
+          ],
+          "properties": {
+            "activateAction": {
+              "type": "string",
+              "const": "copy",
+              "description": "Copy extracted text to clipboard.",
+              "default": "copy"
+            },
+            "extractorRegexBody": true,
+            "extractorFlags": true,
+            "extractorGroup": true,
+            "isPath": true,
+            "hideOnActivation": true
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Open extracted text as a path or URL in the default application.",
+          "allOf": [
+            { "$ref": "#/definitions/BaseActivationOptions" }
+          ],
+          "properties": {
+            "activateAction": {
+              "type": "string",
+              "const": "open",
+              "description": "Open extracted text as a path or URL in the default application."
+            },
+            "extractorRegexBody": true,
+            "extractorFlags": true,
+            "extractorGroup": true,
+            "isPath": true,
+            "hideOnActivation": true
+          },
+          "required": ["activateAction"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "description": "Run a command with the extracted text as an argument. Fire and forget - no output captured.",
+          "allOf": [
+            { "$ref": "#/definitions/BaseActivationOptions" }
+          ],
+          "properties": {
+            "activateAction": {
+              "type": "string",
+              "const": "command",
+              "description": "Run a command with the extracted text as an argument."
+            },
+            "commandPath": {
+              "type": "string",
+              "description": "Path to the command executable."
+            },
+            "commandArguments": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Arguments for the command. The extracted text is appended as the final argument.",
+              "examples": [
+                ["--file"],
+                ["-n", "100"]
+              ]
+            },
+            "commandCurrentDir": {
+              "type": "string",
+              "description": "Working directory for the command."
+            },
+            "extractorRegexBody": true,
+            "extractorFlags": true,
+            "extractorGroup": true,
+            "isPath": true,
+            "hideOnActivation": true
+          },
+          "required": ["activateAction", "commandPath"],
+          "additionalProperties": false
+        }
+      ]
     }
   }
 }

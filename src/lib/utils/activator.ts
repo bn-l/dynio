@@ -14,8 +14,8 @@ const defaultActivationOptions: ActivationOptions = {
 
 
 export async function activate(
-    text: string, 
-    options: ActivationOptions = defaultActivationOptions, 
+    text: string,
+    options: ActivationOptions = defaultActivationOptions,
     openContaining: boolean = false
 ) {
 
@@ -39,12 +39,20 @@ export async function activate(
         }
     }
 
-    const action = activateAction === "copy" ? writeText : openPath;
-
     if(openContaining) text = await invoke("trim_path", { path: text });
 
     try {
-        await action(text);
+        if (activateAction === "command" && "commandPath" in options) {
+            const args = [...(options.commandArguments ?? []), text];
+            await invoke("spawn_detached", {
+                program: options.commandPath,
+                arguments: args,
+                currentDir: options.commandCurrentDir,
+            });
+        } else {
+            const action = activateAction === "open" ? openPath : writeText;
+            await action(text);
+        }
 
         if (options.hideOnActivation ?? true) {
             await invoke("hide_main");
