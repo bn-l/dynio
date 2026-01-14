@@ -32,7 +32,8 @@
     import "./singleDisplay.css";
     import { onDestroy } from "svelte";
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
-    import { stdout, scrollContainer } from "$lib/stores/globals.ts";
+    import { stdout, scrollContainer, statusBar, keySymbols } from "$lib/stores/globals.ts";
+    import type { StatusBarAction } from "$lib/stores/globals.ts";
     import stripAnsi from 'strip-ansi';
     // import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { processSingleOutput } from "./processSingleOuput.ts";
@@ -40,13 +41,33 @@
     let scrollEl: HTMLElement;
     $: $scrollContainer = scrollEl;
 
-    onDestroy(() => {
-        $scrollContainer = null;
-    });
-
     $: modeConfig = $currentCmdConfig?.modeConfig;
     $: displayOptions = modeConfig?.mode === "single" ? modeConfig.displayOptions : undefined;
     $: parseAnsiColors = modeConfig?.displayOptions?.parseAnsiColors;
+    $: activationOptions = modeConfig?.mode === "single" ? modeConfig.activationOptions : undefined;
+    $: runOnEnter = $currentCmdConfig?.runOnEnter;
+
+    $: {
+        const actions: StatusBarAction[] = [];
+        const activateAction = activationOptions?.activateAction ?? "copy";
+
+        if (runOnEnter) {
+            actions.push({ key: `${keySymbols.cmd}+${keySymbols.enter}`, label: activateAction });
+        } else {
+            actions.push({ key: keySymbols.enter, label: activateAction });
+        }
+
+        if (activationOptions?.isPath) {
+            actions.push({ key: `${keySymbols.cmd}+O`, label: "reveal" });
+        }
+
+        $statusBar = { actions, count: "" };
+    }
+
+    onDestroy(() => {
+        $statusBar = { actions: [], count: "" };
+        $scrollContainer = null;
+    });
 
     $: processedOutput = processSingleOutput($stdout, displayOptions);
 

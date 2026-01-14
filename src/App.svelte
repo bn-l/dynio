@@ -270,20 +270,22 @@ as regular stdout from commands) -->
     }
 
     // Status bar hints based on current view and running state
+    // When $stdout has content, display components (ListDisplay, SingleDisplay) manage their own status bar
     $: {
-        const runOnEnter = $currentCmdConfig?.runOnEnter;
-        console.log("[DEBUG] App.svelte statusBar reactive: $running=", $running, "runOnEnter=", runOnEnter, "view=", $currentTrayView);
+        console.log("[DEBUG] App.svelte statusBar reactive: view=", $currentTrayView, "stdout.length=", $stdout.length, "query.length=", $query.length);
         if ($currentTrayView === "stderr" || $currentTrayView === "errors") {
             console.log("[DEBUG] App.svelte: SETTING 'esc go back'");
             $statusBar = { actions: [{ key: "esc", label: "go back" }], count: "" };
-        } else if ($currentTrayView === "stdout" && $query.length > 0) {
-            console.log("[DEBUG] App.svelte: SETTING 'esc to clear'");
-            $statusBar = { actions: [{ key: "esc", label: "to clear" }], count: "" };
-        } else if ($currentTrayView === "stdout") {
-            console.log("[DEBUG] App.svelte: SETTING 'esc to hide'");
-            $statusBar = { actions: [{ key: "esc", label: "to hide" }], count: "" };
+        } else if ($currentTrayView === "stdout" && $stdout.length === 0) {
+            if ($query.length > 0) {
+                console.log("[DEBUG] App.svelte: SETTING 'esc to clear'");
+                $statusBar = { actions: [{ key: "esc", label: "to clear" }], count: "" };
+            } else {
+                console.log("[DEBUG] App.svelte: SETTING 'esc to hide'");
+                $statusBar = { actions: [{ key: "esc", label: "to hide" }], count: "" };
+            }
         } else {
-            console.log("[DEBUG] App.svelte: NO ACTION (not stdout view, cmdSelector handles its own)");
+            console.log("[DEBUG] App.svelte: NOT setting statusBar (display component handles it)");
         }
     }
 
