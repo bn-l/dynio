@@ -75,7 +75,7 @@ as regular stdout from commands) -->
     import "./assets/main.css";
     import "virtual:uno.css";
     
-    // import { settings } from "$lib/stores/settings.js";
+    import { settings } from "$lib/stores/settings.js";
     // import AutoUpdater from "./Meta/AutoUpdater.svelte";
     import { trayOpen, running, stdoutLock, query, clickInBounds, stderr, currentTrayView, currentCmd, clearInput, isMac, statusBar, scrollContainer } from "$lib/stores/globals.js";
     import { errors } from "$lib/stores/errors.ts";
@@ -94,6 +94,7 @@ as regular stdout from commands) -->
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { tick } from "svelte";
     import { openUrl } from "@tauri-apps/plugin-opener";
+    import { getCurrentWindow } from "@tauri-apps/api/window";
 
     onMount(async () => {
         await loadValidateAndInitConfigStores();
@@ -201,6 +202,17 @@ as regular stdout from commands) -->
             exitHandler();
         });
         return () => { void unlisten.then( f => f()) };
+    });
+
+    // ------------- Window focus change listener -------------- //
+
+    onMount(async () => {
+        const unlisten = await getCurrentWindow().onFocusChanged(({ payload: focused }) => {
+            if (!focused && ($settings.hideOnLostFocus ?? true)) {
+                void invoke("hide_main");
+            }
+        });
+        return unlisten;
     });
 
     // -------------------- Hotkey handlers --------------------- //

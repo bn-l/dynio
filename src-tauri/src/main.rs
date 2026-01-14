@@ -527,6 +527,9 @@ fn main() {
             trim_path
         ])
         .setup(|app| {
+            #[cfg(target_os = "macos")]
+            app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+
             // Setup tray icon
             let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
             let toggle = MenuItemBuilder::with_id("togglevis", "Show").build(app)?;
