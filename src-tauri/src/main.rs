@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::OpenOptions;
 use std::process::Stdio;
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Size, WebviewWindow};
-use tokio::io::AsyncBufReadExt;
+use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 use tokio::sync::Mutex;
 use tokio::time::Duration;
 #[cfg(target_os = "windows")]
@@ -87,6 +87,9 @@ fn create_collector(app_handle: AppHandle) -> (VecSender, VecSender) {
         loop {
             let mut update = stdout_rx.borrow_and_update().clone();
             update.dedup();
+            if !update.is_empty() {
+                log::debug!("stdout output: {:?}", update);
+            }
             let _ = app_handle1.emit("stdout", update);
             if stdout_rx.changed().await.is_err() {
                 break;
@@ -126,6 +129,8 @@ impl Default for KillChannel {
     }
 }
 
+/// Reads stdout/stderr line-by-line. Waits for newline characters before emitting.
+/// Used for list/single display modes where output is naturally line-oriented.
 async fn read_and_send_lines<R>(
     mut lines: tokio::io::Lines<tokio::io::BufReader<R>>,
     sender: VecSender,
@@ -141,15 +146,42 @@ async fn read_and_send_lines<R>(
     }
 }
 
+/// Reads stdout as raw byte chunks, emitting data as soon as it's available.
+/// Used for LLM streaming where tokens arrive without newlines between them.
+async fn read_and_send_chunks<R>(
+    mut reader: tokio::io::BufReader<R>,
+    sender: VecSender,
+    finish_flag: std::sync::Arc<AtomicBool>,
+) where
+    R: tokio::io::AsyncRead + Unpin,
+{
+    let mut buf = [0u8; 1024];
+    loop {
+        if finish_flag.load(atomic::Ordering::Relaxed) {
+            break;
+        }
+        match reader.read(&mut buf).await {
+            Ok(0) => break, // EOF
+            Ok(n) => {
+                if let Ok(s) = std::str::from_utf8(&buf[..n]) {
+                    sender.send_modify(|vec| vec.push(s.to_string()));
+                }
+            }
+            Err(_) => break,
+        }
+    }
+}
+
 #[tauri::command]
 async fn run_program(
     program: String,
     current_dir: Option<String>,
     arguments: Vec<String>,
     input: String,
+    streaming: Option<bool>,
     app_handle: AppHandle,
 ) -> Result<(), SerError> {
-    log::debug!("In run_program");
+    log::debug!("In run_program, streaming={:?}", streaming);
 
     if let Some(sender) = app_handle
         .state::<KillChannel>()
@@ -174,7 +206,13 @@ async fn run_program(
     }
 
     #[cfg(any(target_os = "linux", target_os = "macos"))]
-    let mut command = tokio::process::Command::new(program);
+    {
+        log::debug!("[DEBUG] Program path: {}", &program);
+        log::debug!("[DEBUG] Program exists: {}", std::path::Path::new(&program).exists());
+    }
+
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    let mut command = tokio::process::Command::new(&program);
 
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     {
@@ -188,22 +226,49 @@ async fn run_program(
 
     command.stdout(Stdio::piped()).stderr(Stdio::piped());
 
-    let mut child = command.spawn()?;
+    log::debug!("[DEBUG] About to spawn child process");
+
+    // Force flush the log before spawn
+    use std::io::Write;
+    let _ = std::io::stderr().flush();
+
+    let mut child = match command.spawn() {
+        Ok(child) => {
+            log::debug!("[DEBUG] spawn() succeeded");
+            child
+        }
+        Err(e) => {
+            log::debug!("[DEBUG] spawn() FAILED: {:?}", e);
+            // Emit exit event so frontend knows command finished (even though it failed to start)
+            let _ = app_handle.emit("exit", Some(-1i32));
+            return Err(e.into());
+        }
+    };
+    log::debug!("[DEBUG] Child spawned with id: {:?}", child.id());
     let _ = app_handle.emit("started", child.id());
     let stdout_pipe = child.stdout.take().expect("Could not take stdout");
     let stderr_pipe = child.stderr.take().expect("Could not take stderr");
 
-    let stdout = tokio::io::BufReader::new(stdout_pipe).lines();
-    let stderr = tokio::io::BufReader::new(stderr_pipe).lines();
-
     let (stdout_tx, stderr_tx) = create_collector(app_handle.clone());
     let finish_flag = std::sync::Arc::new(AtomicBool::new(false));
 
+    // For stdout: use chunk-based reading for LLM streaming (emits bytes as they arrive),
+    // otherwise use line-based reading (waits for newlines).
     let finish_flag_clone = finish_flag.clone();
-    tokio::spawn(read_and_send_lines(stdout, stdout_tx, finish_flag_clone));
+    if streaming.unwrap_or(false) {
+        let stdout_reader = tokio::io::BufReader::new(stdout_pipe);
+        tokio::spawn(read_and_send_chunks(stdout_reader, stdout_tx, finish_flag_clone));
+    } else {
+        let stdout_lines = tokio::io::BufReader::new(stdout_pipe).lines();
+        tokio::spawn(read_and_send_lines(stdout_lines, stdout_tx, finish_flag_clone));
+    }
 
+    // Stderr always uses line-based reading (error messages are typically line-oriented)
+    let stderr = tokio::io::BufReader::new(stderr_pipe).lines();
     let finish_flag_clone = finish_flag.clone();
     tokio::spawn(read_and_send_lines(stderr, stderr_tx, finish_flag_clone));
+
+    log::debug!("[DEBUG] Reader tasks spawned, about to enter select!");
 
     let (kill_sender, kill_receiver) = tokio::sync::oneshot::channel::<()>();
     app_handle
@@ -215,11 +280,20 @@ async fn run_program(
 
     tokio::select! {
         exit_status = child.wait() => {
-            if let Ok(exit_status) = exit_status {
-                let _ = app_handle.emit("exit", exit_status.code());
+            log::debug!("[DEBUG] child.wait() completed, exit_status: {:?}", exit_status);
+            match exit_status {
+                Ok(status) => {
+                    log::debug!("[DEBUG] Emitting exit event with code: {:?}", status.code());
+                    let _ = app_handle.emit("exit", status.code());
+                }
+                Err(e) => {
+                    log::debug!("[DEBUG] child.wait() error: {:?}, emitting exit with code -1", e);
+                    let _ = app_handle.emit("exit", Some(-1i32));
+                }
             }
         }
         _ = kill_receiver => {
+            log::debug!("[DEBUG] kill_receiver triggered, killing process");
             finish_flag.store(true, atomic::Ordering::Relaxed);
             child.kill().await.expect("Couldn't kill process")
         }

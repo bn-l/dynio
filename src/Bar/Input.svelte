@@ -9,7 +9,7 @@
     </div>
     <input
         id="cmdInput"
-        class="w-120 h-full ml--3"
+        class="w-full h-full"
         style={fontSizeString}
         placeholder={$currentCmdConfig?.placeholderText}
         autoComplete="off"
@@ -54,10 +54,11 @@
             $exitCode = undefined;
             $running = false;
             $stdout = [];
-            $stderr = [];
+            $stderr = "";
             return;
         }
 
+        console.log("[DEBUG] Input.svelte: SETTING $running = true");
         $running = true;
         $stdoutLock = false;
 
@@ -69,6 +70,7 @@
             // The input is added as the last argument.
             arguments: [...($currentCmdConfig.arguments ?? [])],
             input,
+            streaming: $currentCmdConfig.modeConfig.mode === "llm",
         })
         .then(() => {
             $currentTrayView = "stdout";

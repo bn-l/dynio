@@ -16,7 +16,8 @@ export function processLlmOutput(
     openPattern?: string,
     closePattern?: string
 ): LlmOut {
-    const raw = stdout.join("\n");
+    // Join with empty string for streaming mode where chunks are raw byte fragments
+    const raw = stdout.join("");
 
     const openRegex = new RegExp(openPattern ?? DEFAULT_OPEN_PATTERN);
     const closeRegex = new RegExp(closePattern ?? DEFAULT_CLOSE_PATTERN);
