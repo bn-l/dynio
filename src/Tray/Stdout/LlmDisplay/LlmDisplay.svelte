@@ -1,13 +1,6 @@
-<div
-    id="llmDisplay"
-    class="h-full flex flex-col pr-2"
->
-<div
-    bind:this={scrollEl}
-    class="flex-grow nice-scroll overflow-x-hidden overflow-y-auto pl-4 pt-4 pr-6"
->
+<DisplayWrapper padding="pl-4 pt-4 pr-6">
     <div
-        id="llmDisplayContainer"
+        id="llmDisplay"
         style={`font-size: ${fontSize}rem`}
     >
         {#if thinkingDisplay === "none"}
@@ -59,25 +52,17 @@
             {/key}
         {/if}
     </div>
-</div>
-</div>
+</DisplayWrapper>
 
 <script lang="ts">
     import "./llmDisplay.css";
     import { fade } from "svelte/transition";
-    import { onDestroy } from "svelte";
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
-    import { stdout, running, scrollContainer } from "$lib/stores/globals.ts";
+    import { stdout, running } from "$lib/stores/globals.ts";
     import { errors } from "$lib/stores/errors.ts";
     import { processLlmOutput } from "./processLlmOutput.ts";
     import { renderMarkdown } from "$lib/utils/markdown.ts";
-
-    let scrollEl: HTMLElement;
-    $: $scrollContainer = scrollEl;
-
-    onDestroy(() => {
-        $scrollContainer = null;
-    });
+    import DisplayWrapper from "$lib/utils/DisplayWrapper.svelte";
 
     $: modeConfig = $currentCmdConfig?.modeConfig;
     $: displayOptions = modeConfig?.mode === "llm" ? modeConfig.displayOptions : undefined;

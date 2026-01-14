@@ -1,11 +1,7 @@
 
-<div
-    id="listDisplay"
-    class="h-full flex flex-col"
->
+<DisplayWrapper padding="px-2 pt-2">
     <div
-        bind:this={scrollEl}
-        class="flex-grow nice-scroll overflow-x-hidden overflow-y-auto px-2 pt-2"
+        id="listDisplay"
         style={displayOptions?.fontSize ? `font-size: ${displayOptions.fontSize}rem` : ""}
     >
         {#each items as item, index (index)}
@@ -34,21 +30,18 @@
             </div>
         {/each}
     </div>
-</div>
+</DisplayWrapper>
 
 <script lang="ts">
     import { debounce } from "lodash-es";
     import { onDestroy } from "svelte";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
-    import { stdout, statusBar, keySymbols, scrollContainer } from "$lib/stores/globals.ts";
+    import { stdout, statusBar, keySymbols } from "$lib/stores/globals.ts";
     import type { StatusBarAction } from "$lib/stores/globals.ts";
     import { activate } from "$lib/utils/activator.ts";
     import { processListOutput, type ProcessedItem } from "./processListOutput.ts";
-
-
-    let scrollEl: HTMLElement;
-    $: $scrollContainer = scrollEl;
+    import DisplayWrapper from "$lib/utils/DisplayWrapper.svelte";
 
     $: modeConfig = $currentCmdConfig?.modeConfig;
     $: parseAnsiColors = modeConfig?.displayOptions?.parseAnsiColors;
@@ -80,7 +73,6 @@
     onDestroy(() => {
         console.log("[DEBUG] ListDisplay: onDestroy - CLEARING statusBar");
         $statusBar = { actions: [], count: "" };
-        $scrollContainer = null;
     });
 
 

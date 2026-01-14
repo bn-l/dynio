@@ -1,7 +1,6 @@
-
 <div
     id="emptyDisplay"
-    class="text-3xl text-center h-76 flex justify-center items-center"
+    class="text-3xl text-center h-full w-full flex justify-center items-center"
 >
     <div
         id="emptyDisplayMessage"

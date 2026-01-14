@@ -1,7 +1,5 @@
-
-
-<div class="h-[97%] pr-2">
-    <div bind:this={scrollEl} class="nice-scroll overflow-x-hidden overflow-y-auto h-[97%] px-2 pt-2 pb-2">
+<DisplayWrapper padding="px-2 py-2">
+    <div id="cmdSelector">
         {#each items as item, index (item.cmdName)}
             <div
                 id={`cmdselect-item-${index}`}
@@ -47,18 +45,16 @@
             </div>
         {/each}
     </div>
-</div>
+</DisplayWrapper>
 
 <script lang="ts">
     import { debounce } from "lodash-es";
     import { onDestroy, onMount } from "svelte";
     import { cmdConfig } from "$lib/stores/cmd-config.ts";
-    import { currentCmd, query, stdout, currentTrayView, currentFocus, stdoutLock, statusBar, keySymbols, scrollContainer } from "$lib/stores/globals.ts";
+    import { currentCmd, query, stdout, currentTrayView, currentFocus, stdoutLock, statusBar, keySymbols } from "$lib/stores/globals.ts";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { invoke } from "@tauri-apps/api/core";
-
-    let scrollEl: HTMLElement;
-    $: $scrollContainer = scrollEl;
+    import DisplayWrapper from "$lib/utils/DisplayWrapper.svelte";
 
     console.log($cmdConfig);
 
@@ -69,7 +65,6 @@
 
     onDestroy(() => {
         $statusBar = { actions: [], count: "" };
-        $scrollContainer = null;
     });
 
     // Sort by hotkey number: items with hotkeys come first (sorted by number), then items without
