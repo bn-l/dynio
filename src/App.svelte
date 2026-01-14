@@ -93,6 +93,7 @@ as regular stdout from commands) -->
     import { invoke } from "@tauri-apps/api/core";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { tick } from "svelte";
+    import { openUrl } from "@tauri-apps/plugin-opener";
 
     onMount(async () => {
         await loadValidateAndInitConfigStores();
@@ -158,9 +159,6 @@ as regular stdout from commands) -->
             $stderr = stderrText;
             if (stderrText.length > 0) {
                 $trayOpen = true;
-                if ($stdout.length === 0) {
-                    $currentTrayView = "stderr";
-                }
             }
         });
         return () => { void unlisten.then( f => f()) };
@@ -245,36 +243,47 @@ as regular stdout from commands) -->
         }
     }
 
+    function externalLinkHandler(event: MouseEvent) {
+        const anchor = (event.target as Element).closest("a");
+        if (!anchor) return;
+        const href = anchor.getAttribute("href");
+        if (!href) return;
+        if (href.startsWith("http://") || href.startsWith("https://")) {
+            event.preventDefault();
+            void openUrl(href);
+        }
+    }
+
     // Hacky instead of having an event system when events happen (like changing cmd)
     $: {
         $currentCmd,
         document.getElementById("cmdInput")?.focus();
     }
 
-    // Auto-switch to errors view when new errors arrive
+    // Open tray when new errors arrive (badge will be visible)
     let prevErrorsLen = 0;
     $: {
         if ($errors.length > prevErrorsLen) {
             $trayOpen = true;
-            if ($stdout.length === 0) {
-                $currentTrayView = "errors";
-            }
         }
         prevErrorsLen = $errors.length;
     }
 
-    // Show "press esc to cancel" in status bar when runOnEnter command is running
+    // Status bar hints based on current view and running state
     $: {
         const runOnEnter = $currentCmdConfig?.runOnEnter;
-        console.log("[DEBUG] App.svelte statusBar reactive: $running=", $running, "runOnEnter=", runOnEnter);
-        if ($running && runOnEnter) {
-            console.log("[DEBUG] App.svelte: SETTING 'esc to cancel'");
-            $statusBar = { actions: [{ key: "esc", label: "to cancel command" }], count: "" };
-        } else if (!$running) {
-            console.log("[DEBUG] App.svelte: CLEARING statusBar (running=false)");
-            $statusBar = { actions: [], count: "" };
+        console.log("[DEBUG] App.svelte statusBar reactive: $running=", $running, "runOnEnter=", runOnEnter, "view=", $currentTrayView);
+        if ($currentTrayView === "stderr" || $currentTrayView === "errors") {
+            console.log("[DEBUG] App.svelte: SETTING 'esc go back'");
+            $statusBar = { actions: [{ key: "esc", label: "go back" }], count: "" };
+        } else if ($currentTrayView === "stdout" && $query.length > 0) {
+            console.log("[DEBUG] App.svelte: SETTING 'esc to clear'");
+            $statusBar = { actions: [{ key: "esc", label: "to clear" }], count: "" };
+        } else if ($currentTrayView === "stdout") {
+            console.log("[DEBUG] App.svelte: SETTING 'esc to hide'");
+            $statusBar = { actions: [{ key: "esc", label: "to hide" }], count: "" };
         } else {
-            console.log("[DEBUG] App.svelte: NO ACTION (running=true but runOnEnter=false)");
+            console.log("[DEBUG] App.svelte: NO ACTION (not stdout view, cmdSelector handles its own)");
         }
     }
 
@@ -282,6 +291,7 @@ as regular stdout from commands) -->
 
 
 <svelte:body
+    on:click={externalLinkHandler}
     use:hotkeys={{
         handler: escapeKeyHandler,
         keys: ["Escape"],

@@ -129,9 +129,6 @@
         }
     }
 
-    $: if(selectedIndex !== undefined && items[selectedIndex]) {
-        $currentCmd = items[selectedIndex].cmdName;
-    };
 
     const upDownListHandler = debounce(
         (e: KeyboardEvent, indexChange: number) => {
