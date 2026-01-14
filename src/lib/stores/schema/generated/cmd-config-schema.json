@@ -248,14 +248,14 @@
                   "type": "string",
                   "description": "Regex pattern to filter out matching stderr lines. Lines matching this pattern will be hidden."
                 },
-                "largeSize": {
-                  "type": "number",
-                  "description": "Font size for short outputs (rem).",
-                  "default": 1.5
-                },
                 "smallSize": {
                   "type": "number",
                   "description": "Font size for longer outputs (rem).",
+                  "default": 0.8
+                },
+                "largeSize": {
+                  "type": "number",
+                  "description": "Font size for short outputs (rem).",
                   "default": 1
                 },
                 "sizeBreakPoint": {

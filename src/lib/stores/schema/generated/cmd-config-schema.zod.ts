@@ -214,10 +214,18 @@ export default z.record(
                     "Regex pattern to filter out matching stderr lines. Lines matching this pattern will be hidden.",
                   )
                   .optional(),
-                fontSize: z
+                smallSize: z
                   .number()
-                  .describe("Font size (rem).")
+                  .describe("Font size for longer outputs (rem).")
                   .default(0.8),
+                largeSize: z
+                  .number()
+                  .describe("Font size for short outputs (rem).")
+                  .default(1),
+                sizeBreakPoint: z
+                  .number()
+                  .describe("Output length threshold for font size switching.")
+                  .default(100),
                 thinkingDisplay: z
                   .enum(["none", "keepHidden", "showWhileThinking", "show"])
                   .describe(

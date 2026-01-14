@@ -90,7 +90,10 @@
         displayOptions?.thinkingClosePattern
     );
 
-    $: fontSize = displayOptions?.fontSize ?? 0.8;
+    $: smallSize = displayOptions?.smallSize ?? 0.8;
+    $: largeSize = displayOptions?.largeSize ?? 1;
+    $: sizeBreakPoint = displayOptions?.sizeBreakPoint ?? 100;
+    $: fontSize = $stdout.join("").length < sizeBreakPoint ? largeSize : smallSize;
 
     // Detect when command finishes with only thinking tokens (no actual output)
     let wasRunning = false;
