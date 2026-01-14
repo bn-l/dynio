@@ -1,7 +1,7 @@
 
 
-<div class="px-2 pt-2 h-full">
-    <div class="nice-scroll overflow-x-hidden overflow-y-auto h-full pb-2">
+<div class="h-[97%] pr-2">
+    <div class="nice-scroll overflow-x-hidden overflow-y-auto h-[97%] px-2 pt-2 pb-2">
         {#each items as item, index (item.cmdName)}
             <div
                 id={`cmdselect-item-${index}`}
