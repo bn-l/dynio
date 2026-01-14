@@ -86,7 +86,7 @@ as regular stdout from commands) -->
     import { loadValidateAndInitConfigStores } from "./lib/utils/config-file-utils.ts";
     import { onMount } from 'svelte';
     import { listen } from "@tauri-apps/api/event";
-    import type { Event } from "@tauri-apps/api/event";
+    import type { Event, UnlistenFn } from "@tauri-apps/api/event";
     import { stdout } from "$lib/stores/globals.js";
     import { currentCmdConfig, cmdConfig } from "$lib/stores/cmd-config.ts";
     import { debounce } from "lodash-es";
@@ -206,13 +206,16 @@ as regular stdout from commands) -->
 
     // ------------- Window focus change listener -------------- //
 
-    onMount(async () => {
-        const unlisten = await getCurrentWindow().onFocusChanged(({ payload: focused }) => {
+    onMount(() => {
+        let unlisten: UnlistenFn | undefined;
+
+        getCurrentWindow().onFocusChanged(({ payload: focused }) => {
             if (!focused && ($settings.hideOnLostFocus ?? true)) {
                 void invoke("hide_main");
             }
-        });
-        return unlisten;
+        }).then(fn => { unlisten = fn; });
+
+        return () => unlisten?.();
     });
 
     // -------------------- Hotkey handlers --------------------- //
