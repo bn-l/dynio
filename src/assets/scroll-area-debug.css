@@ -16,7 +16,7 @@
     /* user-select: none; */
     /* disable browser handling of all panning and zooming gestures on touch devices */
     touch-action: none;
-    padding: 2px;
+    padding: 0.125rem;
     background: lightgreen;
     transition: background 160ms ease-out;
 }
