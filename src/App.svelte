@@ -19,12 +19,10 @@ https://tauri.app/v1/guides/distribution/updater/#built-in-dialog
     >
         <div
             id="inputWrapper"
-            class="flex flex-row justify-start items-center gap-2.7 p-3.3 relative my-0.5"
-        >   
-            <div class="mx-1.5"><LeftTile /></div>
+            class="grid grid-cols-[1fr_auto] items-center gap-2.7 p-3.3 relative my-0.5 pr-5 pl-6"
+        >
             <Input />
-            <ErrorIndicator />
-            <StderrIndicator />
+            <LeftTile />
             <DragSpot />
         </div>
 
@@ -79,12 +77,11 @@ as regular stdout from commands) -->
     
     // import { settings } from "$lib/stores/settings.js";
     // import AutoUpdater from "./Meta/AutoUpdater.svelte";
-    import { trayOpen, running, stdoutLock, query, clickInBounds, stderr, currentTrayView, currentCmd, clearInput, isMac } from "$lib/stores/globals.js";
+    import { trayOpen, running, stdoutLock, query, clickInBounds, stderr, currentTrayView, currentCmd, clearInput, isMac, statusBar } from "$lib/stores/globals.js";
+    import { errors } from "$lib/stores/errors.ts";
     import Tray from "./Tray/Tray.svelte";
     import Input from "./Bar/Input.svelte";
     import LeftTile from "./Bar/LeftTile.svelte";
-    import ErrorIndicator from "./Bar/ErrorIndicator.svelte";
-    import StderrIndicator from "./Bar/StderrIndicator.svelte";
     import DragSpot from "./Bar/DragSpot.svelte";
     import { loadValidateAndInitConfigStores } from "./lib/utils/config-file-utils.ts";
     import { onMount } from 'svelte';
@@ -96,33 +93,11 @@ as regular stdout from commands) -->
     import { invoke } from "@tauri-apps/api/core";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { tick } from "svelte";
-    import { watch, type WatchEvent } from "@tauri-apps/plugin-fs";
-    import type { UnlistenFn } from '@tauri-apps/api/event';
-    import { relaunch } from '@tauri-apps/plugin-process';
 
     onMount(async () => {
         await loadValidateAndInitConfigStores();
     });
 
-    onMount(() => {
-        const watcher = async (): Promise<UnlistenFn> => {
-            const configDir = await invoke("get_config_dir") as string;
-            const stopWatching = await watch(
-                configDir,
-                (event: WatchEvent) => {
-                    if (event.paths.length === 1 && event.paths[0].includes(".log")) {
-                        return;
-                    }
-                    void relaunch();
-                },
-                { recursive: true  },
-            );
-            return stopWatching;
-        }
-        const unwatchPromise = watcher();
-
-        return () => { unwatchPromise.then(f => f()); }
-    })
 
     // ----------------- Tray open / closed logic ----------------- //
 
@@ -141,7 +116,6 @@ as regular stdout from commands) -->
     onMount(() => {
         const unlisten = listen("stdout", (e: Event<string[]>) => {
             $trayOpen = true;
-            console.log("stdout event recived: ", e.payload)
             if($stdoutLock) return;
 
             clearTimeout(timeout);
@@ -155,7 +129,6 @@ as regular stdout from commands) -->
                     return;
                 }
                 timeout = setTimeout(() => {
-                    console.log("timer ran");
                     $stdout = [];
                 },  $currentCmdConfig?.noOutputTimeoutMs ?? 800);
                 return;
@@ -163,7 +136,6 @@ as regular stdout from commands) -->
             clearTimeout(timeout);
             emptyStdCounter = 0;
 
-            console.log("setting stdout to value")
             $stdout = $currentCmdConfig?.modeConfig?.displayOptions?.reverse ?
                 e.payload.reverse() :
                 e.payload;
@@ -178,12 +150,12 @@ as regular stdout from commands) -->
         const unlisten = listen("stderr", (e: Event<string[]>) => {
             // console.log("stderr event received: ", e.payload);
             const filterPattern = $currentCmdConfig?.modeConfig?.displayOptions?.stderrFilterRegex;
+            let lines = e.payload;
             if (filterPattern) {
                 const regex = new RegExp(filterPattern);
-                $stderr = e.payload.filter(line => !regex.test(line));
-            } else {
-                $stderr = e.payload;
+                lines = lines.filter(line => !regex.test(line));
             }
+            $stderr = lines.join("\n").trim();
         });
         return () => { void unlisten.then( f => f()) };
     }); 
@@ -214,11 +186,14 @@ as regular stdout from commands) -->
 
     // --------------- Backend exit Event Listener --------------- //
 
-    const exitHandler = debounce(() => $running = false, 100);
+    const exitHandler = debounce(() => {
+        console.log("[DEBUG] exitHandler EXECUTING, setting $running = false");
+        $running = false;
+    }, 100);
 
     onMount(() => {
         const unlisten = listen("exit", (e: Event<number | undefined>) => {
-            console.log("cmd exit code received: ", e.payload);
+            console.log("[DEBUG] exit event received, code:", e.payload, "current $running:", $running);
             exitHandler();
         });
         return () => { void unlisten.then( f => f()) };
@@ -270,6 +245,31 @@ as regular stdout from commands) -->
         document.getElementById("cmdInput")?.focus();
     }
 
+    // Auto-switch to errors view when new errors arrive and input is empty
+    let prevErrorsLen = 0;
+    $: {
+        if ($errors.length > prevErrorsLen && $query.trim().length === 0) {
+            $trayOpen = true;
+            $currentTrayView = "errors";
+        }
+        prevErrorsLen = $errors.length;
+    }
+
+    // Show "press esc to cancel" in status bar when runOnEnter command is running
+    $: {
+        const runOnEnter = $currentCmdConfig?.runOnEnter;
+        console.log("[DEBUG] App.svelte statusBar reactive: $running=", $running, "runOnEnter=", runOnEnter);
+        if ($running && runOnEnter) {
+            console.log("[DEBUG] App.svelte: SETTING 'esc to cancel'");
+            $statusBar = { actions: [{ key: "esc", label: "to cancel command" }], count: "" };
+        } else if (!$running) {
+            console.log("[DEBUG] App.svelte: CLEARING statusBar (running=false)");
+            $statusBar = { actions: [], count: "" };
+        } else {
+            console.log("[DEBUG] App.svelte: NO ACTION (running=true but runOnEnter=false)");
+        }
+    }
+
 </script>
 
 
@@ -301,8 +301,7 @@ as regular stdout from commands) -->
         const alt = e.getModifierState("Alt");
         // Overriding webview hotkeys
         if (
-            alt
-            || alt && e.key === "Escape"
+            alt && e.key === "Escape"
             || alt && e.key === " "
             || ctrlOrCmd && e.key === "u"
             || ctrlOrCmd && e.key === "p"
