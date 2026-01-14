@@ -66,6 +66,7 @@
             actions.push({ key: `${keySymbols.cmd}+O`, label: "reveal" });
         }
 
+        console.log("[DEBUG] ListDisplay: SETTING statusBar, actions:", actions.map(a => a.label).join(","), "count:", items.length);
         $statusBar = {
             actions,
             count: !displayOptions?.hideCount && items.length > 0 ? `${items.length} items` : ""
@@ -73,6 +74,7 @@
     }
 
     onDestroy(() => {
+        console.log("[DEBUG] ListDisplay: onDestroy - CLEARING statusBar");
         $statusBar = { actions: [], count: "" };
     });
 

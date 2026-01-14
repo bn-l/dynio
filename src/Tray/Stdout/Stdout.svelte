@@ -40,6 +40,4 @@
 
     $: cmdMode = $currentCmdConfig?.modeConfig?.mode;
 
-    $: console.log("in stdout.svelte", "stdoutLock", $stdoutLock, "stdout.length", $stdout.length, "running", $running)
-
 </script>
