@@ -43,6 +43,12 @@ panel!(DynioPanel {
 const POLL_DELAY_MS: u64 = 16;
 type VecSender = tokio::sync::watch::Sender<Vec<String>>;
 
+// Window sizing constants (relative to screen dimensions)
+const SCREEN_TO_WIDTH_RATIO: f64 = 0.42;
+const HEIGHT_TO_WIDTH_RATIO: f64 = 0.16;
+const TRAY_TO_BAR_RATIO: f64 = 3.05;
+const Y_OFFSET_RATIO: f64 = 0.05; // 5% of screen height above center
+
 fn home_dir() -> std::path::PathBuf {
     dirs::home_dir().expect("Could not get home dir")
 }
@@ -372,6 +378,97 @@ async fn close_tray(app_handle: AppHandle) {
     }
 }
 
+/// Repositions and resizes the window to be centered on the monitor where the cursor is located,
+/// but only if the cursor is on a different monitor than the window.
+fn reposition_to_cursor_monitor(app_handle: &AppHandle) {
+    let Some(window) = app_handle.get_webview_window("main") else {
+        log::error!("Could not get main window for repositioning");
+        return;
+    };
+
+    // Get cursor position
+    let cursor_pos = match window.cursor_position() {
+        Ok(pos) => pos,
+        Err(e) => {
+            log::debug!("Could not get cursor position: {:?}, skipping reposition", e);
+            return;
+        }
+    };
+
+    // On macOS, monitor_from_point expects LOGICAL coordinates but cursor_position
+    // returns PHYSICAL coordinates. See: https://github.com/tauri-apps/tauri/issues/12676
+    // We need to convert physical cursor position to logical for macOS.
+    #[cfg(target_os = "macos")]
+    let cursor_for_monitor = {
+        let scale_factor = window.scale_factor().unwrap_or(1.0);
+        (cursor_pos.x / scale_factor, cursor_pos.y / scale_factor)
+    };
+
+    // On Windows, monitor_from_point expects physical coordinates
+    #[cfg(not(target_os = "macos"))]
+    let cursor_for_monitor = (cursor_pos.x, cursor_pos.y);
+
+    // Find monitor at cursor position
+    let Some(cursor_monitor) = window.monitor_from_point(cursor_for_monitor.0, cursor_for_monitor.1)
+        .ok().flatten() else {
+        log::debug!("Could not find monitor at cursor position");
+        return;
+    };
+
+    // Get the monitor the window is currently on
+    let current_monitor = window.current_monitor().ok().flatten();
+
+    // Only reposition if cursor is on a different monitor than the window
+    if let Some(ref current) = current_monitor {
+        if current.position() == cursor_monitor.position() {
+            log::debug!("Window already on cursor's monitor, skipping reposition");
+            return;
+        }
+    }
+
+    log::debug!("Repositioning window to cursor's monitor: pos=({}, {}), size={}x{}",
+        cursor_monitor.position().x, cursor_monitor.position().y,
+        cursor_monitor.size().width, cursor_monitor.size().height);
+
+    let monitor = cursor_monitor;
+
+    let screen_width = monitor.size().width as f64;
+    let screen_height = monitor.size().height as f64;
+    let monitor_x = monitor.position().x;
+    let monitor_y = monitor.position().y;
+
+    // Calculate window dimensions for this monitor
+    let phys_width = screen_width * SCREEN_TO_WIDTH_RATIO;
+    let phys_height = phys_width * HEIGHT_TO_WIDTH_RATIO;
+    let phys_tray_height = phys_height * TRAY_TO_BAR_RATIO;
+
+    // Calculate centered position on this monitor
+    let x = monitor_x + ((screen_width - phys_width) / 2.0) as i32;
+    let y = monitor_y + ((screen_height - phys_height) / 2.0 - (screen_height * Y_OFFSET_RATIO)) as i32;
+
+    // Update TrayState with new dimensions for this monitor
+    let guard = app_handle.state::<Mutex<TrayState>>();
+    let mut state = tauri::async_runtime::block_on(guard.lock());
+    let is_open = state.currently_open;
+    *state = TrayState {
+        width: phys_width,
+        tray_closed_height: phys_height,
+        tray_open_height: phys_tray_height + phys_height,
+        currently_open: is_open,
+    };
+
+    // Set size based on current tray state
+    let height = if is_open { state.tray_open_height } else { state.tray_closed_height };
+    let _ = window.set_size(Size::Physical(PhysicalSize {
+        width: phys_width as u32,
+        height: height as u32,
+    }));
+    let _ = window.set_position(PhysicalPosition { x, y });
+
+    log::debug!("Repositioned window to monitor at cursor: {}x{} at ({}, {})",
+        phys_width as u32, height as u32, x, y);
+}
+
 fn toggle_main_window(app_handle: &AppHandle) {
     log::debug!("toggling main window");
 
@@ -383,6 +480,8 @@ fn toggle_main_window(app_handle: &AppHandle) {
                 panel.hide();
                 let _ = app_handle.emit("main_hide_unhide", "hide");
             } else {
+                // Reposition to cursor's monitor before showing
+                reposition_to_cursor_monitor(app_handle);
                 // show_and_make_key shows the panel and makes it key window
                 // (receives keyboard input) without activating the app
                 panel.show_and_make_key();
@@ -399,6 +498,8 @@ fn toggle_main_window(app_handle: &AppHandle) {
             let visible = window.is_visible().unwrap_or(false);
             let focused = window.is_focused().unwrap_or(false);
             if !visible {
+                // Reposition to cursor's monitor before showing
+                reposition_to_cursor_monitor(app_handle);
                 let _ = window.show();
                 let _ = window.set_focus();
                 let _ = app_handle.emit("main_hide_unhide", "unhide");
@@ -666,11 +767,6 @@ fn get_general_settings() -> Result<GeneralSettings, Box<dyn std::error::Error>>
 }
 
 fn setup_main_window(app_handle: AppHandle, start_hidden: bool, on_top: bool) {
-    const SCREEN_TO_WIDTH_RATIO: f64 = 0.42;
-    const HEIGHT_TO_WIDTH_RATIO: f64 = 0.16;
-    const TRAY_TO_BAR_RATIO: f64 = 3.05;
-    const Y_OFFSET_RATIO: f64 = 0.05; // 5% of screen height above center
-
     let window = app_handle.get_webview_window("main").unwrap();
     let monitor = window
         .primary_monitor()
