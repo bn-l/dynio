@@ -177,7 +177,7 @@ as regular stdout from commands) -->
                     clearInput();
                 }, 1000 * 60 * 10); // 10mins
             }
-            if(e.payload === "hide" && $trayOpen && !$query && $stdout.length === 0) {
+            if(e.payload === "hide" && $trayOpen && !$query && $stdout.length === 0 && !$stderr && $errors.length === 0) {
                 $trayOpen = false;
             }
             if(e.payload === "unhide") {
