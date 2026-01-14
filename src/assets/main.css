@@ -376,20 +376,20 @@ box-shadow: inset -3px -3px 7px #ffffffb0, inset 3px 3px 5px rgba(94, 104, 121, 
 
 .cmd-name {
     font-weight: 600;
-    font-size: 1.05rem;
+    font-size: 0.9rem;
     color: var(--text);
 }
 
 .cmd-command {
     font-family: var(--mono-font), monospace;
-    font-size: 0.85rem;
+    font-size: 0.72rem;
     color: var(--text-secondary);
     margin-top: 0.125rem;
 }
 
 .cmd-args {
     font-family: var(--mono-font), monospace;
-    font-size: 0.8rem;
+    font-size: 0.68rem;
     color: var(--lightText);
 }
 
@@ -397,7 +397,7 @@ box-shadow: inset -3px -3px 7px #ffffffb0, inset 3px 3px 5px rgba(94, 104, 121, 
     display: flex;
     gap: 1rem;
     margin-top: 0.375rem;
-    font-size: 0.8rem;
+    font-size: 0.68rem;
 }
 
 .meta-item {
@@ -409,14 +409,14 @@ box-shadow: inset -3px -3px 7px #ffffffb0, inset 3px 3px 5px rgba(94, 104, 121, 
 }
 
 .cmd-desc {
-    font-size: 0.85rem;
+    font-size: 0.72rem;
     color: var(--lightText);
     margin-top: 0.375rem;
     font-style: italic;
 }
 
 .hotkey-badge {
-    font-size: 0.75rem;
+    font-size: 0.64rem;
     font-weight: 500;
     color: var(--accent);
     background: var(--accent-selection);
