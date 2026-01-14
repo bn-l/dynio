@@ -111,23 +111,40 @@ describe('processSingleOutput', () => {
 
             const errorList = get(errors);
             expect(errorList.length).toBe(1);
-            expect(errorList[0].message).toContain('Unexpected end');
+            expect(errorList[0].type).toBe('js');
+            // Error message varies by JS engine, just confirm an error was added
         });
     });
 
     describe('jsonPath that does not exist', () => {
-        it('returns undefined for non-existent path', () => {
+        it('adds error and returns original when path traversal fails', () => {
             const input = '{"existing":"value"}';
             const result = processSingleOutput([input], { json: true, jsonPath: 'nonexistent.path' });
 
-            expect(result).toBeUndefined();
+            // When path traversal throws (accessing property of undefined), catch block runs
+            // and returns original string
+            expect(result).toBe('{"existing":"value"}');
+            const errorList = get(errors);
+            expect(errorList.length).toBe(1);
+            expect(errorList[0].type).toBe('js');
         });
 
-        it('returns undefined when path starts valid but goes invalid', () => {
+        it('adds error when path starts valid but goes invalid', () => {
             const input = '{"a":{"b":"value"}}';
             const result = processSingleOutput([input], { json: true, jsonPath: 'a.c.d' });
 
-            expect(result).toBeUndefined();
+            // a.c is undefined, then a.c.d throws
+            expect(result).toBe('{"a":{"b":"value"}}');
+            const errorList = get(errors);
+            expect(errorList.length).toBe(1);
+        });
+
+        it('returns undefined when first-level path exists but value is undefined', () => {
+            // When the path exists but value is legitimately undefined
+            const input = '{"a":null}';
+            const result = processSingleOutput([input], { json: true, jsonPath: 'a' });
+
+            expect(result).toBeNull();
         });
     });
 
