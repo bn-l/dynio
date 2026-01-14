@@ -80,7 +80,7 @@
     border-collapse: collapse;
     margin-top: 1.5rem;
     margin-bottom: 1.5rem;
-    font-size: 0.9rem;
+    font-size: 0.9em;
 }
 
 .prose th, .prose td {
@@ -177,6 +177,7 @@
 .llm-thinking-content {
     color: var(--lightText);
     font-style: italic;
+    font-size: 0.7em;
     border-left: 2px solid var(--border-color);
     padding-left: 1rem;
     margin-bottom: 1rem;

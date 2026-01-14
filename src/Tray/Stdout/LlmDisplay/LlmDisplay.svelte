@@ -1,10 +1,10 @@
 <div
     id="llmDisplay"
-    class="h-71 pr-2"
+    class="h-full flex flex-col pr-2"
 >
 <div
     bind:this={scrollEl}
-    class="nice-scroll overflow-x-hidden overflow-y-auto h-full pl-4 pt-4 pb-4 pr-6"
+    class="flex-grow nice-scroll overflow-x-hidden overflow-y-auto pl-4 pt-4 pr-6"
 >
     <div
         id="llmDisplayContainer"
