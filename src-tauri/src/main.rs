@@ -550,13 +550,27 @@ async fn trim_path(path: String) -> Result<String, SerError> {
     Ok(parent_str.to_string())
 }
 
+static ACTIVE_DETACHED: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+const MAX_DETACHED: usize = 50;
+const DETACHED_TIMEOUT_SECS: u64 = 10 * 60; // 10 minutes
+
 #[tauri::command]
-fn spawn_detached(
+async fn spawn_detached(
     program: String,
     arguments: Vec<String>,
     current_dir: Option<String>,
 ) -> Result<(), String> {
-    let mut cmd = std::process::Command::new(&program);
+    use std::sync::atomic::Ordering;
+
+    let current = ACTIVE_DETACHED.load(Ordering::Relaxed);
+    if current >= MAX_DETACHED {
+        return Err(format!(
+            "Too many background processes ({}/{})",
+            current, MAX_DETACHED
+        ));
+    }
+
+    let mut cmd = tokio::process::Command::new(&program);
 
     cmd.args(&arguments)
         .stdin(Stdio::null())
@@ -567,9 +581,24 @@ fn spawn_detached(
         cmd.current_dir(dir);
     }
 
-    cmd.spawn()
-        .map(|_| ())
-        .map_err(|e| format!("Failed to spawn {}: {}", program, e))
+    let mut child = cmd
+        .spawn()
+        .map_err(|e| format!("Failed to spawn {}: {}", program, e))?;
+
+    ACTIVE_DETACHED.fetch_add(1, Ordering::Relaxed);
+
+    tokio::spawn(async move {
+        let timeout = Duration::from_secs(DETACHED_TIMEOUT_SECS);
+        match tokio::time::timeout(timeout, child.wait()).await {
+            Ok(_) => {}
+            Err(_) => {
+                let _ = child.kill().await;
+            }
+        }
+        ACTIVE_DETACHED.fetch_sub(1, Ordering::Relaxed);
+    });
+
+    Ok(())
 }
 
 #[derive(Serialize, Deserialize)]
