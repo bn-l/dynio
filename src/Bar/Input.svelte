@@ -48,7 +48,7 @@
         if (!$currentCmdConfig) return;
 
         if (!input.trim()) {
-            console.log("Input is empty, not running program.");
+            console.debug("Input is empty, not running program.");
             void invoke("stop_running");
             $stdoutLock = true;
             $exitCode = undefined;
@@ -58,11 +58,11 @@
             return;
         }
 
-        console.log("[DEBUG] Input.svelte: SETTING $running = true");
+        console.debug("[DEBUG] Input.svelte: SETTING $running = true");
         $running = true;
         $stdoutLock = false;
 
-        console.log("About to run program with: ", $currentCmdConfig.command, $currentCmdConfig.currentDir, [...($currentCmdConfig.arguments ?? []), input].join(" "));
+        console.debug("About to run program with: ", $currentCmdConfig.command, $currentCmdConfig.currentDir, [...($currentCmdConfig.arguments ?? []), input].join(" "));
 
         invoke("run_program", {
             program: $currentCmdConfig.command,
@@ -74,7 +74,7 @@
         })
         .then(() => {
             $currentTrayView = "stdout";
-            console.log("Program invoked successfully (need to listen for output).");
+            console.debug("Program invoked successfully (need to listen for output).");
         })
         .catch(err => {
             if(err instanceof Error) {

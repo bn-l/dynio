@@ -8,7 +8,7 @@ export function processSingleOutput(stdout: string[], displayOptions: (SingleDis
 
     let processed = stdout.join("\n");
 
-    console.log("start of processSingleOutput: ", processed);
+    console.debug("start of processSingleOutput: ", processed);
 
     if(!displayOptions) {
         return processed;

@@ -56,7 +56,7 @@
     import { invoke } from "@tauri-apps/api/core";
     import DisplayWrapper from "$lib/utils/DisplayWrapper.svelte";
 
-    console.log($cmdConfig);
+    console.debug($cmdConfig);
 
     $: $statusBar = {
         actions: [{ key: "↵", label: "select" }],
@@ -106,7 +106,7 @@
     
     let selectedIndex: number | undefined = undefined;
 
-    $: console.log("selectedIndex", selectedIndex);
+    $: console.debug("selectedIndex", selectedIndex);
 
     onMount(() => {
         const currentIndex = items.findIndex(item => item.cmdName === $currentCmd);

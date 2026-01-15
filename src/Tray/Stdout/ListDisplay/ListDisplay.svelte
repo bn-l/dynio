@@ -63,7 +63,7 @@
             actions.push({ key: `${keySymbols.cmd}+O`, label: "reveal" });
         }
 
-        console.log("[DEBUG] ListDisplay: SETTING statusBar, actions:", actions.map(a => a.label).join(","), "count:", items.length);
+        console.debug("[DEBUG] ListDisplay: SETTING statusBar, actions:", actions.map(a => a.label).join(","), "count:", items.length);
         $statusBar = {
             actions,
             count: !displayOptions?.hideCount && items.length > 0 ? `${items.length} items` : ""
@@ -71,7 +71,7 @@
     }
 
     onDestroy(() => {
-        console.log("[DEBUG] ListDisplay: onDestroy - CLEARING statusBar");
+        console.debug("[DEBUG] ListDisplay: onDestroy - CLEARING statusBar");
         $statusBar = { actions: [], count: "" };
     });
 
@@ -82,7 +82,7 @@
     // });
 
     function onActivation(text: string, openContaining: boolean = false) {
-        console.log(`calling activator with: "${text.replace(/<.*?>/gm, '')}"`);
+        console.debug(`calling activator with: "${text.replace(/<.*?>/gm, '')}"`);
         void activate(text, activationOptions, openContaining);
     }
 
@@ -169,7 +169,7 @@
     }}
     use:hotkeys={{
         handler() {
-            console.log("enter pressed")
+            console.debug("enter pressed")
             if($currentCmdConfig?.runOnEnter) return;
             onActivation(items[selectedIndex].raw);
         },
@@ -178,7 +178,7 @@
     }}
     use:hotkeys={{
         handler() {
-            console.log("ctrl + enter pressed")
+            console.debug("ctrl + enter pressed")
             onActivation(items[selectedIndex].raw);
         },
         keys: ["Enter"],
@@ -187,7 +187,7 @@
     }}
     use:hotkeys={{
         handler: () => {
-            console.log("opening containing");
+            console.debug("opening containing");
             if(activationOptions?.isPath) {
                 onActivation(items[selectedIndex].raw, true);
             }

@@ -53,7 +53,7 @@
 
     $: processedOutput = processSingleOutput($stdout, displayOptions);
 
-    $: console.log(processedOutput);
+    $: console.debug(processedOutput);
 
     $: fontSize = displayOptions?.sizeBreakPoint && 
         stripAnsi($stdout.join()).length < displayOptions?.sizeBreakPoint ? 

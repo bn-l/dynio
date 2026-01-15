@@ -19,7 +19,7 @@ export async function activate(
     openContaining: boolean = false
 ) {
 
-    console.log(`in activation function with: '${text}'`);
+    console.debug(`in activation function with: '${text}'`);
 
     const { activateAction, extractorRegexBody, extractorFlags, extractorGroup } = options;
 

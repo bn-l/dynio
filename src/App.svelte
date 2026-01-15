@@ -170,7 +170,7 @@ as regular stdout from commands) -->
     onMount(() => {
         const unlisten = listen("main_hide_unhide", (e: Event<"hide" | "unhide">) => {
 
-            console.log(e.payload);
+            console.debug(e.payload);
             if(e.payload === "hide") {
                 $currentTrayView = "stdout";
                 clearInputTimeout = setTimeout(() => {
@@ -192,13 +192,13 @@ as regular stdout from commands) -->
     // --------------- Backend exit Event Listener --------------- //
 
     const exitHandler = debounce(() => {
-        console.log("[DEBUG] exitHandler EXECUTING, setting $running = false");
+        console.debug("[DEBUG] exitHandler EXECUTING, setting $running = false");
         $running = false;
     }, 100);
 
     onMount(() => {
         const unlisten = listen("exit", (e: Event<number | undefined>) => {
-            console.log("[DEBUG] exit event received, code:", e.payload, "current $running:", $running);
+            console.debug("[DEBUG] exit event received, code:", e.payload, "current $running:", $running);
             exitHandler();
         });
         return () => { void unlisten.then( f => f()) };
@@ -287,20 +287,20 @@ as regular stdout from commands) -->
     // Status bar hints based on current view and running state
     // When $stdout has content, display components (ListDisplay, SingleDisplay) manage their own status bar
     $: {
-        console.log("[DEBUG] App.svelte statusBar reactive: view=", $currentTrayView, "stdout.length=", $stdout.length, "query.length=", $query.length);
+        console.debug("[DEBUG] App.svelte statusBar reactive: view=", $currentTrayView, "stdout.length=", $stdout.length, "query.length=", $query.length);
         if ($currentTrayView === "stderr" || $currentTrayView === "errors") {
-            console.log("[DEBUG] App.svelte: SETTING 'esc go back'");
+            console.debug("[DEBUG] App.svelte: SETTING 'esc go back'");
             $statusBar = { actions: [{ key: "esc", label: "go back" }], count: "" };
         } else if ($currentTrayView === "stdout" && $stdout.length === 0) {
             if ($query.length > 0) {
-                console.log("[DEBUG] App.svelte: SETTING 'esc to clear'");
+                console.debug("[DEBUG] App.svelte: SETTING 'esc to clear'");
                 $statusBar = { actions: [{ key: "esc", label: "to clear" }], count: "" };
             } else {
-                console.log("[DEBUG] App.svelte: SETTING 'esc to hide'");
+                console.debug("[DEBUG] App.svelte: SETTING 'esc to hide'");
                 $statusBar = { actions: [{ key: "esc", label: "to hide" }], count: "" };
             }
         } else {
-            console.log("[DEBUG] App.svelte: NOT setting statusBar (display component handles it)");
+            console.debug("[DEBUG] App.svelte: NOT setting statusBar (display component handles it)");
         }
     }
 
@@ -366,7 +366,7 @@ as regular stdout from commands) -->
             || ctrlOrCmd && e.code === "KeyF"
             || e.key === "F5"
         ) {
-            console.log("preventing default");
+            console.debug("preventing default");
             e.preventDefault();
         }
     }}
