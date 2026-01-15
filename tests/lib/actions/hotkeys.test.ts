@@ -433,6 +433,70 @@ describe('hotkeys action', () => {
         });
     });
 
+    describe('letter keys with Shift held for capitals', () => {
+        // When Shift is held and a letter key is pressed, event.key is uppercase (e.g., 'A' not 'a')
+        // The hotkeys action should still match lowercase keys in the keys array
+
+        it('matches lowercase key when Shift produces capital letter', () => {
+            // Register hotkey for lowercase 'a'
+            hotkeys(node, { keys: ['a'], handler });
+
+            // Press Shift+A which produces 'A' as event.key
+            node.dispatchEvent(createKeyboardEvent('A', { shiftKey: true }));
+
+            // Should still match due to case-insensitive comparison
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+
+        it('matches when keys array has lowercase but event is uppercase', () => {
+            hotkeys(node, { keys: ['b'], handler });
+
+            // Simulate pressing B with Shift held
+            node.dispatchEvent(createKeyboardEvent('B', { shiftKey: true }));
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+
+        it('matches regardless of Shift state due to case-insensitive comparison', () => {
+            hotkeys(node, { keys: ['x'], handler });
+
+            // Without Shift
+            node.dispatchEvent(createKeyboardEvent('x'));
+            expect(handler).toHaveBeenCalledTimes(1);
+
+            // With Shift (produces 'X')
+            node.dispatchEvent(createKeyboardEvent('X', { shiftKey: true }));
+            expect(handler).toHaveBeenCalledTimes(2);
+        });
+
+        it('Shift as explicit modifier with letter key still matches', () => {
+            // When Shift is an explicit modifier requirement
+            hotkeys(node, { keys: ['s'], modifiers: ['Shift'], handler });
+
+            // Pressing Shift+S produces 'S' as event.key
+            node.dispatchEvent(createKeyboardEvent('S', { shiftKey: true }));
+            expect(handler).toHaveBeenCalledTimes(1);
+
+            // Without Shift modifier, should not fire
+            node.dispatchEvent(createKeyboardEvent('s'));
+            expect(handler).toHaveBeenCalledTimes(1); // Still 1
+        });
+
+        it('handles all letters case-insensitively', () => {
+            // Test with multiple letters
+            hotkeys(node, { keys: ['q', 'w', 'e'], handler });
+
+            // Test with capitals (as if Shift held)
+            node.dispatchEvent(createKeyboardEvent('Q'));
+            expect(handler).toHaveBeenCalledTimes(1);
+
+            node.dispatchEvent(createKeyboardEvent('W'));
+            expect(handler).toHaveBeenCalledTimes(2);
+
+            node.dispatchEvent(createKeyboardEvent('E'));
+            expect(handler).toHaveBeenCalledTimes(3);
+        });
+    });
+
     describe('complex scenarios', () => {
         it('handles Ctrl+Shift+S', () => {
             hotkeys(node, { keys: ['s'], modifiers: ['Control', 'Shift'], handler });
