@@ -47,7 +47,7 @@ export async function activate(
             await invoke("spawn_detached", {
                 program: options.commandPath,
                 arguments: args,
-                currentDir: options.commandCurrentDir,
+                current_dir: options.commandCurrentDir,
             });
         } else {
             const action = activateAction === "open" ? openPath : writeText;
@@ -59,10 +59,8 @@ export async function activate(
         }
     }
     catch(error) {
-        const errorMsg = error instanceof Error && "message" in error ?
-            `Error message: ${error.message}` :
-            "";
-        errors.addError( `Could not ${activateAction}. Received text: \"${text}\". Check regex settings. ${errorMsg}`,
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        errors.addError(`Could not perform activateAction '${activateAction}'. Received text: "${text}". ${errorMsg}`,
             "tauri");
     }
 

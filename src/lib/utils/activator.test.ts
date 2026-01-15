@@ -219,17 +219,16 @@ describe('activate', () => {
     });
 
     describe('openContaining=true with non-path text', () => {
-        it('handles trim_path error gracefully', async () => {
+        it('throws when trim_path fails (error not caught by function)', async () => {
             mockInvoke.mockImplementation((cmd: string) => {
                 if (cmd === 'trim_path') return Promise.reject(new Error('Not a valid path'));
                 return Promise.resolve(undefined);
             });
 
-            await activate('not a path', { activateAction: 'copy' }, true);
-
-            const errorList = get(errors);
-            expect(errorList.length).toBe(1);
-            expect(errorList[0].type).toBe('tauri');
+            // trim_path is called outside try/catch, so error propagates
+            await expect(
+                activate('not a path', { activateAction: 'copy' }, true)
+            ).rejects.toThrow('Not a valid path');
         });
     });
 
@@ -264,7 +263,7 @@ describe('activate', () => {
             const errorList = get(errors);
             expect(errorList.length).toBe(1);
             expect(errorList[0].type).toBe('tauri');
-            expect(errorList[0].message).toContain('Could not copy');
+            expect(errorList[0].message).toContain("Could not perform activateAction 'copy'");
         });
     });
 
@@ -277,7 +276,7 @@ describe('activate', () => {
             const errorList = get(errors);
             expect(errorList.length).toBe(1);
             expect(errorList[0].type).toBe('tauri');
-            expect(errorList[0].message).toContain('Could not open');
+            expect(errorList[0].message).toContain("Could not perform activateAction 'open'");
         });
     });
 
@@ -300,7 +299,7 @@ describe('activate', () => {
             expect(mockInvoke).toHaveBeenCalledWith('spawn_detached', {
                 program: '/usr/bin/code',
                 arguments: ['--new-window', 'file.txt'],
-                currentDir: undefined,
+                current_dir: undefined,
             });
         });
 
@@ -314,7 +313,7 @@ describe('activate', () => {
             expect(mockInvoke).toHaveBeenCalledWith('spawn_detached', {
                 program: '/usr/bin/code',
                 arguments: ['file.txt'],
-                currentDir: '/home/user',
+                current_dir: '/home/user',
             });
         });
 
@@ -330,7 +329,105 @@ describe('activate', () => {
             expect(mockInvoke).toHaveBeenCalledWith('spawn_detached', {
                 program: 'vim',
                 arguments: ['-O', 'target.txt'],
-                currentDir: undefined,
+                current_dir: undefined,
+            });
+        });
+
+        it('works with no commandArguments (just appends text)', async () => {
+            await activate('file.txt', {
+                activateAction: 'command',
+                commandPath: '/usr/bin/open',
+            });
+
+            expect(mockInvoke).toHaveBeenCalledWith('spawn_detached', {
+                program: '/usr/bin/open',
+                arguments: ['file.txt'],
+                current_dir: undefined,
+            });
+        });
+
+        it('calls hide_main after successful command when hideOnActivation is true', async () => {
+            await activate('file.txt', {
+                activateAction: 'command',
+                commandPath: '/usr/bin/code',
+                hideOnActivation: true,
+            });
+
+            expect(mockInvoke).toHaveBeenCalledWith('hide_main');
+        });
+
+        it('does not call hide_main when hideOnActivation is false', async () => {
+            await activate('file.txt', {
+                activateAction: 'command',
+                commandPath: '/usr/bin/code',
+                hideOnActivation: false,
+            });
+
+            expect(mockInvoke).not.toHaveBeenCalledWith('hide_main');
+        });
+
+        it('adds error when spawn_detached fails', async () => {
+            mockInvoke.mockImplementation((cmd) => {
+                if (cmd === 'spawn_detached') {
+                    return Promise.reject(new Error('Too many background processes'));
+                }
+                return Promise.resolve();
+            });
+
+            await activate('file.txt', {
+                activateAction: 'command',
+                commandPath: '/nonexistent/program',
+            });
+
+            const errorList = get(errors);
+            expect(errorList.length).toBe(1);
+            expect(errorList[0].type).toBe('tauri');
+            expect(errorList[0].message).toContain("Could not perform activateAction 'command'");
+        });
+
+        it('passes text with special characters to command', async () => {
+            await activate('/path/with spaces/file name.txt', {
+                activateAction: 'command',
+                commandPath: '/usr/bin/code',
+            });
+
+            expect(mockInvoke).toHaveBeenCalledWith('spawn_detached', {
+                program: '/usr/bin/code',
+                arguments: ['/path/with spaces/file name.txt'],
+                current_dir: undefined,
+            });
+        });
+
+        it('uses extractor with command action', async () => {
+            await activate('prefix:/actual/path/here:suffix', {
+                activateAction: 'command',
+                commandPath: '/usr/bin/open',
+                extractorRegexBody: ':(.+):',
+                extractorGroup: 1,
+            });
+
+            expect(mockInvoke).toHaveBeenCalledWith('spawn_detached', {
+                program: '/usr/bin/open',
+                arguments: ['/actual/path/here'],
+                current_dir: undefined,
+            });
+        });
+
+        it('passes parent directory to command when openContaining is true', async () => {
+            mockInvoke.mockImplementation((cmd: string) => {
+                if (cmd === 'trim_path') return Promise.resolve('/parent');
+                return Promise.resolve(undefined);
+            });
+
+            await activate('/parent/file.txt', {
+                activateAction: 'command',
+                commandPath: '/usr/bin/code',
+            }, true);
+
+            expect(mockInvoke).toHaveBeenCalledWith('spawn_detached', {
+                program: '/usr/bin/code',
+                arguments: ['/parent'],
+                current_dir: undefined,
             });
         });
     });
