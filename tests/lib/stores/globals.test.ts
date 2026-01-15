@@ -26,7 +26,7 @@ import {
     statusBar,
     isMac,
     keySymbols,
-} from './globals';
+} from '../../../src/lib/stores/globals';
 
 describe('globals.ts stores', () => {
     beforeEach(() => {

@@ -73,12 +73,12 @@ vi.mock('svelte/transition', () => ({
 }));
 
 // Mock config loading
-vi.mock('./lib/utils/config-file-utils.ts', () => ({
+vi.mock('../src/lib/utils/config-file-utils.ts', () => ({
     loadValidateAndInitConfigStores: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Import after mocking
-import App from './App.svelte';
+import App from '../src/App.svelte';
 
 // Helper to emit Tauri events
 function emitEvent<T>(eventName: string, payload: T) {
@@ -1070,6 +1070,166 @@ describe('App.svelte', () => {
             await vi.runAllTimersAsync();
 
             expect(mockFocus).toHaveBeenCalled();
+        });
+    });
+
+    describe('window hide during output streaming - state consistency', () => {
+        // Section 30 Frontend test: Window hide during output streaming → state consistent
+
+        it('hides window during active streaming preserves stdout state', async () => {
+            render(App);
+            await vi.runAllTimersAsync();
+
+            // Simulate active streaming
+            running.set(true);
+            stdoutLock.set(false);
+            emitEvent('stdout', ['streaming', 'output']);
+            await vi.runAllTimersAsync();
+
+            expect(get(stdout)).toEqual(['streaming', 'output']);
+
+            // Hide event arrives during streaming
+            emitEvent('main_hide_unhide', 'hide');
+
+            // Stdout should still be preserved (not immediately cleared)
+            expect(get(stdout)).toEqual(['streaming', 'output']);
+        });
+
+        it('hide during streaming keeps tray open (has output)', async () => {
+            render(App);
+            await vi.runAllTimersAsync();
+
+            // Open tray and add content
+            trayOpen.set(true);
+            await vi.runAllTimersAsync();
+            running.set(true);
+            stdoutLock.set(false);
+            emitEvent('stdout', ['output']);
+            await vi.runAllTimersAsync();
+
+            // Hide event
+            emitEvent('main_hide_unhide', 'hide');
+
+            // Tray should stay open because stdout has content
+            expect(get(trayOpen)).toBe(true);
+        });
+
+        it('hide during streaming does not crash if still receiving events', async () => {
+            render(App);
+            await vi.runAllTimersAsync();
+
+            running.set(true);
+            stdoutLock.set(false);
+            emitEvent('stdout', ['initial output']);
+
+            // Hide while streaming
+            emitEvent('main_hide_unhide', 'hide');
+            await vi.runAllTimersAsync();
+
+            // More stdout events after hide - should not crash
+            expect(() => {
+                emitEvent('stdout', ['more output']);
+                emitEvent('stdout', ['even more']);
+            }).not.toThrow();
+
+            // Stdout preserves last value before lock/debounce
+            // The exact value depends on timing, but should not crash
+        });
+
+        it('unhide after hide during streaming restores focus', async () => {
+            render(App);
+            await vi.runAllTimersAsync();
+
+            running.set(true);
+            stdoutLock.set(false);
+            emitEvent('stdout', ['output']);
+
+            // Hide
+            emitEvent('main_hide_unhide', 'hide');
+            await vi.runAllTimersAsync();
+
+            // Unhide
+            const mockFocus = vi.fn();
+            const originalGetElementById = document.getElementById.bind(document);
+            vi.spyOn(document, 'getElementById').mockImplementation((id) => {
+                if (id === 'cmdInput') {
+                    return { focus: mockFocus, scrollIntoView: vi.fn() } as unknown as HTMLElement;
+                }
+                return originalGetElementById(id);
+            });
+
+            emitEvent('main_hide_unhide', 'unhide');
+
+            expect(mockFocus).toHaveBeenCalled();
+        });
+
+        it('exit event during hidden state still sets running=false', async () => {
+            render(App);
+            await vi.runAllTimersAsync();
+
+            running.set(true);
+            stdoutLock.set(false);
+            emitEvent('stdout', ['output']);
+
+            // Hide
+            emitEvent('main_hide_unhide', 'hide');
+
+            // Exit event while hidden
+            emitEvent('exit', 0);
+            await vi.advanceTimersByTimeAsync(100);
+
+            expect(get(running)).toBe(false);
+        });
+    });
+
+    describe('no commands in config - graceful handling', () => {
+        // Section 31: No commands in config → graceful handling
+
+        it('renders without crash when cmdConfig is empty', async () => {
+            cmdConfig.set({});
+            currentCmd.set(undefined);
+
+            expect(() => render(App)).not.toThrow();
+        });
+
+        it('renders without crash when currentCmd not found in config', async () => {
+            cmdConfig.set({
+                'other-cmd': createConfig(),
+            });
+            currentCmd.set('nonexistent-cmd');
+
+            expect(() => render(App)).not.toThrow();
+        });
+
+        it('handles hotkey press when no commands configured', async () => {
+            cmdConfig.set({});
+            currentCmd.set(undefined);
+
+            const { container } = render(App);
+            await vi.runAllTimersAsync();
+
+            // Press Ctrl+1 - should not crash
+            await fireEvent.keyDown(document.body, {
+                key: '1',
+                ctrlKey: true,
+            });
+
+            expect(get(currentCmd)).toBeUndefined();
+        });
+
+        it('handles escape when no current command', async () => {
+            cmdConfig.set({});
+            currentCmd.set(undefined);
+            query.set('search term');
+
+            render(App);
+            await vi.runAllTimersAsync();
+
+            // Press escape to clear
+            await fireEvent.keyDown(document.body, { key: 'Escape' });
+            await vi.runAllTimersAsync();
+
+            expect(get(query)).toBe('');
         });
     });
 

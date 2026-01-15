@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { activate } from './activator';
+import { activate } from '../../../src/lib/utils/activator';
 import { errors } from '$lib/stores/errors';
 import { get } from 'svelte/store';
 
@@ -20,8 +20,8 @@ vi.mock('@tauri-apps/api/core', () => ({
     invoke: (...args: unknown[]) => mockInvoke(...args),
 }));
 
-// Mock console.log
-const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+// Mock console.debug
+const consoleSpy = vi.spyOn(console, 'debug').mockImplementation(() => {});
 
 describe('activate', () => {
     beforeEach(() => {

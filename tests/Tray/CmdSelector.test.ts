@@ -16,7 +16,7 @@ import {
     keySymbols,
 } from '$lib/stores/globals';
 import type { CmdConfigItem } from '$lib/stores/schema/cmd-config-schema';
-import CmdSelector from './CmdSelector.svelte';
+import CmdSelector from '../../src/Tray/CmdSelector.svelte';
 
 // Mock Tauri APIs
 const mockInvoke = vi.fn();

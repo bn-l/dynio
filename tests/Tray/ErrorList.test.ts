@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent, cleanup } from '@testing-library/svelte';
 import { get } from 'svelte/store';
 import { errors } from '$lib/stores/errors';
-import ErrorList from './ErrorList.svelte';
+import ErrorList from '../../src/Tray/ErrorList.svelte';
 
 describe('ErrorList.svelte', () => {
     beforeEach(() => {

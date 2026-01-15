@@ -7,7 +7,7 @@ import { get } from 'svelte/store';
 import { stdout, statusBar, keySymbols, currentCmd } from '$lib/stores/globals';
 import { cmdConfig } from '$lib/stores/cmd-config';
 import type { CmdConfigItem } from '$lib/stores/schema/cmd-config-schema';
-import ListDisplay from './ListDisplay.svelte';
+import ListDisplay from '../../../../src/Tray/Stdout/ListDisplay/ListDisplay.svelte';
 
 // Mock Tauri APIs
 const mockInvoke = vi.fn();
@@ -438,6 +438,40 @@ describe('ListDisplay.svelte', () => {
 
             const items = container.querySelectorAll('.list-item');
             expect(items).toHaveLength(1);
+        });
+
+        it('single item - up/down arrow keys do not crash', async () => {
+            stdout.set(['only-item']);
+
+            const { container } = render(ListDisplay);
+
+            // Arrow up on single item should not crash
+            await fireEvent.keyDown(document.body, { key: 'ArrowUp' });
+            await new Promise((resolve) => setTimeout(resolve, 30));
+
+            const firstItem = container.querySelector('#item-0');
+            expect(firstItem?.classList.contains('item-selected')).toBe(true);
+
+            // Arrow down on single item should not crash
+            await fireEvent.keyDown(document.body, { key: 'ArrowDown' });
+            await new Promise((resolve) => setTimeout(resolve, 30));
+
+            expect(firstItem?.classList.contains('item-selected')).toBe(true);
+        });
+
+        it('single item - multiple rapid arrow presses do not crash', async () => {
+            stdout.set(['single']);
+
+            render(ListDisplay);
+
+            // Rapidly press up and down
+            for (let i = 0; i < 10; i++) {
+                await fireEvent.keyDown(document.body, { key: 'ArrowUp' });
+                await fireEvent.keyDown(document.body, { key: 'ArrowDown' });
+            }
+
+            // Should not crash
+            await new Promise((resolve) => setTimeout(resolve, 50));
         });
 
         it('selected item scrolls into view on navigation', async () => {

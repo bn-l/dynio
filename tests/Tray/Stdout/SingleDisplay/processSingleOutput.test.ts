@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { processSingleOutput } from './processSingleOuput';
+import { processSingleOutput } from '../../../../src/Tray/Stdout/SingleDisplay/processSingleOuput';
 import { errors } from '$lib/stores/errors';
 import { get } from 'svelte/store';
 

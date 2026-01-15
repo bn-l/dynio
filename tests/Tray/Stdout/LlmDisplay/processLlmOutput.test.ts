@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { processLlmOutput } from './processLlmOutput';
+import { processLlmOutput } from '../../../../src/Tray/Stdout/LlmDisplay/processLlmOutput';
 
 describe('processLlmOutput', () => {
     describe('no thinking tags present', () => {

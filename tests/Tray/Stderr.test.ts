@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent, cleanup } from '@testing-library/svelte';
 import { get } from 'svelte/store';
 import { stderr } from '$lib/stores/globals';
-import Stderr from './Stderr.svelte';
+import Stderr from '../../src/Tray/Stderr.svelte';
 
 describe('Stderr.svelte', () => {
     beforeEach(() => {

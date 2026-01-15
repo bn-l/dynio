@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { processListOutput } from './processListOutput';
+import { processListOutput } from '../../../../src/Tray/Stdout/ListDisplay/processListOutput';
 
 describe('processListOutput', () => {
     describe('default case with no options', () => {

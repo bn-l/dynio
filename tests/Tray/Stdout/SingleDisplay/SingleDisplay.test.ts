@@ -7,7 +7,7 @@ import { get } from 'svelte/store';
 import { stdout, statusBar, keySymbols, currentCmd } from '$lib/stores/globals';
 import { cmdConfig } from '$lib/stores/cmd-config';
 import type { CmdConfigItem } from '$lib/stores/schema/cmd-config-schema';
-import SingleDisplay from './SingleDisplay.svelte';
+import SingleDisplay from '../../../../src/Tray/Stdout/SingleDisplay/SingleDisplay.svelte';
 
 // Mock Tauri APIs
 const mockInvoke = vi.fn();

@@ -6,7 +6,7 @@ import { render, fireEvent, cleanup } from '@testing-library/svelte';
 import { get } from 'svelte/store';
 import { statusBar, currentTrayView, trayOpen, stderr } from '$lib/stores/globals';
 import { errors } from '$lib/stores/errors';
-import StatusBar from './StatusBar.svelte';
+import StatusBar from '../../src/Tray/StatusBar.svelte';
 
 // Mock Tauri APIs
 const mockInvoke = vi.fn();

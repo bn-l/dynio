@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { hotkeys } from './hotkeys';
+import { hotkeys } from '../../../src/lib/actions/hotkeys';
 
 // Helper to create mock keyboard events
 function createKeyboardEvent(key: string, options: {

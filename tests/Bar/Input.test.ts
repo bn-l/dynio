@@ -18,7 +18,7 @@ import { cmdConfig } from '$lib/stores/cmd-config';
 import { settings } from '$lib/stores/settings';
 import { errors } from '$lib/stores/errors';
 import type { CmdConfigItem } from '$lib/stores/schema/cmd-config-schema';
-import Input from './Input.svelte';
+import Input from '../../src/Bar/Input.svelte';
 
 // Mock Tauri APIs
 const mockInvoke = vi.fn();

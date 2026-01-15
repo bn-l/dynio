@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { errors } from './errors';
+import { errors } from '../../../src/lib/stores/errors';
 import { get } from 'svelte/store';
 
 describe('errors store', () => {

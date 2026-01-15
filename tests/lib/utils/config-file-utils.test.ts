@@ -16,7 +16,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 // Import after mocking
-import { loadValidateAndInitConfigStores } from './config-file-utils';
+import { loadValidateAndInitConfigStores } from '../../../src/lib/utils/config-file-utils';
 
 describe('Config Loading (config-file-utils.ts)', () => {
     beforeEach(() => {

@@ -9,7 +9,7 @@ import { cmdConfig } from '$lib/stores/cmd-config';
 import { currentCmd } from '$lib/stores/globals';
 import { errors } from '$lib/stores/errors';
 import type { CmdConfigItem } from '$lib/stores/schema/cmd-config-schema';
-import LlmDisplay from './LlmDisplay.svelte';
+import LlmDisplay from '../../../../src/Tray/Stdout/LlmDisplay/LlmDisplay.svelte';
 
 // Mock Tauri APIs
 const mockInvoke = vi.fn();
