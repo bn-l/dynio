@@ -4,7 +4,20 @@ import { svelteTesting } from '@testing-library/svelte/vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 export default defineConfig({
-    plugins: [svelte({ hot: false }), svelteTesting(), tsconfigPaths()],
+    plugins: [
+        {
+            name: 'mock-virtual-uno',
+            resolveId(id) {
+                if (id === 'virtual:uno.css') return '\0virtual:uno.css';
+            },
+            load(id) {
+                if (id === '\0virtual:uno.css') return '';
+            },
+        },
+        svelte({ hot: false }),
+        svelteTesting(),
+        tsconfigPaths(),
+    ],
     test: {
         globals: true,
         environment: 'jsdom',
