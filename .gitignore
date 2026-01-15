@@ -42,3 +42,4 @@ REPOMAP.md
 CODEGUIDE.md
 **/.cursor
 .mcp.json
+src-tauri/gen/
