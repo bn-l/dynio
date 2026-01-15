@@ -2,8 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use serde::{Deserialize, Serialize};
-use std::fs::OpenOptions;
 use std::process::Stdio;
+use flexi_logger::{Cleanup, Criterion, FileSpec, Logger, Naming};
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Runtime, Size, WebviewWindow};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 use tokio::sync::Mutex;
@@ -632,18 +632,33 @@ async fn get_config_dir() -> Result<String, SerError> {
 }
 
 fn main() {
+    // Load .env file - try project root first (for dev), then current dir (for release)
+    let _ = dotenvy::from_filename(".env")
+        .or_else(|_| dotenvy::from_filename("../.env"));
+
+    // Get log level from RUST_LOG_LEVEL env var, default to "info"
+    let log_level = std::env::var("RUST_LOG_LEVEL").unwrap_or_else(|_| "info".to_string());
+
     let dynio_dir = config_dir();
     std::fs::create_dir_all(&dynio_dir).expect("Failed to create config directory");
-    let log_file_path = dynio_dir.join("dynio.log");
-    let log_file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(log_file_path)
-        .expect("Failed to open dynio.log file");
-    env_logger::Builder::from_default_env()
-        .filter_level(log::LevelFilter::Debug)
-        .target(env_logger::Target::Pipe(Box::new(log_file)))
-        .init();
+
+    Logger::try_with_str(&log_level)
+        .expect("Invalid log level in RUST_LOG_LEVEL")
+        .log_to_file(
+            FileSpec::default()
+                .directory(&dynio_dir)
+                .basename("dynio")
+                .suffix("log")
+                .suppress_timestamp(),
+        )
+        .rotate(
+            Criterion::Size(5_000_000), // 5 MB
+            Naming::Numbers,
+            Cleanup::KeepLogFiles(3),
+        )
+        .append()
+        .start()
+        .expect("Failed to initialize flexi_logger");
 
     let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
