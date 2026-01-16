@@ -18,16 +18,17 @@
         "test:all": "vitest run && cargo test --manifest-path src-tauri/Cargo.toml",
         "test:cov": "vitest run --coverage",
         "test:cov:rust": "mkdir -p coverage/rust && cargo llvm-cov --manifest-path src-tauri/Cargo.toml --json --output-path coverage/rust/coverage.json && cargo llvm-cov --manifest-path src-tauri/Cargo.toml --html --output-dir coverage/rust",
-        "badges": "npx tsx scripts/generate-coverage-badges.ts",
-        "cov": "npm run test:cov && npm run test:cov:rust && npm run badges"
+        "cov": "npm run test:cov && npm run test:cov:rust"
     },
     "dependencies": {
         "@tauri-apps/api": "^2.9.1",
+        "@tauri-apps/plugin-autostart": "^2.5.1",
         "@tauri-apps/plugin-clipboard-manager": "^2.3.2",
         "@tauri-apps/plugin-fs": "^2.4.4",
         "@tauri-apps/plugin-opener": "^2.5.2",
         "@tauri-apps/plugin-process": "^2.3.1",
         "@tauri-apps/plugin-shell": "^2.3.3",
+        "@tauri-apps/plugin-updater": "^2.9.0",
         "ansi_up": "^6.0.2",
         "dompurify": "^3.3.1",
         "lodash-es": "^4.17.21",
