@@ -1,9 +1,9 @@
 [package]
 name = "dynio"
-version = "0.1.9"
+version = "1.0.0"
 description = "Dynio"
 authors = ["bn-l"]
-license = "mit"
+license = "AGPL-3.0"
 repository = ""
 default-run = "dynio"
 edition = "2021"

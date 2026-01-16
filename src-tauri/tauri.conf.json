@@ -38,7 +38,7 @@
   },
   "productName": "dynio",
   "mainBinaryName": "dynio",
-  "version": "0.1.9",
+  "version": "1.0.0",
   "identifier": "com.dynio.net",
   "plugins": {
     "updater": {
