@@ -22,6 +22,8 @@ use general_settings::GeneralSettings;
 #[cfg(desktop)]
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 
+use tauri_plugin_autostart::ManagerExt as AutostartManagerExt;
+
 #[cfg(target_os = "macos")]
 use tauri_nspanel::{
     objc2::{msg_send, ClassType, Message},
@@ -74,6 +76,8 @@ fn build_windows_command(program: &str, arguments: &[String], input: &str) -> St
 enum SerError {
     #[error(transparent)]
     Io(#[from] std::io::Error),
+    #[error("Failed to run '{program}': {source}")]
+    SpawnFailed { program: String, source: std::io::Error },
 }
 impl serde::Serialize for SerError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -224,6 +228,21 @@ async fn run_program<R: Runtime>(
     {
         command.args(arguments);
         command.arg(input);
+
+        // GUI apps on macOS don't inherit the user's shell PATH, so we need to set it explicitly
+        // to include common locations where CLI tools are installed
+        let home = std::env::var("HOME").unwrap_or_default();
+        let extra_paths = [
+            "/opt/homebrew/bin",      // Apple Silicon Homebrew
+            "/opt/homebrew/sbin",
+            "/usr/local/bin",         // Intel Homebrew / manual installs
+            "/usr/local/sbin",
+            &format!("{}/.local/bin", home),  // User local bin
+            &format!("{}/bin", home),         // User bin
+        ];
+        let system_path = std::env::var("PATH").unwrap_or_else(|_| "/usr/bin:/bin:/usr/sbin:/sbin".to_string());
+        let full_path = format!("{}:{}", extra_paths.join(":"), system_path);
+        command.env("PATH", full_path);
     }
 
     if let Some(ref dir) = current_dir {
@@ -247,7 +266,10 @@ async fn run_program<R: Runtime>(
             log::debug!("[DEBUG] spawn() FAILED: {:?}", e);
             // Emit exit event so frontend knows command finished (even though it failed to start)
             let _ = app_handle.emit("exit", Some(-1i32));
-            return Err(e.into());
+            return Err(SerError::SpawnFailed {
+                program: program.clone(),
+                source: e
+            });
         }
     };
     log::debug!("[DEBUG] Child spawned with id: {:?}", child.id());
@@ -666,6 +688,10 @@ fn main() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_autostart::init(
+            tauri_plugin_autostart::MacosLauncher::LaunchAgent,
+            None,
+        ))
         .plugin(tauri_plugin_single_instance::init(|_app, _argv, _cwd| {}));
 
     #[cfg(target_os = "macos")]
@@ -689,6 +715,9 @@ fn main() {
             spawn_detached
         ])
         .setup(|app| {
+            app.handle()
+                .plugin(tauri_plugin_updater::Builder::new().build())?;
+
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
@@ -701,8 +730,10 @@ fn main() {
                 .item(&toggle)
                 .build()?;
 
+            let tray_icon = tauri::image::Image::from_bytes(include_bytes!("../icons/peach-menu-bar.png"))
+                .expect("Failed to load tray icon");
             let _tray = TrayIconBuilder::new()
-                .icon(app.default_window_icon().unwrap().clone())
+                .icon(tray_icon)
                 .icon_as_template(true)
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id().as_ref() {
@@ -731,6 +762,16 @@ fn main() {
 
             let settings = get_general_settings().expect("Could not get settings");
             log::debug!("settings: {:?}", settings);
+
+            // Sync autostart state with setting
+            let autostart_manager = app.autolaunch();
+            if settings.run_at_startup {
+                let _ = autostart_manager.enable();
+                log::debug!("Autostart enabled");
+            } else {
+                let _ = autostart_manager.disable();
+                log::debug!("Autostart disabled");
+            }
 
             // Global shortcut setup
             #[cfg(desktop)]
