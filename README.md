@@ -36,7 +36,7 @@ For example: Take the command `ls`. The app calls `ls` each time you press a key
 
 <br />
 
-\* Mac: `open <path>`, Windows `explorer.exe <path>`, Linux: `xdg-open <path>. 
+\* Mac: `open <path>`, Windows `explorer.exe <path>`, Linux: `xdg-open <path>`. 
 
 ---
 
