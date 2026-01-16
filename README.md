@@ -27,12 +27,16 @@
 
 This provides a spotlight-like GUI to CLI commands. **You edit a yaml with the name of or path to the command and the app calls it and uses its output to create a UI**.
 
-E.g. `ls`. The app calls `ls` on each key stroke with what you type in the input box and outputs the result as a scrollable and selectable list. You can set an "activation" on each list item (what happens when you select and press enter). In this example the "open" activation would open the path that `ls` outputs (`ls -d`).
+For example: Take the command `ls`. The app calls `ls` each time you press a key with everything you have in the input and then outputs the result as a scrollable and selectable list. You can set an "activation" on each list item (what happens when you select and press enter--this can be basically anything). You could configure the "open" activation which treats the line as a path to be opened* that `ls` outputs (`ls -d`).
 
 - Windows, macOS, Linux
 - Global shortcut (Alt/Option+Space) shows/hides instantly
 - Yaml config: Full schema with autocomplete in vscod. Paste the schema into an LLM and have it create a command.
 - LLM streaming: Chunk-based output for real-time LLM responses with `<think>` block rendering
+
+<br />
+
+\* Mac: `open <path>`, Windows `explorer.exe <path>`, Linux: `xdg-open <path>. 
 
 ---
 
@@ -72,7 +76,7 @@ qalc:
 <div align="center">
 <img src="./assets-repo/groq-demo-smaller.webp" alt="Groq LLM demo" width="550">
 
-*Adding an LLM is just a matter of copying and pasting the curl command. You can get fancier also.*
+*Adding an LLM is just a matter of copying and pasting the curl command you get in the code preview panel on most [LLM playgrounds](https://aistudio.google.com/prompts/new_chat). You can get fancier also:*
 </div>
 
 ```yaml
@@ -190,7 +194,7 @@ process.stdout.write("\n");
 <div align="center">
 <img src="./assets-repo/find-demo-smaller.webp" alt="File search demo" width="550">
 
-*This is extremely fast and shows applications listed.*
+*This is extremely fast and shows system applications like TextEdit. You could get really fancy by adding [frecency](https://en.wikipedia.org/wiki/Frecency) to the find script and a custom activation script that updates frequency scores*
 </div>
 
 ```yaml
