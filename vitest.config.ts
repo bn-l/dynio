@@ -30,5 +30,12 @@ export default defineConfig({
         setupFiles: ['./vitest-setup.ts'],
         include: ['tests/**/*.test.ts'],
         exclude: ['node_modules', 'src-tauri'],
+        coverage: {
+            provider: 'v8',
+            reporter: ['text', 'json-summary', 'lcov', 'html'],
+            reportsDirectory: './coverage/frontend',
+            include: ['src/**/*.{ts,svelte}'],
+            exclude: ['src/**/*.d.ts', 'src/lib/stores/schema/generated/**'],
+        },
     },
 });

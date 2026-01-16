@@ -15,7 +15,11 @@
         "tauri build": "tauri build",
         "tauri dev": "tauri dev",
         "test": "vitest",
-        "test:all": "vitest run && cargo test --manifest-path src-tauri/Cargo.toml"
+        "test:all": "vitest run && cargo test --manifest-path src-tauri/Cargo.toml",
+        "test:cov": "vitest run --coverage",
+        "test:cov:rust": "mkdir -p coverage/rust && cargo llvm-cov --manifest-path src-tauri/Cargo.toml --json --output-path coverage/rust/coverage.json && cargo llvm-cov --manifest-path src-tauri/Cargo.toml --html --output-dir coverage/rust",
+        "badges": "npx tsx scripts/generate-coverage-badges.ts",
+        "cov": "npm run test:cov && npm run test:cov:rust && npm run badges"
     },
     "dependencies": {
         "@tauri-apps/api": "^2.9.1",
@@ -48,6 +52,7 @@
         "@types/node": "^20.14.9",
         "@types/showdown": "^2.0.6",
         "@unocss/eslint-plugin": "^0.60.4",
+        "@vitest/coverage-v8": "^4.0.17",
         "eslint": "^8.57.0",
         "eslint-plugin-svelte": "^2.39.3",
         "eslint-plugin-unicorn": "^54.0.0",
