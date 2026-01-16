@@ -39,6 +39,11 @@
           "type": "boolean",
           "description": "Whether clicking outside the app will cause it to hide.",
           "default": true
+        },
+        "runAtStartup": {
+          "type": "boolean",
+          "description": "Whether to start the app automatically when the user logs in.",
+          "default": false
         }
       },
       "additionalProperties": false

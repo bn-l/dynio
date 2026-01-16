@@ -50,6 +50,9 @@
     {
       "identifier": "opener:allow-open-path",
       "allow": [{ "path": "/**" }]
-    }
+    },
+    "autostart:allow-enable",
+    "autostart:allow-disable",
+    "autostart:allow-is-enabled"
   ]
 }

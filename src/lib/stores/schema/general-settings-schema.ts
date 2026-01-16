@@ -34,6 +34,11 @@ export type GeneralSettings = {
      * @default true
      */
     hideOnLostFocus?: boolean;
+    /**
+     * Whether to start the app automatically when the user logs in.
+     * @default false
+     */
+    runAtStartup?: boolean;
 }
 
 /**

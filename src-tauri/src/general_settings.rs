@@ -38,6 +38,10 @@ pub struct GeneralSettings {
     /// Global shortcut to toggle window visibility.
     /// Defaults: Windows=Alt+Space, macOS=Option+Space, Linux=Alt+Space
     pub global_shortcut: Option<String>,
+
+    /// Whether to start the app automatically when the user logs in. Defaults to `false`.
+    #[serde(default = "default_false")]
+    pub run_at_startup: bool,
     // /// Whether to automatically update. Defaults to `true`.
     // #[serde(default = "default_false")]
     // pub auto_update: bool,

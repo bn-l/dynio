@@ -32,5 +32,9 @@ export default z
       .boolean()
       .describe("Whether clicking outside the app will cause it to hide.")
       .default(true),
+    runAtStartup: z
+      .boolean()
+      .describe("Whether to start the app automatically when the user logs in.")
+      .default(false),
   })
   .strict();

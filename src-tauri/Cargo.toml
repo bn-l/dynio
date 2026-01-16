@@ -15,7 +15,7 @@ rust-version = "1.60"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [ "macos-private-api", "tray-icon", "test"] }
+tauri = { version = "2", features = ["macos-private-api", "tray-icon", "test", "image-png"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "1.0.61"
