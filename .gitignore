@@ -43,3 +43,4 @@ CODEGUIDE.md
 **/.cursor
 .mcp.json
 src-tauri/gen/
+coverage/
