@@ -273,6 +273,24 @@ mod process_integration {
         assert!(child.is_err());
     }
 
+    #[test]
+    fn spawn_failed_error_includes_program_name() {
+        use crate::SerError;
+
+        let io_error = std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "No such file or directory"
+        );
+        let err = SerError::SpawnFailed {
+            program: "qalc".to_string(),
+            source: io_error,
+        };
+
+        let msg = err.to_string();
+        assert!(msg.contains("qalc"), "Error should contain program name: {}", msg);
+        assert!(msg.contains("Failed to run"), "Error should contain 'Failed to run': {}", msg);
+    }
+
     #[tokio::test]
     async fn spawn_command_with_exit_code() {
         let mut cmd = tokio::process::Command::new("sh");
