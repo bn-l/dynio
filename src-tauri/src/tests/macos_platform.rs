@@ -1,5 +1,3 @@
-use super::*;
-
 // Section 32: macOS-Specific Platform Tests
 //
 // NOTE: Most NSPanel behavior (non-activating, floating, level=25) requires actual

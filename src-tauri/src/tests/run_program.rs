@@ -196,6 +196,7 @@ async fn read_chunks_handles_mixed_valid_invalid_utf8() {
 /// Documents: from_utf8 returns Err for invalid sequences.
 /// This test verifies the behavior that the main code relies on.
 #[test]
+#[allow(invalid_from_utf8)]
 fn from_utf8_returns_error_for_invalid_bytes() {
     let invalid: &[u8] = &[0xFF, 0xFE];
     let result = std::str::from_utf8(invalid);
