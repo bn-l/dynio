@@ -1,71 +1,5 @@
 import { z } from "zod";
 
-const baseActivationFields = {
-  extractorRegexBody: z
-    .string()
-    .describe(
-      "Regex to extract text from each split line for use in the enterAction in this config. Don't pre/post-fix with /.",
-    )
-    .optional(),
-  extractorFlags: z
-    .string()
-    .describe(
-      "Regex flags to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
-    )
-    .optional(),
-  extractorGroup: z
-    .number()
-    .describe(
-      "Regex group to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
-    )
-    .optional(),
-  isPath: z
-    .boolean()
-    .describe(
-      "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent folder of the extracted text or error if the extract text is not a path.",
-    )
-    .default(false),
-  hideOnActivation: z
-    .boolean()
-    .describe("Hide window after activation (copy, open, command, or reveal).")
-    .default(true),
-};
-
-const activationOptionsSchema = z.union([
-  z
-    .object({
-      activateAction: z.literal("command"),
-      commandPath: z.string().describe("Path to the command executable."),
-      commandArguments: z
-        .array(z.string())
-        .describe(
-          "Arguments for the command. The extracted text is appended as the final argument.",
-        )
-        .optional(),
-      commandCurrentDir: z
-        .string()
-        .describe("Working directory for the command.")
-        .optional(),
-      ...baseActivationFields,
-    })
-    .strict(),
-  z
-    .object({
-      activateAction: z.literal("open"),
-      ...baseActivationFields,
-    })
-    .strict(),
-  z
-    .object({
-      activateAction: z
-        .literal("copy")
-        .optional()
-        .default("copy"),
-      ...baseActivationFields,
-    })
-    .strict(),
-]);
-
 export default z.record(
   z
     .object({
@@ -127,7 +61,141 @@ export default z.record(
               })
               .strict()
               .describe("Display options. Use {} for default options."),
-            activationOptions: activationOptionsSchema,
+            activationOptions: z
+              .union([
+                z
+                  .object({
+                    activateAction: z
+                      .literal("copy")
+                      .describe("Copy extracted text to clipboard.")
+                      .default("copy"),
+                    extractorRegexBody: z
+                      .string()
+                      .describe(
+                        "Regex to extract text from each split line for use in the enterAction in this config. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    extractorFlags: z
+                      .string()
+                      .describe(
+                        "Regex flags to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    extractorGroup: z
+                      .number()
+                      .describe(
+                        "Regex group to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    isPath: z
+                      .boolean()
+                      .describe(
+                        "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent folder of the extracted text or error if the extract text is not a path.",
+                      )
+                      .default(false),
+                    hideOnActivation: z
+                      .boolean()
+                      .describe(
+                        "Hide window after activation (copy, open, command, or reveal).",
+                      )
+                      .default(true),
+                  })
+                  .strict(),
+                z
+                  .object({
+                    activateAction: z
+                      .literal("open")
+                      .describe(
+                        "Open extracted text as a path or URL in the default application.",
+                      ),
+                    extractorRegexBody: z
+                      .string()
+                      .describe(
+                        "Regex to extract text from each split line for use in the enterAction in this config. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    extractorFlags: z
+                      .string()
+                      .describe(
+                        "Regex flags to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    extractorGroup: z
+                      .number()
+                      .describe(
+                        "Regex group to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    isPath: z
+                      .boolean()
+                      .describe(
+                        "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent folder of the extracted text or error if the extract text is not a path.",
+                      )
+                      .default(false),
+                    hideOnActivation: z
+                      .boolean()
+                      .describe(
+                        "Hide window after activation (copy, open, command, or reveal).",
+                      )
+                      .default(true),
+                  })
+                  .strict(),
+                z
+                  .object({
+                    activateAction: z
+                      .literal("command")
+                      .describe(
+                        "Run a command with the extracted text as an argument.",
+                      ),
+                    commandPath: z
+                      .string()
+                      .describe("Path to the command executable."),
+                    commandArguments: z
+                      .array(z.string())
+                      .describe(
+                        "Arguments for the command. The extracted text is appended as the final argument.",
+                      )
+                      .optional(),
+                    commandCurrentDir: z
+                      .string()
+                      .describe("Working directory for the command.")
+                      .optional(),
+                    extractorRegexBody: z
+                      .string()
+                      .describe(
+                        "Regex to extract text from each split line for use in the enterAction in this config. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    extractorFlags: z
+                      .string()
+                      .describe(
+                        "Regex flags to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    extractorGroup: z
+                      .number()
+                      .describe(
+                        "Regex group to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    isPath: z
+                      .boolean()
+                      .describe(
+                        "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent folder of the extracted text or error if the extract text is not a path.",
+                      )
+                      .default(false),
+                    hideOnActivation: z
+                      .boolean()
+                      .describe(
+                        "Hide window after activation (copy, open, command, or reveal).",
+                      )
+                      .default(true),
+                  })
+                  .strict(),
+              ])
+              .describe(
+                "Discriminated union for activation options based on activateAction.",
+              ),
           })
           .strict(),
         z
@@ -185,7 +253,141 @@ export default z.record(
               })
               .strict()
               .describe("Display options. Use {} for default options."),
-            activationOptions: activationOptionsSchema,
+            activationOptions: z
+              .union([
+                z
+                  .object({
+                    activateAction: z
+                      .literal("copy")
+                      .describe("Copy extracted text to clipboard.")
+                      .default("copy"),
+                    extractorRegexBody: z
+                      .string()
+                      .describe(
+                        "Regex to extract text from each split line for use in the enterAction in this config. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    extractorFlags: z
+                      .string()
+                      .describe(
+                        "Regex flags to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    extractorGroup: z
+                      .number()
+                      .describe(
+                        "Regex group to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    isPath: z
+                      .boolean()
+                      .describe(
+                        "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent folder of the extracted text or error if the extract text is not a path.",
+                      )
+                      .default(false),
+                    hideOnActivation: z
+                      .boolean()
+                      .describe(
+                        "Hide window after activation (copy, open, command, or reveal).",
+                      )
+                      .default(true),
+                  })
+                  .strict(),
+                z
+                  .object({
+                    activateAction: z
+                      .literal("open")
+                      .describe(
+                        "Open extracted text as a path or URL in the default application.",
+                      ),
+                    extractorRegexBody: z
+                      .string()
+                      .describe(
+                        "Regex to extract text from each split line for use in the enterAction in this config. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    extractorFlags: z
+                      .string()
+                      .describe(
+                        "Regex flags to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    extractorGroup: z
+                      .number()
+                      .describe(
+                        "Regex group to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    isPath: z
+                      .boolean()
+                      .describe(
+                        "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent folder of the extracted text or error if the extract text is not a path.",
+                      )
+                      .default(false),
+                    hideOnActivation: z
+                      .boolean()
+                      .describe(
+                        "Hide window after activation (copy, open, command, or reveal).",
+                      )
+                      .default(true),
+                  })
+                  .strict(),
+                z
+                  .object({
+                    activateAction: z
+                      .literal("command")
+                      .describe(
+                        "Run a command with the extracted text as an argument.",
+                      ),
+                    commandPath: z
+                      .string()
+                      .describe("Path to the command executable."),
+                    commandArguments: z
+                      .array(z.string())
+                      .describe(
+                        "Arguments for the command. The extracted text is appended as the final argument.",
+                      )
+                      .optional(),
+                    commandCurrentDir: z
+                      .string()
+                      .describe("Working directory for the command.")
+                      .optional(),
+                    extractorRegexBody: z
+                      .string()
+                      .describe(
+                        "Regex to extract text from each split line for use in the enterAction in this config. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    extractorFlags: z
+                      .string()
+                      .describe(
+                        "Regex flags to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    extractorGroup: z
+                      .number()
+                      .describe(
+                        "Regex group to extract text from each split line for use in the enterAction in this config. Must have set extractorRegex. Don't pre/post-fix with /.",
+                      )
+                      .optional(),
+                    isPath: z
+                      .boolean()
+                      .describe(
+                        "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent folder of the extracted text or error if the extract text is not a path.",
+                      )
+                      .default(false),
+                    hideOnActivation: z
+                      .boolean()
+                      .describe(
+                        "Hide window after activation (copy, open, command, or reveal).",
+                      )
+                      .default(true),
+                  })
+                  .strict(),
+              ])
+              .describe(
+                "Discriminated union for activation options based on activateAction.",
+              ),
           })
           .strict(),
         z
