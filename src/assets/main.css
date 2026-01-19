@@ -56,26 +56,30 @@
 
 
 .dark {
-    --bg-primary: #1e1e1e;
-    --bg-secondary: #252525;
-    --bg-tertiary: #2d2d2d;
-    --border-color: #3d3d3d;
-    --border-light: #333333;
-    --text: #f0f0f0;
-    --text-secondary: #a0a0a0;
-    --lightText: #707070;
-    --accent-selection: #3d2a1a;
-    --accent-hover: #2d2520;
+    /* Solid color system - warm stone tints */
+    --bg-primary: #1c1917;
+    --bg-secondary: #231f1c;
+    --bg-tertiary: #2c2622;
+    --border-color: rgba(245, 130, 70, 0.45);
+    --border-light: rgba(245, 130, 70, 0.5);
+
+    --text: #e0dbd5;
+    --text-secondary: #a09890;
+    --lightText: #6e6560;
+
+    /* Peachy orange accent */
+    --accent-selection: #98623b36;
+    --accent-hover: rgba(255, 140, 80, 0.2);
 
     /* Warm tones */
-    --bg-app: rgba(30, 30, 30, 0.96);
-    --border-warm: #3d3d3d;
-    --text-muted: #8a8a8a;
-    --divider-color: rgba(249, 115, 22, 0.15);
+    --bg-app: rgba(28, 25, 23, 0.96);
+    --border-warm: rgba(245, 130, 70, 0.65);
+    --text-muted: #f9b886c3;
+    --divider-color: rgba(245, 130, 70, 0.4);
 
     /* Code blocks */
-    --code-bg: #0d0d0d;
-    --code-text: #e0e0e0;
+    --code-bg: #12100e;
+    --code-text: #e5e0db;
 }
 
 * {

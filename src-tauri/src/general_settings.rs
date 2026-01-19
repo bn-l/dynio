@@ -1,12 +1,22 @@
 use serde::{Deserialize, Serialize};
 
+/// Theme mode: "off" for light, "on" for dark, "auto" to follow system preference.
+#[derive(Debug, Serialize, Deserialize, Default, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum DarkMode {
+    #[default]
+    Off,
+    On,
+    Auto,
+}
+
 /// General settings for the application.
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GeneralSettings {
-    /// Whether dark mode is enabled. Defaults to `false`.
-    #[serde(default = "default_false")]
-    pub dark_mode: bool,
+    /// Theme mode. Defaults to `Off` (light).
+    #[serde(default)]
+    pub dark_mode: DarkMode,
 
     // ///  Whether to show the welcome info on launch. Defaults to `false`.
     // #[serde(default = "default_false")]

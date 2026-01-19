@@ -6,8 +6,10 @@
       "type": "object",
       "properties": {
         "darkMode": {
-          "type": "boolean",
-          "default": false
+          "type": "string",
+          "enum": ["off", "on", "auto"],
+          "default": "off",
+          "description": "Theme mode: 'off' for light, 'on' for dark, 'auto' to follow system preference"
         },
         "defaultCommand": {
           "type": "string",

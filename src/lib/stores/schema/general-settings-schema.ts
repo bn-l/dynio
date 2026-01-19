@@ -1,9 +1,10 @@
 
 export type GeneralSettings = {
     /**
-     * @default false
+     * Theme mode: 'off' for light, 'on' for dark, 'auto' to follow system preference.
+     * @default "off"
      */
-    darkMode?: boolean;
+    darkMode?: "off" | "on" | "auto";
     /**
      * Defaults to whichever has hotkey number 1 (or if no hotkeys, the first one it finds)
      */

@@ -2,7 +2,10 @@ import { z } from "zod";
 
 export default z
   .object({
-    darkMode: z.boolean().default(false),
+    darkMode: z
+      .enum(["off", "on", "auto"])
+      .describe("Theme mode: 'off' for light, 'on' for dark, 'auto' to follow system preference")
+      .default("off"),
     defaultCommand: z
       .string()
       .describe(

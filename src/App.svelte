@@ -16,6 +16,7 @@ https://tauri.app/v1/guides/distribution/updater/#built-in-dialog
     <div
         id="mainWrapper"
         class="rounded-xl absolute top-4 left-3 right-4"
+        class:dark={isDark}
     >
         <div
             id="inputWrapper"
@@ -96,8 +97,19 @@ as regular stdout from commands) -->
     import { openUrl } from "@tauri-apps/plugin-opener";
     import { getCurrentWindow } from "@tauri-apps/api/window";
 
-    onMount(async () => {
-        await loadValidateAndInitConfigStores();
+    // Dark mode state
+    let systemPrefersDark = false;
+    $: isDark = $settings.darkMode === "on" || ($settings.darkMode === "auto" && systemPrefersDark);
+
+    onMount(() => {
+        void loadValidateAndInitConfigStores();
+
+        // Dark mode: listen for system preference changes (for "auto" mode)
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        systemPrefersDark = mediaQuery.matches;
+        const handler = (e: MediaQueryListEvent) => { systemPrefersDark = e.matches; };
+        mediaQuery.addEventListener('change', handler);
+        return () => mediaQuery.removeEventListener('change', handler);
     });
 
 
