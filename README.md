@@ -277,7 +277,7 @@ The app watches its config directory and auto-restarts on changes.
 ### General Settings
 
 ```yaml
-darkMode: false
+darkMode: auto                # auto | true | false (auto follows system preference)
 defaultCommand: find          # Command to use on launch
 startMinimised: false         # Start hidden
 inputFontSize: 1.8            # Input font size (rem)
