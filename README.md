@@ -225,6 +225,11 @@ find:
 #!/bin/bash
 query="$1"
 
+# Trigger TCC prompts for dynio to access protected folders (only prompts once). 
+#  comment out after first exectution
+ls ~/Desktop ~/Documents ~/Downloads >/dev/null 2>&1
+
+
 [[ ${#query} -le 2 ]] && exit 0
 
 {
