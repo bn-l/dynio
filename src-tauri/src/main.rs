@@ -368,14 +368,25 @@ async fn open_tray<R: Runtime>(app_handle: AppHandle<R>) {
     let state = app_handle.state::<Mutex<TrayState>>();
     let mut guard = state.lock().await;
 
+    let is_visible = window.is_visible().unwrap_or(false);
+    let current_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+
+    log::info!(
+        "open_tray called: visible={}, currently_open={}, pos=({}, {}), target_height={}",
+        is_visible, guard.currently_open, current_pos.x, current_pos.y, guard.tray_open_height
+    );
+
     if !guard.currently_open {
         // Capture current position before resize to preserve user-set position
-        let current_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
         let _ = window.set_size(Size::Physical(PhysicalSize {
             width: guard.width as u32,
             height: guard.tray_open_height as u32,
         }));
         let _ = window.set_position(current_pos);
+
+        let after_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+        log::info!("open_tray after: pos=({}, {})", after_pos.x, after_pos.y);
+
         guard.currently_open = true;
     }
 }
@@ -388,14 +399,25 @@ async fn close_tray<R: Runtime>(app_handle: AppHandle<R>) {
     let state = app_handle.state::<Mutex<TrayState>>();
     let mut guard = state.lock().await;
 
+    let is_visible = window.is_visible().unwrap_or(false);
+    let current_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+
+    log::info!(
+        "close_tray called: visible={}, currently_open={}, pos=({}, {}), target_height={}",
+        is_visible, guard.currently_open, current_pos.x, current_pos.y, guard.tray_closed_height
+    );
+
     if guard.currently_open {
         // Capture current position before resize to preserve user-set position
-        let current_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
         let _ = window.set_size(Size::Physical(PhysicalSize {
             width: guard.width as u32,
             height: guard.tray_closed_height as u32,
         }));
         let _ = window.set_position(current_pos);
+
+        let after_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+        log::info!("close_tray after: pos=({}, {})", after_pos.x, after_pos.y);
+
         guard.currently_open = false;
     }
 }
@@ -443,12 +465,12 @@ fn reposition_to_cursor_monitor<R: Runtime>(app_handle: &AppHandle<R>) {
     // Only reposition if cursor is on a different monitor than the window
     if let Some(ref current) = current_monitor {
         if current.position() == cursor_monitor.position() {
-            log::debug!("Window already on cursor's monitor, skipping reposition");
+            log::info!("reposition_to_cursor_monitor: same monitor, skipping reposition");
             return;
         }
     }
 
-    log::debug!("Repositioning window to cursor's monitor: pos=({}, {}), size={}x{}",
+    log::info!("reposition_to_cursor_monitor: moving to cursor's monitor at pos=({}, {}), size={}x{}",
         cursor_monitor.position().x, cursor_monitor.position().y,
         cursor_monitor.size().width, cursor_monitor.size().height);
 
@@ -487,26 +509,48 @@ fn reposition_to_cursor_monitor<R: Runtime>(app_handle: &AppHandle<R>) {
     }));
     let _ = window.set_position(PhysicalPosition { x, y });
 
-    log::debug!("Repositioned window to monitor at cursor: {}x{} at ({}, {})",
+    log::info!("reposition_to_cursor_monitor: repositioned to {}x{} at ({}, {})",
         phys_width as u32, height as u32, x, y);
 }
 
 fn toggle_main_window<R: Runtime>(app_handle: &AppHandle<R>) {
     log::debug!("toggling main window");
 
+    // Get window for position logging (works on all platforms)
+    let window = app_handle.get_webview_window("main");
+
     #[cfg(target_os = "macos")]
     {
         // On macOS, use the panel API to avoid focus stealing
         if let Ok(panel) = app_handle.get_webview_panel("main") {
             if panel.is_visible() {
+                if let Some(ref w) = window {
+                    let pos = w.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+                    let size = w.outer_size().unwrap_or(PhysicalSize { width: 0, height: 0 });
+                    log::info!("toggle_main_window HIDE: pos=({}, {}), size={}x{}", pos.x, pos.y, size.width, size.height);
+                }
                 panel.hide();
                 let _ = app_handle.emit("main_hide_unhide", "hide");
             } else {
+                if let Some(ref w) = window {
+                    let pos = w.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+                    let size = w.outer_size().unwrap_or(PhysicalSize { width: 0, height: 0 });
+                    log::info!("toggle_main_window SHOW (before reposition): pos=({}, {}), size={}x{}", pos.x, pos.y, size.width, size.height);
+                }
                 // Reposition to cursor's monitor before showing
                 reposition_to_cursor_monitor(app_handle);
+                if let Some(ref w) = window {
+                    let pos = w.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+                    let size = w.outer_size().unwrap_or(PhysicalSize { width: 0, height: 0 });
+                    log::info!("toggle_main_window SHOW (after reposition): pos=({}, {}), size={}x{}", pos.x, pos.y, size.width, size.height);
+                }
                 // show_and_make_key shows the panel and makes it key window
                 // (receives keyboard input) without activating the app
                 panel.show_and_make_key();
+                if let Some(ref w) = window {
+                    let pos = w.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+                    log::info!("toggle_main_window SHOW (after show_and_make_key): pos=({}, {})", pos.x, pos.y);
+                }
                 let _ = app_handle.emit("main_hide_unhide", "unhide");
             }
         } else {
@@ -516,19 +560,29 @@ fn toggle_main_window<R: Runtime>(app_handle: &AppHandle<R>) {
 
     #[cfg(not(target_os = "macos"))]
     {
-        if let Some(window) = app_handle.get_webview_window("main") {
+        if let Some(window) = window {
             let visible = window.is_visible().unwrap_or(false);
             let focused = window.is_focused().unwrap_or(false);
             if !visible {
+                let pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+                let size = window.outer_size().unwrap_or(PhysicalSize { width: 0, height: 0 });
+                log::info!("toggle_main_window SHOW (before reposition): pos=({}, {}), size={}x{}", pos.x, pos.y, size.width, size.height);
                 // Reposition to cursor's monitor before showing
                 reposition_to_cursor_monitor(app_handle);
+                let pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+                log::info!("toggle_main_window SHOW (after reposition): pos=({}, {})", pos.x, pos.y);
                 let _ = window.show();
                 let _ = window.set_focus();
+                let pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+                log::info!("toggle_main_window SHOW (after show): pos=({}, {})", pos.x, pos.y);
                 let _ = app_handle.emit("main_hide_unhide", "unhide");
             } else if !focused {
                 log::debug!("Window was not focused, setting focus");
                 let _ = window.set_focus();
             } else {
+                let pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+                let size = window.outer_size().unwrap_or(PhysicalSize { width: 0, height: 0 });
+                log::info!("toggle_main_window HIDE: pos=({}, {}), size={}x{}", pos.x, pos.y, size.width, size.height);
                 let _ = window.hide();
                 let _ = app_handle.emit("main_hide_unhide", "hide");
             }
@@ -539,6 +593,9 @@ fn toggle_main_window<R: Runtime>(app_handle: &AppHandle<R>) {
 #[tauri::command]
 async fn hide_main<R: Runtime>(app_handle: AppHandle<R>) {
     if let Some(window) = app_handle.get_webview_window("main") {
+        let pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+        let size = window.outer_size().unwrap_or(PhysicalSize { width: 0, height: 0 });
+        log::info!("hide_main: pos=({}, {}), size={}x{}", pos.x, pos.y, size.width, size.height);
         let _ = window.hide();
         let _ = app_handle.emit("main_hide_unhide", "hide");
     }
