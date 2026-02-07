@@ -350,8 +350,7 @@ box-shadow: inset -3px -3px 7px #ffffffb0, inset 3px 3px 5px rgba(94, 104, 121, 
 }
 
 .item-hover:not(.item-selected):hover {
-    background: var(--accent-hover);
-    border-radius: 0.625rem;
+    background: transparent;
 }
 
 .accent-text-hover:hover {
