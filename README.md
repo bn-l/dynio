@@ -248,7 +248,12 @@ ls ~/Desktop ~/Documents ~/Downloads >/dev/null 2>&1
 
 ## Installation
 
-Download the installer for your OS from [Releases](https://github.com/bn-l/dynio/releases).
+**macOS (Homebrew):**
+```bash
+brew install --cask bn-l/tap/dynio
+```
+
+**All platforms:** Download the installer for your OS from [Releases](https://github.com/bn-l/dynio/releases).
 
 | Platform | Format |
 |----------|--------|
