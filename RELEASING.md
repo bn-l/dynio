@@ -31,6 +31,10 @@ git checkout main
 
 Go to [Releases](https://github.com/bn-l/dynio/releases) and publish the draft.
 
+**Note:** CI may create duplicate draft releases (one per platform). If this happens,
+merge the assets into a single release: download assets from the spare, delete it,
+upload them to the main release via the `uploads.github.com` API, then publish.
+
 ## 6. Get SHA256 of macOS DMGs
 
 ```bash
