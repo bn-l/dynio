@@ -253,6 +253,11 @@ ls ~/Desktop ~/Documents ~/Downloads >/dev/null 2>&1
 brew install --cask bn-l/tap/dynio
 ```
 
+> **Note:** The app is not yet notarized. On first launch macOS may show "app is damaged." Fix with:
+> ```bash
+> xattr -d com.apple.quarantine /Applications/dynio.app
+> ```
+
 **All platforms:** Download the installer for your OS from [Releases](https://github.com/bn-l/dynio/releases).
 
 | Platform | Format |
