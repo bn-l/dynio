@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, cleanup } from '@testing-library/svelte';
+import { render, fireEvent, cleanup } from '@testing-library/svelte';
 import { get } from 'svelte/store';
 import { stdout, statusBar, keySymbols, currentCmd } from '$lib/stores/globals';
 import { cmdConfig } from '$lib/stores/cmd-config';
@@ -11,9 +11,19 @@ import SingleDisplay from '../../../../src/Tray/Stdout/SingleDisplay/SingleDispl
 
 // Mock Tauri APIs
 const mockInvoke = vi.fn();
+const mockWriteText = vi.fn();
+const mockOpenPath = vi.fn();
 
 vi.mock('@tauri-apps/api/core', () => ({
     invoke: (...args: unknown[]) => mockInvoke(...args),
+}));
+
+vi.mock('@tauri-apps/plugin-clipboard-manager', () => ({
+    writeText: (...args: unknown[]) => mockWriteText(...args),
+}));
+
+vi.mock('@tauri-apps/plugin-opener', () => ({
+    openPath: (...args: unknown[]) => mockOpenPath(...args),
 }));
 
 // Helper function to create a minimal config for single mode
@@ -35,6 +45,8 @@ describe('SingleDisplay.svelte', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockInvoke.mockResolvedValue(undefined);
+        mockWriteText.mockResolvedValue(undefined);
+        mockOpenPath.mockResolvedValue(undefined);
 
         // Reset stores
         stdout.set([]);
@@ -459,6 +471,155 @@ describe('SingleDisplay.svelte', () => {
             const display = container.querySelector('#singleDisplay');
             // Should use largeSize because actual text "short" (5 chars) < 10
             expect(display?.getAttribute('style')).toContain('font-size: 2rem');
+        });
+    });
+
+    describe('Enter key activation', () => {
+        it('Enter key copies output when runOnEnter is false', async () => {
+            cmdConfig.set({
+                'test-cmd': createConfig({
+                    runOnEnter: false,
+                }),
+            });
+            stdout.set(['42']);
+
+            render(SingleDisplay);
+
+            await fireEvent.keyDown(document.body, { key: 'Enter' });
+
+            await vi.waitFor(() => {
+                expect(mockWriteText).toHaveBeenCalledWith('42');
+            });
+        });
+
+        it('Enter key does NOT activate when runOnEnter is true', async () => {
+            cmdConfig.set({
+                'test-cmd': createConfig({
+                    runOnEnter: true,
+                }),
+            });
+            stdout.set(['do-not-copy']);
+
+            render(SingleDisplay);
+
+            await fireEvent.keyDown(document.body, { key: 'Enter' });
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            expect(mockWriteText).not.toHaveBeenCalled();
+        });
+
+        it('Cmd/Ctrl+Enter activates regardless of runOnEnter', async () => {
+            cmdConfig.set({
+                'test-cmd': createConfig({
+                    runOnEnter: true,
+                }),
+            });
+            stdout.set(['force-copy']);
+
+            render(SingleDisplay);
+
+            await fireEvent.keyDown(document.body, { key: 'Enter', ctrlKey: true });
+
+            await vi.waitFor(() => {
+                expect(mockWriteText).toHaveBeenCalledWith('force-copy');
+            });
+        });
+
+        it('copies multi-line output joined with newlines', async () => {
+            stdout.set(['line1', 'line2', 'line3']);
+
+            render(SingleDisplay);
+
+            await fireEvent.keyDown(document.body, { key: 'Enter' });
+
+            await vi.waitFor(() => {
+                expect(mockWriteText).toHaveBeenCalledWith('line1\nline2\nline3');
+            });
+        });
+
+        it('strips ANSI codes before copying', async () => {
+            stdout.set(['\x1b[31m42\x1b[0m']);
+
+            render(SingleDisplay);
+
+            await fireEvent.keyDown(document.body, { key: 'Enter' });
+
+            await vi.waitFor(() => {
+                expect(mockWriteText).toHaveBeenCalledWith('42');
+            });
+        });
+
+        it('calls open action when activateAction is open', async () => {
+            cmdConfig.set({
+                'test-cmd': createConfig({
+                    modeConfig: {
+                        mode: 'single',
+                        displayOptions: {},
+                        activationOptions: { activateAction: 'open' },
+                    },
+                }),
+            });
+            stdout.set(['/path/to/file']);
+
+            render(SingleDisplay);
+
+            await fireEvent.keyDown(document.body, { key: 'Enter' });
+
+            await vi.waitFor(() => {
+                expect(mockOpenPath).toHaveBeenCalledWith('/path/to/file');
+            });
+        });
+    });
+
+    describe('Cmd/Ctrl+O reveal', () => {
+        it('Cmd/Ctrl+O reveals containing folder when isPath is true', async () => {
+            cmdConfig.set({
+                'test-cmd': createConfig({
+                    modeConfig: {
+                        mode: 'single',
+                        displayOptions: {},
+                        activationOptions: {
+                            activateAction: 'copy',
+                            isPath: true,
+                        },
+                    },
+                }),
+            });
+            stdout.set(['/path/to/file.txt']);
+            mockInvoke.mockImplementation((cmd: string) => {
+                if (cmd === 'trim_path') return Promise.resolve('/path/to');
+                return Promise.resolve(undefined);
+            });
+
+            render(SingleDisplay);
+
+            await fireEvent.keyDown(document.body, { key: 'o', ctrlKey: true });
+
+            await vi.waitFor(() => {
+                expect(mockInvoke).toHaveBeenCalledWith('trim_path', { path: '/path/to/file.txt' });
+            });
+        });
+
+        it('Cmd/Ctrl+O does nothing when isPath is false', async () => {
+            cmdConfig.set({
+                'test-cmd': createConfig({
+                    modeConfig: {
+                        mode: 'single',
+                        displayOptions: {},
+                        activationOptions: {
+                            isPath: false,
+                        },
+                    },
+                }),
+            });
+            stdout.set(['not a path']);
+
+            render(SingleDisplay);
+
+            await fireEvent.keyDown(document.body, { key: 'o', ctrlKey: true });
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            expect(mockInvoke).not.toHaveBeenCalledWith('trim_path', expect.anything());
         });
     });
 });

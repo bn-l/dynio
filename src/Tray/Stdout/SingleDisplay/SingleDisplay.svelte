@@ -17,10 +17,12 @@
 <script lang="ts">
     import "./singleDisplay.css";
     import { onDestroy } from "svelte";
+    import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
     import { stdout, statusBar, keySymbols } from "$lib/stores/globals.ts";
     import type { StatusBarAction } from "$lib/stores/globals.ts";
     import stripAnsi from 'strip-ansi';
+    import { activate } from "$lib/utils/activator.ts";
     import { processSingleOutput } from "./processSingleOuput.ts";
     import DisplayWrapper from "$lib/utils/DisplayWrapper.svelte";
 
@@ -61,4 +63,33 @@
             displayOptions?.smallSize;
 
 
-</script> 
+</script>
+
+<svelte:body
+    use:hotkeys={{
+        handler() {
+            if ($currentCmdConfig?.runOnEnter) return;
+            void activate(stripAnsi($stdout.join("\n")), activationOptions);
+        },
+        keys: ["Enter"],
+        enabled: true,
+    }}
+    use:hotkeys={{
+        handler() {
+            void activate(stripAnsi($stdout.join("\n")), activationOptions);
+        },
+        keys: ["Enter"],
+        modifiers: ["CmdOrCtrl"],
+        enabled: true,
+    }}
+    use:hotkeys={{
+        handler() {
+            if (activationOptions?.isPath) {
+                void activate(stripAnsi($stdout.join("\n")), activationOptions, true);
+            }
+        },
+        keys: ["o"],
+        modifiers: ["CmdOrCtrl"],
+        enabled: true,
+    }}
+/>
