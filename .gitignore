@@ -43,3 +43,6 @@ CODEGUIDE.md
 .mcp.json
 src-tauri/gen/
 coverage/
+
+GUIDE_*.md
+TEST_PLAN_*.md
