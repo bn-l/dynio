@@ -377,16 +377,18 @@ async fn open_tray<R: Runtime>(app_handle: AppHandle<R>) {
     );
 
     if !guard.currently_open {
-        // Capture current position before resize to preserve user-set position
-        let _ = window.set_size(Size::Physical(PhysicalSize {
-            width: guard.width as u32,
-            height: guard.tray_open_height as u32,
-        }));
-        let _ = window.set_position(current_pos);
+        if is_visible {
+            let _ = window.set_size(Size::Physical(PhysicalSize {
+                width: guard.width as u32,
+                height: guard.tray_open_height as u32,
+            }));
+            let _ = window.set_position(current_pos);
 
-        let after_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
-        log::info!("open_tray after: pos=({}, {})", after_pos.x, after_pos.y);
-
+            let after_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+            log::info!("open_tray after: pos=({}, {})", after_pos.x, after_pos.y);
+        } else {
+            log::info!("open_tray: window hidden, deferring resize");
+        }
         guard.currently_open = true;
     }
 }
@@ -408,17 +410,44 @@ async fn close_tray<R: Runtime>(app_handle: AppHandle<R>) {
     );
 
     if guard.currently_open {
-        // Capture current position before resize to preserve user-set position
+        if is_visible {
+            let _ = window.set_size(Size::Physical(PhysicalSize {
+                width: guard.width as u32,
+                height: guard.tray_closed_height as u32,
+            }));
+            let _ = window.set_position(current_pos);
+
+            let after_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+            log::info!("close_tray after: pos=({}, {})", after_pos.x, after_pos.y);
+        } else {
+            log::info!("close_tray: window hidden, deferring resize");
+        }
+        guard.currently_open = false;
+    }
+}
+
+/// Ensures the window size matches the current tray state. Called before showing the window
+/// so that any open/close that was deferred while the window was hidden gets applied.
+fn sync_tray_size<R: Runtime>(app_handle: &AppHandle<R>) {
+    let Some(window) = app_handle.get_webview_window("main") else { return; };
+
+    let guard = app_handle.state::<Mutex<TrayState>>();
+    let state = tauri::async_runtime::block_on(guard.lock());
+
+    let expected_height = if state.currently_open { state.tray_open_height } else { state.tray_closed_height };
+    let current_size = window.outer_size().unwrap_or(PhysicalSize { width: 0, height: 0 });
+
+    if (current_size.height as f64 - expected_height).abs() > 1.0 {
+        let current_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+        log::info!("sync_tray_size: resizing from {}x{} to {}x{} at ({}, {})",
+            current_size.width, current_size.height,
+            state.width as u32, expected_height as u32,
+            current_pos.x, current_pos.y);
         let _ = window.set_size(Size::Physical(PhysicalSize {
-            width: guard.width as u32,
-            height: guard.tray_closed_height as u32,
+            width: state.width as u32,
+            height: expected_height as u32,
         }));
         let _ = window.set_position(current_pos);
-
-        let after_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
-        log::info!("close_tray after: pos=({}, {})", after_pos.x, after_pos.y);
-
-        guard.currently_open = false;
     }
 }
 
@@ -539,6 +568,8 @@ fn toggle_main_window<R: Runtime>(app_handle: &AppHandle<R>) {
                 }
                 // Reposition to cursor's monitor before showing
                 reposition_to_cursor_monitor(app_handle);
+                // Apply any tray open/close that was deferred while hidden
+                sync_tray_size(app_handle);
                 if let Some(ref w) = window {
                     let pos = w.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
                     let size = w.outer_size().unwrap_or(PhysicalSize { width: 0, height: 0 });
@@ -569,6 +600,8 @@ fn toggle_main_window<R: Runtime>(app_handle: &AppHandle<R>) {
                 log::info!("toggle_main_window SHOW (before reposition): pos=({}, {}), size={}x{}", pos.x, pos.y, size.width, size.height);
                 // Reposition to cursor's monitor before showing
                 reposition_to_cursor_monitor(app_handle);
+                // Apply any tray open/close that was deferred while hidden
+                sync_tray_size(app_handle);
                 let pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
                 log::info!("toggle_main_window SHOW (after reposition): pos=({}, {})", pos.x, pos.y);
                 let _ = window.show();
