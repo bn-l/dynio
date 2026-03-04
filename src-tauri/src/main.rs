@@ -451,8 +451,7 @@ fn sync_tray_size<R: Runtime>(app_handle: &AppHandle<R>) {
     }
 }
 
-/// Repositions and resizes the window to be centered on the monitor where the cursor is located,
-/// but only if the cursor is on a different monitor than the window.
+/// Repositions and resizes the window to be centered on the monitor where the cursor is located.
 fn reposition_to_cursor_monitor<R: Runtime>(app_handle: &AppHandle<R>) {
     let Some(window) = app_handle.get_webview_window("main") else {
         log::error!("Could not get main window for repositioning");
@@ -488,22 +487,11 @@ fn reposition_to_cursor_monitor<R: Runtime>(app_handle: &AppHandle<R>) {
         return;
     };
 
-    // Get the monitor the window is currently on
-    let current_monitor = window.current_monitor().ok().flatten();
-
-    // Only reposition if cursor is on a different monitor than the window
-    if let Some(ref current) = current_monitor {
-        if current.position() == cursor_monitor.position() {
-            log::info!("reposition_to_cursor_monitor: same monitor, skipping reposition");
-            return;
-        }
-    }
-
-    log::info!("reposition_to_cursor_monitor: moving to cursor's monitor at pos=({}, {}), size={}x{}",
-        cursor_monitor.position().x, cursor_monitor.position().y,
-        cursor_monitor.size().width, cursor_monitor.size().height);
-
     let monitor = cursor_monitor;
+
+    log::info!("reposition_to_cursor_monitor: centering on monitor at pos=({}, {}), size={}x{}",
+        monitor.position().x, monitor.position().y,
+        monitor.size().width, monitor.size().height);
 
     let screen_width = monitor.size().width as f64;
     let screen_height = monitor.size().height as f64;
