@@ -4,7 +4,7 @@
 
 # Dynio
 
-### Wrap any cli command in a spotlight-like omnibar
+### Wrap any cli command in a spotlight-like input bar
 
 [![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)](#installation)
 [![macOS](https://img.shields.io/badge/macOS-000000?logo=apple&logoColor=white)](#installation)
@@ -31,12 +31,59 @@ For example: Take the command `ls`. The app calls `ls` each time you press a key
 
 - Windows, macOS, Linux
 - Global shortcut (Alt/Option+Space) shows/hides instantly
-- Yaml config: Full schema with autocomplete in vscod. Paste the schema into an LLM and have it create a command.
+- Yaml config: Full schema with autocomplete in vscode. Paste the schema into an LLM and have it create a command.
 - LLM streaming: Chunk-based output for real-time LLM responses with `<think>` block rendering
 
 <br />
 
-\* Mac: `open <path>`, Windows `explorer.exe <path>`, Linux: `xdg-open <path>`. 
+\* Mac: `open <path>`, Windows: `explorer.exe <path>`, Linux: `xdg-open <path>`. 
+
+
+## Getting started
+
+1. [Install it](#installation)
+
+2. Go to `~/.config/dynio/cmd-config.yaml` on mac and linux, or `%USERPROFILE%\.config\dynio\cmd-config.yaml` on windows
+
+3. Each top level of this file is the name of a "command" in the app (in the demo screeners below this is the badge with "qalc" or "groq" or "find") and below it is the config for the command. If you open the file in vscode you will have automatic linting and intellisense thanks to the json schema in the folder.
+
+4. At the top of this file, add a new entry:
+
+Macos and Linux:
+
+```yaml
+list:
+    command: ls  # This is the CLI command to run with the content of the input box
+    description: List files
+    placeholderText: List files...
+    runOnEnter: true  # You press enter after typing a path
+    modeConfig:
+        mode: list
+        displayOptions: {}
+        activationOptions:
+            activateAction: copy
+```
+
+Windows:
+
+```yaml
+list:
+    command: dir
+    description: List files
+    placeholderText: List files...
+    runOnEnter: true
+    modeConfig:
+        mode: list
+        displayOptions: {}
+        activationOptions:
+            activateAction: copy
+```
+
+(the full structure is [here](#command-config-structure))
+
+That's it. Type a path in the input and press enter to list it. There are some examples below that can be copied and pasted but the possible commands are unlimited. Paste a link to this repo into your LLM of choice and get it to write a script to do anything. 
+
+You can put as many commands as you like in this file. Cmd or Ctrl + s will list all the commands with the hotkey number (another option) set for them.
 
 ---
 
