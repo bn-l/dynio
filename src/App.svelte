@@ -109,7 +109,16 @@ as regular stdout from commands) -->
         systemPrefersDark = mediaQuery.matches;
         const handler = (e: MediaQueryListEvent) => { systemPrefersDark = e.matches; };
         mediaQuery.addEventListener('change', handler);
-        return () => mediaQuery.removeEventListener('change', handler);
+
+        // Re-check on unhide since media query events don't fire inside hidden NSPanels
+        const unhideUnsub = listen("main_hide_unhide", (e: Event<"hide" | "unhide">) => {
+            if (e.payload === "unhide") systemPrefersDark = mediaQuery.matches;
+        });
+
+        return () => {
+            mediaQuery.removeEventListener('change', handler);
+            void unhideUnsub.then(f => f());
+        };
     });
 
 
