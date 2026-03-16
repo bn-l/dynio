@@ -46,6 +46,11 @@
           "type": "boolean",
           "description": "Whether to start the app automatically when the user logs in.",
           "default": false
+        },
+        "maxWindowWidth": {
+          "type": "number",
+          "description": "Max window width in physical pixels. All other dimensions derive from width.",
+          "default": 1200
         }
       },
       "additionalProperties": false

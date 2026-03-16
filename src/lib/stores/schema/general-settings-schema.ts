@@ -40,6 +40,11 @@ export type GeneralSettings = {
      * @default false
      */
     runAtStartup?: boolean;
+    /**
+     * Max window width in physical pixels. All other dimensions derive from width.
+     * @default 1200
+     */
+    maxWindowWidth?: number;
 }
 
 /**

@@ -39,5 +39,9 @@ export default z
       .boolean()
       .describe("Whether to start the app automatically when the user logs in.")
       .default(false),
+    maxWindowWidth: z
+      .number()
+      .describe("Max window width in physical pixels. All other dimensions derive from width.")
+      .default(1200),
   })
   .strict();

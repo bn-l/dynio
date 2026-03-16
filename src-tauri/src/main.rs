@@ -348,6 +348,7 @@ struct TrayState {
     tray_closed_height: f64,
     tray_open_height: f64,
     currently_open: bool,
+    max_window_width: f64,
 }
 impl Default for TrayState {
     fn default() -> Self {
@@ -356,6 +357,7 @@ impl Default for TrayState {
             tray_closed_height: 0.0,
             tray_open_height: 0.0,
             currently_open: false,
+            max_window_width: f64::INFINITY,
         }
     }
 }
@@ -498,8 +500,12 @@ fn reposition_to_cursor_monitor<R: Runtime>(app_handle: &AppHandle<R>) {
     let monitor_x = monitor.position().x;
     let monitor_y = monitor.position().y;
 
+    // Read max_window_width from state before computing dimensions
+    let guard = app_handle.state::<Mutex<TrayState>>();
+    let mut state = tauri::async_runtime::block_on(guard.lock());
+
     // Calculate window dimensions for this monitor
-    let phys_width = screen_width * SCREEN_TO_WIDTH_RATIO;
+    let phys_width = (screen_width * SCREEN_TO_WIDTH_RATIO).min(state.max_window_width);
     let phys_height = phys_width * HEIGHT_TO_WIDTH_RATIO;
     let phys_tray_height = phys_height * TRAY_TO_BAR_RATIO;
 
@@ -508,14 +514,14 @@ fn reposition_to_cursor_monitor<R: Runtime>(app_handle: &AppHandle<R>) {
     let y = monitor_y + ((screen_height - phys_height) / 2.0 - (screen_height * Y_OFFSET_RATIO)) as i32;
 
     // Update TrayState with new dimensions for this monitor
-    let guard = app_handle.state::<Mutex<TrayState>>();
-    let mut state = tauri::async_runtime::block_on(guard.lock());
     let is_open = state.currently_open;
+    let max_w = state.max_window_width;
     *state = TrayState {
         width: phys_width,
         tray_closed_height: phys_height,
         tray_open_height: phys_tray_height + phys_height,
         currently_open: is_open,
+        max_window_width: max_w,
     };
 
     // Set size based on current tray state
@@ -889,6 +895,7 @@ fn main() {
                 app.handle().clone(),
                 settings.start_minimised,
                 settings.always_on_top,
+                settings.max_window_width,
             );
 
             Ok(())
@@ -953,7 +960,7 @@ fn get_general_settings() -> Result<GeneralSettings, Box<dyn std::error::Error>>
     Ok(settings)
 }
 
-fn setup_main_window(app_handle: AppHandle, start_hidden: bool, on_top: bool) {
+fn setup_main_window(app_handle: AppHandle, start_hidden: bool, on_top: bool, max_window_width: f64) {
     let window = app_handle.get_webview_window("main").unwrap();
     let monitor = window
         .primary_monitor()
@@ -967,7 +974,7 @@ fn setup_main_window(app_handle: AppHandle, start_hidden: bool, on_top: bool) {
     let screen_width = monitor.size().width as f64;
     let screen_height = monitor.size().height as f64;
 
-    let phys_width = screen_width * SCREEN_TO_WIDTH_RATIO;
+    let phys_width = (screen_width * SCREEN_TO_WIDTH_RATIO).min(max_window_width);
     let phys_height = phys_width * HEIGHT_TO_WIDTH_RATIO;
     let phys_tray_height = phys_height * TRAY_TO_BAR_RATIO;
 
@@ -982,6 +989,7 @@ fn setup_main_window(app_handle: AppHandle, start_hidden: bool, on_top: bool) {
         tray_closed_height: phys_height,
         tray_open_height: phys_tray_height + phys_height,
         currently_open: false,
+        max_window_width,
     };
 
     let _ = window.set_size(Size::Physical(PhysicalSize {

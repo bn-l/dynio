@@ -52,6 +52,10 @@ pub struct GeneralSettings {
     /// Whether to start the app automatically when the user logs in. Defaults to `false`.
     #[serde(default = "default_false")]
     pub run_at_startup: bool,
+
+    /// Max window width in physical pixels. All other dimensions derive from width.
+    #[serde(default = "default_max_window_width")]
+    pub max_window_width: f64,
     // /// Whether to automatically update. Defaults to `true`.
     // #[serde(default = "default_false")]
     // pub auto_update: bool,
@@ -74,4 +78,8 @@ fn default_false() -> bool {
 /// Provides a default value for `timeout_secs`.
 fn default_input_font_size() -> f32 {
     1.8
+}
+
+fn default_max_window_width() -> f64 {
+    1200.0
 }
