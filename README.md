@@ -137,7 +137,7 @@ groq:
     runOnEnter: true
     noOutputTimeoutMs: 2000
     modeConfig:
-        mode: llm
+        mode: llm # <-- !! Nota bene: This is the money mode for LLMs
         displayOptions:
             parseAnsiColors: false
             thinkingDisplay: showWhileThinking
