@@ -81,5 +81,5 @@ fn default_input_font_size() -> f32 {
 }
 
 fn default_max_window_width() -> f64 {
-    1200.0
+    1300.0
 }

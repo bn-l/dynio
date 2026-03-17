@@ -42,6 +42,6 @@ export default z
     maxWindowWidth: z
       .number()
       .describe("Max window width in physical pixels. All other dimensions derive from width.")
-      .default(1200),
+      .default(1300),
   })
   .strict();
