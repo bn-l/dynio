@@ -4,7 +4,9 @@ export default z
   .object({
     darkMode: z
       .enum(["off", "on", "auto"])
-      .describe("Theme mode: 'off' for light, 'on' for dark, 'auto' to follow system preference")
+      .describe(
+        "Theme mode: 'off' for light, 'on' for dark, 'auto' to follow system preference.",
+      )
       .default("off"),
     defaultCommand: z
       .string()
@@ -41,7 +43,15 @@ export default z
       .default(false),
     maxWindowWidth: z
       .number()
-      .describe("Max window width in physical pixels. All other dimensions derive from width.")
+      .describe(
+        "Max window width in physical pixels. All other dimensions derive from width.",
+      )
       .default(1300),
+    reshowInCenter: z
+      .boolean()
+      .describe(
+        "Whether to ignore saved window placement and show in the center.",
+      )
+      .default(false),
   })
   .strict();

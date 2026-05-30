@@ -1,13 +1,52 @@
-use serde::{Deserialize, Serialize};
+use serde::{de, Deserialize, Deserializer, Serialize};
+use std::fmt;
 
 /// Theme mode: "off" for light, "on" for dark, "auto" to follow system preference.
-#[derive(Debug, Serialize, Deserialize, Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Serialize, Default, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum DarkMode {
     #[default]
     Off,
     On,
     Auto,
+}
+
+impl<'de> Deserialize<'de> for DarkMode {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct DarkModeVisitor;
+
+        impl<'de> de::Visitor<'de> for DarkModeVisitor {
+            type Value = DarkMode;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a dark mode value: off, on, auto, true, or false")
+            }
+
+            fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(if value { DarkMode::On } else { DarkMode::Off })
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                match value {
+                    "off" | "false" => Ok(DarkMode::Off),
+                    "on" | "true" => Ok(DarkMode::On),
+                    "auto" => Ok(DarkMode::Auto),
+                    other => Err(E::unknown_variant(other, &["off", "on", "auto"])),
+                }
+            }
+        }
+
+        deserializer.deserialize_any(DarkModeVisitor)
+    }
 }
 
 /// General settings for the application.
@@ -56,6 +95,10 @@ pub struct GeneralSettings {
     /// Max window width in physical pixels. All other dimensions derive from width.
     #[serde(default = "default_max_window_width")]
     pub max_window_width: f64,
+
+    /// Whether the window should ignore saved placement and show in the center.
+    #[serde(default = "default_false")]
+    pub reshow_in_center: bool,
     // /// Whether to automatically update. Defaults to `true`.
     // #[serde(default = "default_false")]
     // pub auto_update: bool,

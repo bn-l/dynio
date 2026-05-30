@@ -6,8 +6,14 @@
       "type": "object",
       "properties": {
         "darkMode": {
-          "type": "boolean",
-          "default": false
+          "type": "string",
+          "enum": [
+            "off",
+            "on",
+            "auto"
+          ],
+          "description": "Theme mode: 'off' for light, 'on' for dark, 'auto' to follow system preference.",
+          "default": "off"
         },
         "defaultCommand": {
           "type": "string",
@@ -43,6 +49,16 @@
         "runAtStartup": {
           "type": "boolean",
           "description": "Whether to start the app automatically when the user logs in.",
+          "default": false
+        },
+        "maxWindowWidth": {
+          "type": "number",
+          "description": "Max window width in physical pixels. All other dimensions derive from width.",
+          "default": 1300
+        },
+        "reshowInCenter": {
+          "type": "boolean",
+          "description": "Whether to ignore saved window placement and show in the center.",
           "default": false
         }
       },

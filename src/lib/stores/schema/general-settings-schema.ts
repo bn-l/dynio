@@ -45,6 +45,11 @@ export type GeneralSettings = {
      * @default 1300
      */
     maxWindowWidth?: number;
+    /**
+     * Whether to ignore saved window placement and show in the center.
+     * @default false
+     */
+    reshowInCenter?: boolean;
 }
 
 /**
