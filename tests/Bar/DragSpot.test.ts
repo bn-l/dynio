@@ -5,8 +5,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent, cleanup } from '@testing-library/svelte';
 import DragSpot from '../../src/Bar/DragSpot.svelte';
 
-// Mock the startDragging function
+// Mock the native startDragging function. In jsdom we cannot observe the OS
+// drag, so these tests assert the timing contract that caused the regression:
+// the drag must begin during mousedown, without waiting for IPC.
 const mockStartDragging = vi.fn();
+const mockInvoke = vi.fn();
 
 // Mock @tauri-apps/api/webviewWindow
 vi.mock('@tauri-apps/api/webviewWindow', () => ({
@@ -17,13 +20,14 @@ vi.mock('@tauri-apps/api/webviewWindow', () => ({
 
 // Also mock @tauri-apps/api/core for consistency
 vi.mock('@tauri-apps/api/core', () => ({
-    invoke: vi.fn().mockResolvedValue(undefined),
+    invoke: (...args: unknown[]) => mockInvoke(...args),
 }));
 
 describe('DragSpot.svelte', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockStartDragging.mockResolvedValue(undefined);
+        mockInvoke.mockResolvedValue(undefined);
     });
 
     afterEach(() => {
@@ -32,25 +36,46 @@ describe('DragSpot.svelte', () => {
     });
 
     describe('mousedown starts window dragging', () => {
-        it('calls appWindow.startDragging() on mousedown', async () => {
+        it('starts the native drag during the mousedown handler', async () => {
             const { container } = render(DragSpot);
             const dragSpot = container.querySelector('#dragSpot');
 
             await fireEvent.mouseDown(dragSpot!);
 
-            expect(mockStartDragging).toHaveBeenCalled();
-        });
-
-        it('calls startDragging exactly once per mousedown', async () => {
-            const { container } = render(DragSpot);
-            const dragSpot = container.querySelector('#dragSpot');
-
-            await fireEvent.mouseDown(dragSpot!);
-
+            expect(mockInvoke).toHaveBeenCalledWith('begin_window_drag');
             expect(mockStartDragging).toHaveBeenCalledTimes(1);
         });
 
-        it('calls startDragging on multiple mousedown events', async () => {
+        it('does not wait for backend bookkeeping before starting the native drag', async () => {
+            let resolveInvoke: (() => void) | undefined;
+            const pendingInvoke = new Promise<void>((resolve) => {
+                resolveInvoke = resolve;
+            });
+            mockInvoke.mockReturnValueOnce(pendingInvoke);
+
+            const { container } = render(DragSpot);
+            const dragSpot = container.querySelector('#dragSpot');
+
+            await fireEvent.mouseDown(dragSpot!);
+
+            expect(mockInvoke).toHaveBeenCalledWith('begin_window_drag');
+            expect(mockStartDragging).toHaveBeenCalledTimes(1);
+
+            resolveInvoke?.();
+        });
+
+        it('uses one backend command per mousedown instead of a mousemove IPC loop', async () => {
+            const { container } = render(DragSpot);
+            const dragSpot = container.querySelector('#dragSpot');
+
+            await fireEvent.mouseDown(dragSpot!);
+            window.dispatchEvent(new MouseEvent('mousemove'));
+
+            expect(mockInvoke).toHaveBeenCalledTimes(1);
+            expect(mockInvoke).not.toHaveBeenCalledWith('update_window_drag');
+        });
+
+        it('starts native dragging on multiple mousedown events', async () => {
             const { container } = render(DragSpot);
             const dragSpot = container.querySelector('#dragSpot');
 
@@ -61,26 +86,88 @@ describe('DragSpot.svelte', () => {
             expect(mockStartDragging).toHaveBeenCalledTimes(3);
         });
 
-        it('does not call startDragging on mouseup', async () => {
+        it('does not start dragging on mouseup', async () => {
             const { container } = render(DragSpot);
             const dragSpot = container.querySelector('#dragSpot');
 
             await fireEvent.mouseUp(dragSpot!);
 
-            expect(mockStartDragging).not.toHaveBeenCalled();
+            expect(mockInvoke).not.toHaveBeenCalled();
         });
 
-        it('does not call startDragging on click', async () => {
+        it('does not start dragging on mousemove', async () => {
             const { container } = render(DragSpot);
             const dragSpot = container.querySelector('#dragSpot');
 
-            // Note: click includes mousedown, so this test is more about
-            // verifying the event binding is specifically mousedown
-            // Clear any calls from the click's mousedown phase
-            mockStartDragging.mockClear();
             await fireEvent.mouseMove(dragSpot!);
 
-            expect(mockStartDragging).not.toHaveBeenCalled();
+            expect(mockInvoke).not.toHaveBeenCalled();
+        });
+
+        it('does not start dragging for non-primary mouse buttons', async () => {
+            const { container } = render(DragSpot);
+            const dragSpot = container.querySelector('#dragSpot');
+
+            await fireEvent.mouseDown(dragSpot!, { button: 2 });
+
+            expect(mockInvoke).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('manual drag lifecycle', () => {
+        it('starts the drag once for one mousedown even if backend bookkeeping is pending', async () => {
+            let resolveInvoke: (() => void) | undefined;
+            const pendingInvoke = new Promise<void>((resolve) => {
+                resolveInvoke = resolve;
+            });
+            mockInvoke.mockReturnValueOnce(pendingInvoke);
+
+            const { container } = render(DragSpot);
+            const dragSpot = container.querySelector('#dragSpot');
+
+            await fireEvent.mouseDown(dragSpot!);
+
+            expect(mockStartDragging).toHaveBeenCalledTimes(1);
+
+            resolveInvoke?.();
+        });
+
+        it('does not send backend update commands on window mousemove', async () => {
+            const { container } = render(DragSpot);
+            const dragSpot = container.querySelector('#dragSpot');
+
+            await fireEvent.mouseDown(dragSpot!);
+            window.dispatchEvent(new MouseEvent('mousemove'));
+
+            expect(mockInvoke).not.toHaveBeenCalledWith('update_window_drag');
+        });
+
+        it('finishes the drag on mouseup without sending mousemove updates', async () => {
+            const { container } = render(DragSpot);
+            const dragSpot = container.querySelector('#dragSpot');
+
+            await fireEvent.mouseDown(dragSpot!);
+            window.dispatchEvent(new MouseEvent('mousemove'));
+            window.dispatchEvent(new MouseEvent('mouseup'));
+            window.dispatchEvent(new MouseEvent('mousemove'));
+
+            expect(mockInvoke.mock.calls.map((call) => call[0])).toEqual([
+                'begin_window_drag',
+                'finish_window_drag',
+            ]);
+        });
+
+        it('finishes the drag when the window blurs', async () => {
+            const { container } = render(DragSpot);
+            const dragSpot = container.querySelector('#dragSpot');
+
+            await fireEvent.mouseDown(dragSpot!);
+            window.dispatchEvent(new Event('blur'));
+
+            expect(mockInvoke.mock.calls.map((call) => call[0])).toEqual([
+                'begin_window_drag',
+                'finish_window_drag',
+            ]);
         });
     });
 
@@ -153,9 +240,9 @@ describe('DragSpot.svelte', () => {
         });
     });
 
-    describe('startDragging promise handling', () => {
-        it('handles startDragging promise resolution', async () => {
-            mockStartDragging.mockResolvedValue(undefined);
+    describe('drag command promise handling', () => {
+        it('handles drag command promise resolution', async () => {
+            mockInvoke.mockResolvedValue(undefined);
 
             const { container } = render(DragSpot);
             const dragSpot = container.querySelector('#dragSpot');
@@ -164,15 +251,16 @@ describe('DragSpot.svelte', () => {
             await expect(fireEvent.mouseDown(dragSpot!)).resolves.toBe(true);
         });
 
-        it('handles startDragging when it returns immediately', async () => {
-            mockStartDragging.mockReturnValue(undefined);
+        it('handles drag command when it returns immediately', async () => {
+            mockInvoke.mockReturnValue(undefined);
 
             const { container } = render(DragSpot);
             const dragSpot = container.querySelector('#dragSpot');
 
             await fireEvent.mouseDown(dragSpot!);
 
-            expect(mockStartDragging).toHaveBeenCalled();
+            expect(mockInvoke).toHaveBeenCalledWith('begin_window_drag');
+            expect(mockStartDragging).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -186,7 +274,7 @@ describe('DragSpot.svelte', () => {
                 await fireEvent.mouseDown(dragSpot!);
             }
 
-            expect(mockStartDragging).toHaveBeenCalledTimes(10);
+            expect(mockInvoke).toHaveBeenCalledTimes(10);
         });
 
         it('renders without errors', () => {
@@ -208,7 +296,7 @@ describe('DragSpot.svelte', () => {
 
             await fireEvent.mouseEnter(dragSpot!);
 
-            expect(mockStartDragging).not.toHaveBeenCalled();
+            expect(mockInvoke).not.toHaveBeenCalled();
         });
 
         it('mouseleave does not trigger dragging', async () => {
@@ -217,7 +305,7 @@ describe('DragSpot.svelte', () => {
 
             await fireEvent.mouseLeave(dragSpot!);
 
-            expect(mockStartDragging).not.toHaveBeenCalled();
+            expect(mockInvoke).not.toHaveBeenCalled();
         });
 
         it('mouseover does not trigger dragging', async () => {
@@ -226,7 +314,7 @@ describe('DragSpot.svelte', () => {
 
             await fireEvent.mouseOver(dragSpot!);
 
-            expect(mockStartDragging).not.toHaveBeenCalled();
+            expect(mockInvoke).not.toHaveBeenCalled();
         });
     });
 });

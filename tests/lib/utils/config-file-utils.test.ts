@@ -48,7 +48,7 @@ test-cmd:
     activationOptions: {}
 `,
                 settings: `
-darkMode: false
+darkMode: off
 `,
             });
 
@@ -77,9 +77,29 @@ test-cmd:
 
             const loadedSettings = get(settings);
             // Zod should apply defaults for unspecified fields
-            expect(loadedSettings.darkMode).toBe(false);
+            expect(loadedSettings.darkMode).toBe('off');
             expect(loadedSettings.inputFontSize).toBe(1.8);
             expect(loadedSettings.hideOnLostFocus).toBe(true);
+        });
+
+        it('loads reshowInCenter from general settings', async () => {
+            mockInvoke.mockResolvedValue({
+                cmd_config: `
+test-cmd:
+  command: echo
+  modeConfig:
+    mode: list
+    displayOptions: {}
+    activationOptions: {}
+`,
+                settings: `
+reshowInCenter: true
+`,
+            });
+
+            await loadValidateAndInitConfigStores();
+
+            expect(get(settings).reshowInCenter).toBe(true);
         });
     });
 
@@ -583,7 +603,7 @@ full-cmd:
       isPath: true
 `,
                 settings: `
-darkMode: true
+darkMode: on
 inputFontSize: 2.0
 alwaysOnTop: true
 hideOnLostFocus: false
@@ -599,7 +619,7 @@ hideOnLostFocus: false
             expect(config['full-cmd'].runOnEnter).toBe(true);
 
             const loadedSettings = get(settings);
-            expect(loadedSettings.darkMode).toBe(true);
+            expect(loadedSettings.darkMode).toBe('on');
             expect(loadedSettings.alwaysOnTop).toBe(true);
         });
 

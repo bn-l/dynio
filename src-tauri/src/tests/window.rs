@@ -120,7 +120,8 @@ fn reposition_centered_position_calculation() {
 
     // Centered position formula from reposition_to_cursor_monitor
     let x = monitor_x + ((screen_width - phys_width) / 2.0) as i32;
-    let y = monitor_y + ((screen_height - phys_height) / 2.0 - (screen_height * Y_OFFSET_RATIO)) as i32;
+    let y =
+        monitor_y + ((screen_height - phys_height) / 2.0 - (screen_height * Y_OFFSET_RATIO)) as i32;
 
     // x: (1920 - 806.4) / 2 = 556.8 -> 556
     assert!((x - 556).abs() <= 1);
@@ -141,7 +142,8 @@ fn centered_position_on_secondary_monitor() {
     let phys_height = phys_width * HEIGHT_TO_WIDTH_RATIO;
 
     let x = monitor_x + ((screen_width - phys_width) / 2.0) as i32;
-    let y = monitor_y + ((screen_height - phys_height) / 2.0 - (screen_height * Y_OFFSET_RATIO)) as i32;
+    let y =
+        monitor_y + ((screen_height - phys_height) / 2.0 - (screen_height * Y_OFFSET_RATIO)) as i32;
 
     // x should include monitor offset
     assert!(x > 1920);
@@ -149,6 +151,191 @@ fn centered_position_on_secondary_monitor() {
 
     // y should be same as primary
     assert!((y - 421).abs() <= 1);
+}
+
+#[test]
+fn show_position_uses_saved_monitor_relative_placement_when_reshow_in_center_is_false() {
+    let monitor = MonitorBounds {
+        x: 1920,
+        y: 0,
+        width: 1920.0,
+        height: 1080.0,
+    };
+    let window_size = WindowDimensions {
+        width: 800.0,
+        height: 120.0,
+    };
+    let saved = RelativeWindowPlacement {
+        x_ratio: 0.25,
+        y_ratio: 0.40,
+    };
+
+    let position = show_position_for_monitor(&monitor, window_size, Some(saved), false);
+    let centered = centered_window_position(&monitor, window_size);
+
+    assert_eq!(position.x, 2400);
+    assert_eq!(position.y, 432);
+    assert_ne!(position.x, centered.x);
+    assert_ne!(position.y, centered.y);
+}
+
+#[test]
+fn startup_position_uses_same_saved_placement_as_first_reveal() {
+    let monitor = MonitorBounds {
+        x: 1920,
+        y: 0,
+        width: 1920.0,
+        height: 1080.0,
+    };
+    let window_size = WindowDimensions {
+        width: 800.0,
+        height: 120.0,
+    };
+    let saved = RelativeWindowPlacement {
+        x_ratio: 0.25,
+        y_ratio: 0.40,
+    };
+
+    let startup_position = startup_position_for_monitor(&monitor, window_size, Some(saved), false);
+    let reveal_position = show_position_for_monitor(&monitor, window_size, Some(saved), false);
+
+    assert_eq!(startup_position, reveal_position);
+}
+
+#[test]
+fn show_position_uses_center_without_saved_placement_even_after_hidden_position_drift() {
+    let monitor = MonitorBounds {
+        x: 0,
+        y: 0,
+        width: 1920.0,
+        height: 1080.0,
+    };
+    let window_size = WindowDimensions {
+        width: 800.0,
+        height: 120.0,
+    };
+    let drifted_hidden_position = PhysicalPosition { x: 420, y: 720 };
+    let centered = centered_window_position(&monitor, window_size);
+
+    let position = show_position_for_monitor(&monitor, window_size, None, false);
+
+    assert_ne!(drifted_hidden_position, centered);
+    assert_ne!(position, drifted_hidden_position);
+    assert_eq!(position, centered);
+}
+
+#[test]
+fn show_position_uses_center_when_reshow_in_center_is_true_even_with_saved_placement() {
+    let monitor = MonitorBounds {
+        x: 1920,
+        y: 0,
+        width: 1920.0,
+        height: 1080.0,
+    };
+    let window_size = WindowDimensions {
+        width: 800.0,
+        height: 120.0,
+    };
+    let saved = RelativeWindowPlacement {
+        x_ratio: 0.10,
+        y_ratio: 0.80,
+    };
+
+    let position = show_position_for_monitor(&monitor, window_size, Some(saved), true);
+    let centered = centered_window_position(&monitor, window_size);
+
+    assert_eq!(position, centered);
+}
+
+#[test]
+fn saved_monitor_relative_placement_is_clamped_inside_monitor() {
+    let monitor = MonitorBounds {
+        x: 0,
+        y: 0,
+        width: 1920.0,
+        height: 1080.0,
+    };
+    let window_size = WindowDimensions {
+        width: 800.0,
+        height: 120.0,
+    };
+    let saved = RelativeWindowPlacement {
+        x_ratio: 1.50,
+        y_ratio: -0.25,
+    };
+
+    let position = position_from_saved_placement(&monitor, window_size, saved);
+
+    assert_eq!(position.x, 1120);
+    assert_eq!(position.y, 0);
+}
+
+#[test]
+fn saved_placement_restores_same_bar_top_when_tray_height_changes() {
+    let monitor = MonitorBounds {
+        x: 0,
+        y: 0,
+        width: 1920.0,
+        height: 1080.0,
+    };
+    let dragged_position = PhysicalPosition { x: 500, y: 220 };
+    let open_tray_size = WindowDimensions {
+        width: 800.0,
+        height: 520.0,
+    };
+    let closed_bar_size = WindowDimensions {
+        width: 800.0,
+        height: 120.0,
+    };
+
+    let saved = relative_placement_from_position(&monitor, open_tray_size, dragged_position);
+    let restored = position_from_saved_placement(&monitor, closed_bar_size, saved);
+
+    assert_eq!(restored.y, dragged_position.y);
+}
+
+#[test]
+fn drag_position_near_center_stays_under_pointer_without_snap_adjustment() {
+    let monitor = MonitorBounds {
+        x: 0,
+        y: 0,
+        width: 1920.0,
+        height: 1080.0,
+    };
+    let window_size = WindowDimensions {
+        width: 800.0,
+        height: 120.0,
+    };
+    let centered = centered_window_position(&monitor, window_size);
+    let near_center = PhysicalPosition {
+        x: centered.x + 10,
+        y: centered.y + 10,
+    };
+
+    let drag_position = drag_position_for_window_move(near_center);
+
+    assert_eq!(drag_position, near_center);
+}
+
+#[test]
+fn drag_position_outside_monitor_is_not_adjusted_during_drag_move() {
+    let monitor = MonitorBounds {
+        x: 0,
+        y: 0,
+        width: 1920.0,
+        height: 1080.0,
+    };
+    let window_size = WindowDimensions {
+        width: 800.0,
+        height: 120.0,
+    };
+    let outside_monitor = PhysicalPosition { x: -40, y: -20 };
+
+    let drag_position = drag_position_for_window_move(outside_monitor);
+    let persisted_position = clamp_position_to_monitor(&monitor, window_size, drag_position);
+
+    assert_eq!(drag_position, outside_monitor);
+    assert_eq!(persisted_position, PhysicalPosition { x: 0, y: 0 });
 }
 
 #[test]
@@ -164,6 +351,7 @@ fn tray_state_preserves_is_open_during_reposition() {
         tray_closed_height: phys_height,
         tray_open_height: phys_tray_height + phys_height,
         currently_open: is_open, // Preserved
+        max_window_width: f64::INFINITY,
     };
 
     // is_open should be preserved during reposition
@@ -182,6 +370,7 @@ fn tray_state_preserves_is_closed_during_reposition() {
         tray_closed_height: phys_height,
         tray_open_height: phys_tray_height + phys_height,
         currently_open: is_open,
+        max_window_width: f64::INFINITY,
     };
 
     assert!(!new_state.currently_open);
@@ -194,6 +383,7 @@ fn height_selection_based_on_tray_state() {
         tray_closed_height: 100.0,
         tray_open_height: 400.0,
         currently_open: false,
+        max_window_width: f64::INFINITY,
     };
 
     // Logic from reposition_to_cursor_monitor
@@ -213,6 +403,7 @@ fn height_selection_when_tray_open() {
         tray_closed_height: 100.0,
         tray_open_height: 400.0,
         currently_open: true,
+        max_window_width: f64::INFINITY,
     };
 
     let height = if state.currently_open {
@@ -360,20 +551,14 @@ mod toggle_main_window {
             visible: true,
             focused: true,
         };
-        assert_eq!(
-            compute_toggle_action_non_macos(state),
-            ToggleAction::Hide
-        );
+        assert_eq!(compute_toggle_action_non_macos(state), ToggleAction::Hide);
     }
 
     // macOS tests
 
     #[test]
     fn macos_visible_panel_hides() {
-        assert_eq!(
-            compute_toggle_action_macos(true),
-            ToggleAction::Hide
-        );
+        assert_eq!(compute_toggle_action_macos(true), ToggleAction::Hide);
     }
 
     #[test]
@@ -553,7 +738,10 @@ mod hide_main_command {
         // }
         let window_exists = false;
         let should_hide = window_exists;
-        assert!(!should_hide, "hide_main should no-op when window doesn't exist");
+        assert!(
+            !should_hide,
+            "hide_main should no-op when window doesn't exist"
+        );
     }
 
     /// Documents: hide_main uses "main" as window label.

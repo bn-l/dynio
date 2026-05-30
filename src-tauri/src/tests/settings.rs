@@ -3,7 +3,7 @@
 //! Tests the `GeneralSettings` struct parsing, default values, and error handling
 //! for YAML configuration files.
 
-use crate::general_settings::GeneralSettings;
+use crate::general_settings::{DarkMode, GeneralSettings};
 use tempfile::tempdir;
 
 /// Tests for GeneralSettings YAML parsing.
@@ -22,7 +22,7 @@ alwaysOnTop: true
 globalShortcut: "Ctrl+Space"
 "#;
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-        assert!(settings.dark_mode);
+        assert_eq!(settings.dark_mode, DarkMode::On);
         assert_eq!(settings.default_command, Some("myCommand".to_string()));
         assert_eq!(settings.first_launch, Some(true));
         assert!(settings.start_minimised);
@@ -32,17 +32,27 @@ globalShortcut: "Ctrl+Space"
     }
 
     #[test]
+    fn parses_reshow_in_center_camel_case_yaml() {
+        let yaml = r#"
+reshowInCenter: true
+"#;
+        let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
+        assert!(settings.reshow_in_center);
+    }
+
+    #[test]
     fn parses_minimal_yaml() {
         let yaml = "{}";
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
         // All fields should use defaults
-        assert!(!settings.dark_mode);
+        assert_eq!(settings.dark_mode, DarkMode::Off);
         assert!(settings.default_command.is_none());
         assert!(settings.first_launch.is_none());
         assert!(!settings.start_minimised);
         assert_eq!(settings.input_font_size, 1.8); // default
         assert!(!settings.always_on_top);
         assert!(settings.global_shortcut.is_none());
+        assert!(!settings.reshow_in_center);
     }
 
     #[test]
@@ -55,7 +65,7 @@ globalShortcut: "Ctrl+Space"
         assert!(result.is_ok());
         let settings = result.unwrap();
         // All fields should have their default values
-        assert!(!settings.dark_mode);
+        assert_eq!(settings.dark_mode, DarkMode::Off);
     }
 
     #[test]
@@ -65,7 +75,7 @@ darkMode: true
 alwaysOnTop: true
 "#;
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-        assert!(settings.dark_mode);
+        assert_eq!(settings.dark_mode, DarkMode::On);
         assert!(settings.always_on_top);
         // Other fields use defaults
         assert!(!settings.start_minimised);
@@ -82,7 +92,7 @@ mod default_values {
     fn dark_mode_defaults_to_false() {
         let yaml = "{}";
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-        assert!(!settings.dark_mode);
+        assert_eq!(settings.dark_mode, DarkMode::Off);
     }
 
     #[test]
@@ -257,7 +267,7 @@ mod camel_case_fields {
         // So field names in YAML should be camelCase
         let yaml = r#"darkMode: true"#;
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-        assert!(settings.dark_mode);
+        assert_eq!(settings.dark_mode, DarkMode::On);
     }
 
     #[test]
@@ -266,7 +276,7 @@ mod camel_case_fields {
         let yaml = r#"dark_mode: true"#;
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
         // snake_case is ignored, so dark_mode uses default (false)
-        assert!(!settings.dark_mode);
+        assert_eq!(settings.dark_mode, DarkMode::Off);
     }
 
     #[test]
@@ -361,15 +371,25 @@ mod yaml_value_variants {
         // YAML accepts various representations for true (unquoted only)
         // Note: serde_yaml with strict typing only accepts true/True/TRUE/yes/Yes/on/On
         // as unquoted boolean values
-        let variants = vec![
-            "darkMode: true",
-            "darkMode: True",
-            "darkMode: TRUE",
-        ];
+        let variants = vec!["darkMode: true", "darkMode: True", "darkMode: TRUE"];
 
         for yaml in variants {
             let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-            assert!(settings.dark_mode, "Failed for: {}", yaml);
+            assert_eq!(settings.dark_mode, DarkMode::On, "Failed for: {}", yaml);
+        }
+    }
+
+    #[test]
+    fn dark_mode_string_variants() {
+        let variants = vec![
+            ("darkMode: off", DarkMode::Off),
+            ("darkMode: on", DarkMode::On),
+            ("darkMode: auto", DarkMode::Auto),
+        ];
+
+        for (yaml, expected) in variants {
+            let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
+            assert_eq!(settings.dark_mode, expected, "Failed for: {}", yaml);
         }
     }
 
@@ -388,15 +408,11 @@ mod yaml_value_variants {
         // YAML accepts various representations for false (unquoted only)
         // Note: serde_yaml with strict typing only accepts false/False/FALSE
         // as unquoted boolean values
-        let variants = vec![
-            "darkMode: false",
-            "darkMode: False",
-            "darkMode: FALSE",
-        ];
+        let variants = vec!["darkMode: false", "darkMode: False", "darkMode: FALSE"];
 
         for yaml in variants {
             let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-            assert!(!settings.dark_mode, "Failed for: {}", yaml);
+            assert_eq!(settings.dark_mode, DarkMode::Off, "Failed for: {}", yaml);
         }
     }
 
@@ -509,7 +525,7 @@ mod get_general_settings_pattern {
         let result = get_settings_from_path(&path);
         assert!(result.is_ok());
         let settings = result.unwrap();
-        assert!(settings.dark_mode);
+        assert_eq!(settings.dark_mode, DarkMode::On);
         assert!(settings.always_on_top);
     }
 
@@ -522,7 +538,7 @@ mod get_general_settings_pattern {
         let result = get_settings_from_path(&path);
         assert!(result.is_ok());
         let settings = result.unwrap();
-        assert!(!settings.dark_mode);
+        assert_eq!(settings.dark_mode, DarkMode::Off);
         assert!(!settings.start_minimised);
         assert_eq!(settings.input_font_size, 1.8);
     }
@@ -598,7 +614,7 @@ unknownField: "ignored"
 anotherUnknown: 123
 "#;
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-        assert!(settings.dark_mode);
+        assert_eq!(settings.dark_mode, DarkMode::On);
         // No error for unknown fields - they're just ignored
     }
 }

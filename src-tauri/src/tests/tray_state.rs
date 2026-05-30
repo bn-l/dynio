@@ -47,6 +47,7 @@ fn tray_state_open_close_toggle_logic() {
         tray_closed_height: 100.0,
         tray_open_height: 400.0,
         currently_open: false,
+        max_window_width: f64::INFINITY,
     };
 
     // Simulate open_tray logic: only opens if not currently open
@@ -85,6 +86,7 @@ fn tray_dimensions_calculation() {
         tray_closed_height: phys_height,
         tray_open_height: phys_tray_height + phys_height,
         currently_open: false,
+        max_window_width: f64::INFINITY,
     };
 
     // Verify ratios are applied correctly

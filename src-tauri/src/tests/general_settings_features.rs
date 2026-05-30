@@ -6,7 +6,7 @@
 //!
 //! Reference: https://v2.tauri.app/develop/tests/
 
-use crate::general_settings::GeneralSettings;
+use crate::general_settings::{DarkMode, GeneralSettings};
 
 /// Tests for settings values that affect app initialization.
 mod settings_initialization_values {
@@ -58,14 +58,14 @@ mod settings_initialization_values {
     fn dark_mode_defaults_to_false() {
         let yaml = "{}";
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-        assert!(!settings.dark_mode);
+        assert_eq!(settings.dark_mode, DarkMode::Off);
     }
 
     #[test]
     fn dark_mode_can_be_true() {
         let yaml = "darkMode: true";
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-        assert!(settings.dark_mode);
+        assert_eq!(settings.dark_mode, DarkMode::On);
     }
 
     #[test]
@@ -232,7 +232,10 @@ mod custom_global_shortcut_behavior {
 
     /// Simulates shortcut selection from settings.
     fn get_shortcut_str<'a>(settings: &'a GeneralSettings, platform_default: &'a str) -> &'a str {
-        settings.global_shortcut.as_deref().unwrap_or(platform_default)
+        settings
+            .global_shortcut
+            .as_deref()
+            .unwrap_or(platform_default)
     }
 
     #[test]
@@ -320,7 +323,7 @@ mod dark_mode_settings {
     fn dark_mode_read_from_settings() {
         let yaml = "darkMode: true";
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-        assert!(settings.dark_mode);
+        assert_eq!(settings.dark_mode, DarkMode::On);
     }
 
     /// Documents: darkMode defaults to false for light theme.
@@ -328,7 +331,11 @@ mod dark_mode_settings {
     fn dark_mode_defaults_to_light_theme() {
         let yaml = "{}";
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-        assert!(!settings.dark_mode, "Default should be light theme (false)");
+        assert_eq!(
+            settings.dark_mode,
+            DarkMode::Off,
+            "Default should be light theme"
+        );
     }
 }
 
@@ -377,7 +384,10 @@ mod default_command_settings {
     fn default_command_can_be_any_string() {
         let yaml = "defaultCommand: my-custom-command";
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-        assert_eq!(settings.default_command, Some("my-custom-command".to_string()));
+        assert_eq!(
+            settings.default_command,
+            Some("my-custom-command".to_string())
+        );
     }
 
     #[test]
@@ -391,7 +401,10 @@ mod default_command_settings {
     fn default_command_with_special_chars() {
         let yaml = r#"defaultCommand: "cmd-with-dashes_and_underscores""#;
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-        assert_eq!(settings.default_command, Some("cmd-with-dashes_and_underscores".to_string()));
+        assert_eq!(
+            settings.default_command,
+            Some("cmd-with-dashes_and_underscores".to_string())
+        );
     }
 }
 
@@ -411,7 +424,7 @@ firstLaunch: false
 globalShortcut: "Ctrl+Shift+D"
 "#;
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-        assert!(settings.dark_mode);
+        assert_eq!(settings.dark_mode, DarkMode::On);
         assert!(settings.start_minimised);
         assert!(settings.always_on_top);
         assert!((settings.input_font_size - 2.5).abs() < 0.001);
@@ -431,7 +444,7 @@ globalShortcut: "Ctrl+Space"
         assert!(settings.start_minimised);
         assert_eq!(settings.global_shortcut, Some("Ctrl+Space".to_string()));
         // Everything else uses defaults
-        assert!(!settings.dark_mode);
+        assert_eq!(settings.dark_mode, DarkMode::Off);
         assert!(!settings.always_on_top);
         assert!((settings.input_font_size - 1.8).abs() < 0.001);
     }
@@ -459,6 +472,8 @@ mod setup_main_window_behavior {
         //     app.handle().clone(),
         //     settings.start_minimised,  // -> start_hidden
         //     settings.always_on_top,    // -> on_top
+        //     settings.max_window_width,
+        //     settings.reshow_in_center,
         // );
         let start_minimised = true;
         let always_on_top = false;
@@ -536,7 +551,10 @@ mod shortcut_registration_flow {
         // The parse().expect() will panic if the shortcut string is invalid
         // This is intentional - invalid config should fail fast at startup
         let shortcut_str = "Alt+Space";
-        assert!(shortcut_str.contains("+"), "Valid shortcut has modifier+key format");
+        assert!(
+            shortcut_str.contains("+"),
+            "Valid shortcut has modifier+key format"
+        );
     }
 
     /// Documents: invalid shortcut string causes panic on startup.
