@@ -105,6 +105,8 @@ as regular stdout from commands) -->
         void loadValidateAndInitConfigStores();
 
         // Dark mode: listen for system preference changes (for "auto" mode)
+        if (typeof window.matchMedia !== "function") return;
+
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         systemPrefersDark = mediaQuery.matches;
         const handler = (e: MediaQueryListEvent) => { systemPrefersDark = e.matches; };

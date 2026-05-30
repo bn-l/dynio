@@ -1,10 +1,15 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use serde::{Deserialize, Serialize};
-use std::process::Stdio;
 use flexi_logger::{Cleanup, Criterion, FileSpec, Logger, Naming};
-use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Runtime, Size, WebviewWindow};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::process::Stdio;
+use std::time::Instant;
+use tauri::{
+    AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Runtime, Size, WebviewWindow,
+    WindowEvent,
+};
 use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 use tokio::sync::Mutex;
 use tokio::time::Duration;
@@ -50,6 +55,41 @@ const SCREEN_TO_WIDTH_RATIO: f64 = 0.42;
 const HEIGHT_TO_WIDTH_RATIO: f64 = 0.16;
 const TRAY_TO_BAR_RATIO: f64 = 3.05;
 const Y_OFFSET_RATIO: f64 = 0.05; // 5% of screen height above center
+const DRAG_FALLBACK_FINISH_DELAY_MS: u64 = 10_000;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct MonitorBounds {
+    x: i32,
+    y: i32,
+    width: f64,
+    height: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct WindowDimensions {
+    width: f64,
+    height: f64,
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct RelativeWindowPlacement {
+    x_ratio: f64,
+    y_ratio: f64,
+}
+
+#[derive(Debug, Default, Deserialize, Serialize)]
+struct WindowPlacementStore {
+    monitors: HashMap<String, RelativeWindowPlacement>,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+struct WindowDragState {
+    active: bool,
+    last_position: Option<PhysicalPosition<i32>>,
+    last_move_at: Option<Instant>,
+    settle_task_running: bool,
+}
 
 fn home_dir() -> std::path::PathBuf {
     dirs::home_dir().expect("Could not get home dir")
@@ -77,7 +117,10 @@ enum SerError {
     #[error(transparent)]
     Io(#[from] std::io::Error),
     #[error("Failed to run '{program}': {source}")]
-    SpawnFailed { program: String, source: std::io::Error },
+    SpawnFailed {
+        program: String,
+        source: std::io::Error,
+    },
 }
 impl serde::Serialize for SerError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -218,7 +261,10 @@ async fn run_program<R: Runtime>(
     #[cfg(any(target_os = "linux", target_os = "macos"))]
     {
         log::debug!("[DEBUG] Program path: {}", &program);
-        log::debug!("[DEBUG] Program exists: {}", std::path::Path::new(&program).exists());
+        log::debug!(
+            "[DEBUG] Program exists: {}",
+            std::path::Path::new(&program).exists()
+        );
     }
 
     #[cfg(any(target_os = "linux", target_os = "macos"))]
@@ -233,14 +279,15 @@ async fn run_program<R: Runtime>(
         // to include common locations where CLI tools are installed
         let home = std::env::var("HOME").unwrap_or_default();
         let extra_paths = [
-            "/opt/homebrew/bin",      // Apple Silicon Homebrew
+            "/opt/homebrew/bin", // Apple Silicon Homebrew
             "/opt/homebrew/sbin",
-            "/usr/local/bin",         // Intel Homebrew / manual installs
+            "/usr/local/bin", // Intel Homebrew / manual installs
             "/usr/local/sbin",
-            &format!("{}/.local/bin", home),  // User local bin
-            &format!("{}/bin", home),         // User bin
+            &format!("{}/.local/bin", home), // User local bin
+            &format!("{}/bin", home),        // User bin
         ];
-        let system_path = std::env::var("PATH").unwrap_or_else(|_| "/usr/bin:/bin:/usr/sbin:/sbin".to_string());
+        let system_path =
+            std::env::var("PATH").unwrap_or_else(|_| "/usr/bin:/bin:/usr/sbin:/sbin".to_string());
         let full_path = format!("{}:{}", extra_paths.join(":"), system_path);
         command.env("PATH", full_path);
     }
@@ -268,7 +315,7 @@ async fn run_program<R: Runtime>(
             let _ = app_handle.emit("exit", Some(-1i32));
             return Err(SerError::SpawnFailed {
                 program: program.clone(),
-                source: e
+                source: e,
             });
         }
     };
@@ -285,10 +332,18 @@ async fn run_program<R: Runtime>(
     let finish_flag_clone = finish_flag.clone();
     if streaming.unwrap_or(false) {
         let stdout_reader = tokio::io::BufReader::new(stdout_pipe);
-        tokio::spawn(read_and_send_chunks(stdout_reader, stdout_tx, finish_flag_clone));
+        tokio::spawn(read_and_send_chunks(
+            stdout_reader,
+            stdout_tx,
+            finish_flag_clone,
+        ));
     } else {
         let stdout_lines = tokio::io::BufReader::new(stdout_pipe).lines();
-        tokio::spawn(read_and_send_lines(stdout_lines, stdout_tx, finish_flag_clone));
+        tokio::spawn(read_and_send_lines(
+            stdout_lines,
+            stdout_tx,
+            finish_flag_clone,
+        ));
     }
 
     // Stderr always uses line-based reading (error messages are typically line-oriented)
@@ -362,6 +417,202 @@ impl Default for TrayState {
     }
 }
 
+fn window_placement_path() -> std::path::PathBuf {
+    config_dir().join("window-placement.yaml")
+}
+
+fn load_window_placements() -> WindowPlacementStore {
+    let path = window_placement_path();
+    let Ok(text) = std::fs::read_to_string(&path) else {
+        return WindowPlacementStore::default();
+    };
+    match serde_yaml::from_str(&text) {
+        Ok(store) => store,
+        Err(err) => {
+            log::warn!("Could not parse {:?}: {:?}", path, err);
+            WindowPlacementStore::default()
+        }
+    }
+}
+
+fn save_window_placements(store: &WindowPlacementStore) {
+    let path = window_placement_path();
+    match serde_yaml::to_string(store) {
+        Ok(text) => {
+            if let Err(err) = std::fs::write(&path, text) {
+                log::warn!("Could not write {:?}: {:?}", path, err);
+            }
+        }
+        Err(err) => log::warn!("Could not serialize window placements: {:?}", err),
+    }
+}
+
+fn clamp_i32(value: i32, min: i32, max: i32) -> i32 {
+    value.clamp(min, max.max(min))
+}
+
+fn centered_window_position(
+    monitor: &MonitorBounds,
+    window_size: WindowDimensions,
+) -> PhysicalPosition<i32> {
+    let x = monitor.x + ((monitor.width - window_size.width) / 2.0) as i32;
+    let y = monitor.y
+        + ((monitor.height - window_size.height) / 2.0 - (monitor.height * Y_OFFSET_RATIO)) as i32;
+    PhysicalPosition { x, y }
+}
+
+fn clamp_position_to_monitor(
+    monitor: &MonitorBounds,
+    window_size: WindowDimensions,
+    position: PhysicalPosition<i32>,
+) -> PhysicalPosition<i32> {
+    let max_x = monitor.x + (monitor.width - window_size.width).max(0.0) as i32;
+    let max_y = monitor.y + (monitor.height - window_size.height).max(0.0) as i32;
+    PhysicalPosition {
+        x: clamp_i32(position.x, monitor.x, max_x),
+        y: clamp_i32(position.y, monitor.y, max_y),
+    }
+}
+
+fn position_from_saved_placement(
+    monitor: &MonitorBounds,
+    window_size: WindowDimensions,
+    saved: RelativeWindowPlacement,
+) -> PhysicalPosition<i32> {
+    let position = PhysicalPosition {
+        x: monitor.x + (monitor.width * saved.x_ratio) as i32,
+        y: monitor.y + (monitor.height * saved.y_ratio) as i32,
+    };
+    clamp_position_to_monitor(monitor, window_size, position)
+}
+
+fn relative_placement_from_position(
+    monitor: &MonitorBounds,
+    window_size: WindowDimensions,
+    position: PhysicalPosition<i32>,
+) -> RelativeWindowPlacement {
+    let clamped = clamp_position_to_monitor(monitor, window_size, position);
+
+    RelativeWindowPlacement {
+        x_ratio: if monitor.width > 0.0 {
+            ((clamped.x - monitor.x) as f64 / monitor.width).clamp(0.0, 1.0)
+        } else {
+            0.0
+        },
+        y_ratio: if monitor.height > 0.0 {
+            ((clamped.y - monitor.y) as f64 / monitor.height).clamp(0.0, 1.0)
+        } else {
+            0.0
+        },
+    }
+}
+
+fn show_position_for_monitor(
+    monitor: &MonitorBounds,
+    window_size: WindowDimensions,
+    saved: Option<RelativeWindowPlacement>,
+    reshow_in_center: bool,
+) -> PhysicalPosition<i32> {
+    if reshow_in_center {
+        return centered_window_position(monitor, window_size);
+    }
+
+    match saved {
+        Some(placement) => position_from_saved_placement(monitor, window_size, placement),
+        None => centered_window_position(monitor, window_size),
+    }
+}
+
+fn startup_position_for_monitor(
+    monitor: &MonitorBounds,
+    window_size: WindowDimensions,
+    saved: Option<RelativeWindowPlacement>,
+    reshow_in_center: bool,
+) -> PhysicalPosition<i32> {
+    show_position_for_monitor(monitor, window_size, saved, reshow_in_center)
+}
+
+fn drag_position_for_window_move(position: PhysicalPosition<i32>) -> PhysicalPosition<i32> {
+    position
+}
+
+fn monitor_bounds(monitor: &tauri::Monitor) -> MonitorBounds {
+    MonitorBounds {
+        x: monitor.position().x,
+        y: monitor.position().y,
+        width: monitor.size().width as f64,
+        height: monitor.size().height as f64,
+    }
+}
+
+fn monitor_key(monitor: &tauri::Monitor) -> String {
+    let name = monitor.name().map(String::as_str).unwrap_or("unknown");
+    format!(
+        "{}:{}x{}:{:.3}",
+        name,
+        monitor.size().width,
+        monitor.size().height,
+        monitor.scale_factor()
+    )
+}
+
+fn point_for_monitor_lookup<R: Runtime>(window: &WebviewWindow<R>, x: f64, y: f64) -> (f64, f64) {
+    #[cfg(target_os = "macos")]
+    {
+        let scale_factor = window.scale_factor().unwrap_or(1.0);
+        (x / scale_factor, y / scale_factor)
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    {
+        (x, y)
+    }
+}
+
+fn monitor_at_cursor<R: Runtime>(window: &WebviewWindow<R>) -> Option<tauri::Monitor> {
+    let cursor_pos = match window.cursor_position() {
+        Ok(pos) => pos,
+        Err(err) => {
+            log::debug!(
+                "Could not get cursor position: {:?}, skipping reposition",
+                err
+            );
+            return None;
+        }
+    };
+
+    let cursor_for_monitor = point_for_monitor_lookup(window, cursor_pos.x, cursor_pos.y);
+    window
+        .monitor_from_point(cursor_for_monitor.0, cursor_for_monitor.1)
+        .ok()
+        .flatten()
+}
+
+fn monitor_at_window_center<R: Runtime>(
+    window: &WebviewWindow<R>,
+    position: PhysicalPosition<i32>,
+    window_size: WindowDimensions,
+) -> Option<tauri::Monitor> {
+    let center_x = position.x as f64 + (window_size.width / 2.0);
+    let center_y = position.y as f64 + (window_size.height / 2.0);
+    let point = point_for_monitor_lookup(window, center_x, center_y);
+    window.monitor_from_point(point.0, point.1).ok().flatten()
+}
+
+fn window_dimensions_from_monitor(screen_width: f64, max_window_width: f64) -> WindowDimensions {
+    let width = (screen_width * SCREEN_TO_WIDTH_RATIO).min(max_window_width);
+    WindowDimensions {
+        width,
+        height: width * HEIGHT_TO_WIDTH_RATIO,
+    }
+}
+
+fn reshow_in_center_setting() -> bool {
+    get_general_settings()
+        .map(|settings| settings.reshow_in_center)
+        .unwrap_or(false)
+}
+
 #[tauri::command]
 async fn open_tray<R: Runtime>(app_handle: AppHandle<R>) {
     let window = app_handle
@@ -371,11 +622,17 @@ async fn open_tray<R: Runtime>(app_handle: AppHandle<R>) {
     let mut guard = state.lock().await;
 
     let is_visible = window.is_visible().unwrap_or(false);
-    let current_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+    let current_pos = window
+        .outer_position()
+        .unwrap_or(PhysicalPosition { x: 0, y: 0 });
 
     log::info!(
         "open_tray called: visible={}, currently_open={}, pos=({}, {}), target_height={}",
-        is_visible, guard.currently_open, current_pos.x, current_pos.y, guard.tray_open_height
+        is_visible,
+        guard.currently_open,
+        current_pos.x,
+        current_pos.y,
+        guard.tray_open_height
     );
 
     if !guard.currently_open {
@@ -386,7 +643,9 @@ async fn open_tray<R: Runtime>(app_handle: AppHandle<R>) {
             }));
             let _ = window.set_position(current_pos);
 
-            let after_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+            let after_pos = window
+                .outer_position()
+                .unwrap_or(PhysicalPosition { x: 0, y: 0 });
             log::info!("open_tray after: pos=({}, {})", after_pos.x, after_pos.y);
         } else {
             log::info!("open_tray: window hidden, deferring resize");
@@ -404,11 +663,17 @@ async fn close_tray<R: Runtime>(app_handle: AppHandle<R>) {
     let mut guard = state.lock().await;
 
     let is_visible = window.is_visible().unwrap_or(false);
-    let current_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+    let current_pos = window
+        .outer_position()
+        .unwrap_or(PhysicalPosition { x: 0, y: 0 });
 
     log::info!(
         "close_tray called: visible={}, currently_open={}, pos=({}, {}), target_height={}",
-        is_visible, guard.currently_open, current_pos.x, current_pos.y, guard.tray_closed_height
+        is_visible,
+        guard.currently_open,
+        current_pos.x,
+        current_pos.y,
+        guard.tray_closed_height
     );
 
     if guard.currently_open {
@@ -419,7 +684,9 @@ async fn close_tray<R: Runtime>(app_handle: AppHandle<R>) {
             }));
             let _ = window.set_position(current_pos);
 
-            let after_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
+            let after_pos = window
+                .outer_position()
+                .unwrap_or(PhysicalPosition { x: 0, y: 0 });
             log::info!("close_tray after: pos=({}, {})", after_pos.x, after_pos.y);
         } else {
             log::info!("close_tray: window hidden, deferring resize");
@@ -431,20 +698,36 @@ async fn close_tray<R: Runtime>(app_handle: AppHandle<R>) {
 /// Ensures the window size matches the current tray state. Called before showing the window
 /// so that any open/close that was deferred while the window was hidden gets applied.
 fn sync_tray_size<R: Runtime>(app_handle: &AppHandle<R>) {
-    let Some(window) = app_handle.get_webview_window("main") else { return; };
+    let Some(window) = app_handle.get_webview_window("main") else {
+        return;
+    };
 
     let guard = app_handle.state::<Mutex<TrayState>>();
     let state = tauri::async_runtime::block_on(guard.lock());
 
-    let expected_height = if state.currently_open { state.tray_open_height } else { state.tray_closed_height };
-    let current_size = window.outer_size().unwrap_or(PhysicalSize { width: 0, height: 0 });
+    let expected_height = if state.currently_open {
+        state.tray_open_height
+    } else {
+        state.tray_closed_height
+    };
+    let current_size = window.outer_size().unwrap_or(PhysicalSize {
+        width: 0,
+        height: 0,
+    });
 
     if (current_size.height as f64 - expected_height).abs() > 1.0 {
-        let current_pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
-        log::info!("sync_tray_size: resizing from {}x{} to {}x{} at ({}, {})",
-            current_size.width, current_size.height,
-            state.width as u32, expected_height as u32,
-            current_pos.x, current_pos.y);
+        let current_pos = window
+            .outer_position()
+            .unwrap_or(PhysicalPosition { x: 0, y: 0 });
+        log::info!(
+            "sync_tray_size: resizing from {}x{} to {}x{} at ({}, {})",
+            current_size.width,
+            current_size.height,
+            state.width as u32,
+            expected_height as u32,
+            current_pos.x,
+            current_pos.y
+        );
         let _ = window.set_size(Size::Physical(PhysicalSize {
             width: state.width as u32,
             height: expected_height as u32,
@@ -453,87 +736,75 @@ fn sync_tray_size<R: Runtime>(app_handle: &AppHandle<R>) {
     }
 }
 
-/// Repositions and resizes the window to be centered on the monitor where the cursor is located.
+/// Repositions and resizes the window on the monitor where the cursor is located.
 fn reposition_to_cursor_monitor<R: Runtime>(app_handle: &AppHandle<R>) {
     let Some(window) = app_handle.get_webview_window("main") else {
         log::error!("Could not get main window for repositioning");
         return;
     };
 
-    // Get cursor position
-    let cursor_pos = match window.cursor_position() {
-        Ok(pos) => pos,
-        Err(e) => {
-            log::debug!("Could not get cursor position: {:?}, skipping reposition", e);
-            return;
-        }
-    };
-
-    // On macOS, monitor_from_point expects LOGICAL coordinates but cursor_position
-    // returns PHYSICAL coordinates. See: https://github.com/tauri-apps/tauri/issues/12676
-    // We need to convert physical cursor position to logical for macOS.
-    #[cfg(target_os = "macos")]
-    let cursor_for_monitor = {
-        let scale_factor = window.scale_factor().unwrap_or(1.0);
-        (cursor_pos.x / scale_factor, cursor_pos.y / scale_factor)
-    };
-
-    // On Windows, monitor_from_point expects physical coordinates
-    #[cfg(not(target_os = "macos"))]
-    let cursor_for_monitor = (cursor_pos.x, cursor_pos.y);
-
-    // Find monitor at cursor position
-    let Some(cursor_monitor) = window.monitor_from_point(cursor_for_monitor.0, cursor_for_monitor.1)
-        .ok().flatten() else {
+    let Some(monitor) = monitor_at_cursor(&window) else {
         log::debug!("Could not find monitor at cursor position");
         return;
     };
 
-    let monitor = cursor_monitor;
+    log::info!(
+        "reposition_to_cursor_monitor: placing on monitor at pos=({}, {}), size={}x{}",
+        monitor.position().x,
+        monitor.position().y,
+        monitor.size().width,
+        monitor.size().height
+    );
 
-    log::info!("reposition_to_cursor_monitor: centering on monitor at pos=({}, {}), size={}x{}",
-        monitor.position().x, monitor.position().y,
-        monitor.size().width, monitor.size().height);
-
-    let screen_width = monitor.size().width as f64;
-    let screen_height = monitor.size().height as f64;
-    let monitor_x = monitor.position().x;
-    let monitor_y = monitor.position().y;
+    let bounds = monitor_bounds(&monitor);
 
     // Read max_window_width from state before computing dimensions
     let guard = app_handle.state::<Mutex<TrayState>>();
     let mut state = tauri::async_runtime::block_on(guard.lock());
 
     // Calculate window dimensions for this monitor
-    let phys_width = (screen_width * SCREEN_TO_WIDTH_RATIO).min(state.max_window_width);
-    let phys_height = phys_width * HEIGHT_TO_WIDTH_RATIO;
-    let phys_tray_height = phys_height * TRAY_TO_BAR_RATIO;
-
-    // Calculate centered position on this monitor
-    let x = monitor_x + ((screen_width - phys_width) / 2.0) as i32;
-    let y = monitor_y + ((screen_height - phys_height) / 2.0 - (screen_height * Y_OFFSET_RATIO)) as i32;
+    let dimensions = window_dimensions_from_monitor(bounds.width, state.max_window_width);
+    let phys_tray_height = dimensions.height * TRAY_TO_BAR_RATIO;
 
     // Update TrayState with new dimensions for this monitor
     let is_open = state.currently_open;
     let max_w = state.max_window_width;
     *state = TrayState {
-        width: phys_width,
-        tray_closed_height: phys_height,
-        tray_open_height: phys_tray_height + phys_height,
+        width: dimensions.width,
+        tray_closed_height: dimensions.height,
+        tray_open_height: phys_tray_height + dimensions.height,
         currently_open: is_open,
         max_window_width: max_w,
     };
 
     // Set size based on current tray state
-    let height = if is_open { state.tray_open_height } else { state.tray_closed_height };
+    let height = if is_open {
+        state.tray_open_height
+    } else {
+        state.tray_closed_height
+    };
+    let window_size = WindowDimensions {
+        width: dimensions.width,
+        height,
+    };
+    let placements = load_window_placements();
+    let saved = placements.monitors.get(&monitor_key(&monitor)).copied();
+    let target_position =
+        show_position_for_monitor(&bounds, window_size, saved, reshow_in_center_setting());
+
     let _ = window.set_size(Size::Physical(PhysicalSize {
-        width: phys_width as u32,
+        width: dimensions.width as u32,
         height: height as u32,
     }));
-    let _ = window.set_position(PhysicalPosition { x, y });
+    let _ = window.set_position(target_position);
 
-    log::info!("reposition_to_cursor_monitor: repositioned to {}x{} at ({}, {})",
-        phys_width as u32, height as u32, x, y);
+    log::info!(
+        "reposition_to_cursor_monitor: repositioned to {}x{} at ({}, {})",
+        dimensions.width as u32,
+        height as u32,
+        target_position.x,
+        target_position.y
+    );
 }
 
 fn toggle_main_window<R: Runtime>(app_handle: &AppHandle<R>) {
@@ -548,33 +819,72 @@ fn toggle_main_window<R: Runtime>(app_handle: &AppHandle<R>) {
         if let Ok(panel) = app_handle.get_webview_panel("main") {
             if panel.is_visible() {
                 if let Some(ref w) = window {
-                    let pos = w.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
-                    let size = w.outer_size().unwrap_or(PhysicalSize { width: 0, height: 0 });
-                    log::info!("toggle_main_window HIDE: pos=({}, {}), size={}x{}", pos.x, pos.y, size.width, size.height);
+                    let pos = w
+                        .outer_position()
+                        .unwrap_or(PhysicalPosition { x: 0, y: 0 });
+                    let size = w.outer_size().unwrap_or(PhysicalSize {
+                        width: 0,
+                        height: 0,
+                    });
+                    log::info!(
+                        "toggle_main_window HIDE: pos=({}, {}), size={}x{}",
+                        pos.x,
+                        pos.y,
+                        size.width,
+                        size.height
+                    );
                 }
                 panel.hide();
                 let _ = app_handle.emit("main_hide_unhide", "hide");
             } else {
                 if let Some(ref w) = window {
-                    let pos = w.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
-                    let size = w.outer_size().unwrap_or(PhysicalSize { width: 0, height: 0 });
-                    log::info!("toggle_main_window SHOW (before reposition): pos=({}, {}), size={}x{}", pos.x, pos.y, size.width, size.height);
+                    let pos = w
+                        .outer_position()
+                        .unwrap_or(PhysicalPosition { x: 0, y: 0 });
+                    let size = w.outer_size().unwrap_or(PhysicalSize {
+                        width: 0,
+                        height: 0,
+                    });
+                    log::info!(
+                        "toggle_main_window SHOW (before reposition): pos=({}, {}), size={}x{}",
+                        pos.x,
+                        pos.y,
+                        size.width,
+                        size.height
+                    );
                 }
                 // Reposition to cursor's monitor before showing
                 reposition_to_cursor_monitor(app_handle);
                 // Apply any tray open/close that was deferred while hidden
                 sync_tray_size(app_handle);
                 if let Some(ref w) = window {
-                    let pos = w.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
-                    let size = w.outer_size().unwrap_or(PhysicalSize { width: 0, height: 0 });
-                    log::info!("toggle_main_window SHOW (after reposition): pos=({}, {}), size={}x{}", pos.x, pos.y, size.width, size.height);
+                    let pos = w
+                        .outer_position()
+                        .unwrap_or(PhysicalPosition { x: 0, y: 0 });
+                    let size = w.outer_size().unwrap_or(PhysicalSize {
+                        width: 0,
+                        height: 0,
+                    });
+                    log::info!(
+                        "toggle_main_window SHOW (after reposition): pos=({}, {}), size={}x{}",
+                        pos.x,
+                        pos.y,
+                        size.width,
+                        size.height
+                    );
                 }
                 // show_and_make_key shows the panel and makes it key window
                 // (receives keyboard input) without activating the app
                 panel.show_and_make_key();
                 if let Some(ref w) = window {
-                    let pos = w.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
-                    log::info!("toggle_main_window SHOW (after show_and_make_key): pos=({}, {})", pos.x, pos.y);
+                    let pos = w
+                        .outer_position()
+                        .unwrap_or(PhysicalPosition { x: 0, y: 0 });
+                    log::info!(
+                        "toggle_main_window SHOW (after show_and_make_key): pos=({}, {})",
+                        pos.x,
+                        pos.y
+                    );
                 }
                 let _ = app_handle.emit("main_hide_unhide", "unhide");
             }
@@ -589,27 +899,61 @@ fn toggle_main_window<R: Runtime>(app_handle: &AppHandle<R>) {
             let visible = window.is_visible().unwrap_or(false);
             let focused = window.is_focused().unwrap_or(false);
             if !visible {
-                let pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
-                let size = window.outer_size().unwrap_or(PhysicalSize { width: 0, height: 0 });
-                log::info!("toggle_main_window SHOW (before reposition): pos=({}, {}), size={}x{}", pos.x, pos.y, size.width, size.height);
+                let pos = window
+                    .outer_position()
+                    .unwrap_or(PhysicalPosition { x: 0, y: 0 });
+                let size = window.outer_size().unwrap_or(PhysicalSize {
+                    width: 0,
+                    height: 0,
+                });
+                log::info!(
+                    "toggle_main_window SHOW (before reposition): pos=({}, {}), size={}x{}",
+                    pos.x,
+                    pos.y,
+                    size.width,
+                    size.height
+                );
                 // Reposition to cursor's monitor before showing
                 reposition_to_cursor_monitor(app_handle);
                 // Apply any tray open/close that was deferred while hidden
                 sync_tray_size(app_handle);
-                let pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
-                log::info!("toggle_main_window SHOW (after reposition): pos=({}, {})", pos.x, pos.y);
+                let pos = window
+                    .outer_position()
+                    .unwrap_or(PhysicalPosition { x: 0, y: 0 });
+                log::info!(
+                    "toggle_main_window SHOW (after reposition): pos=({}, {})",
+                    pos.x,
+                    pos.y
+                );
                 let _ = window.show();
                 let _ = window.set_focus();
-                let pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
-                log::info!("toggle_main_window SHOW (after show): pos=({}, {})", pos.x, pos.y);
+                let pos = window
+                    .outer_position()
+                    .unwrap_or(PhysicalPosition { x: 0, y: 0 });
+                log::info!(
+                    "toggle_main_window SHOW (after show): pos=({}, {})",
+                    pos.x,
+                    pos.y
+                );
                 let _ = app_handle.emit("main_hide_unhide", "unhide");
             } else if !focused {
                 log::debug!("Window was not focused, setting focus");
                 let _ = window.set_focus();
             } else {
-                let pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
-                let size = window.outer_size().unwrap_or(PhysicalSize { width: 0, height: 0 });
-                log::info!("toggle_main_window HIDE: pos=({}, {}), size={}x{}", pos.x, pos.y, size.width, size.height);
+                let pos = window
+                    .outer_position()
+                    .unwrap_or(PhysicalPosition { x: 0, y: 0 });
+                let size = window.outer_size().unwrap_or(PhysicalSize {
+                    width: 0,
+                    height: 0,
+                });
+                log::info!(
+                    "toggle_main_window HIDE: pos=({}, {}), size={}x{}",
+                    pos.x,
+                    pos.y,
+                    size.width,
+                    size.height
+                );
                 let _ = window.hide();
                 let _ = app_handle.emit("main_hide_unhide", "hide");
             }
@@ -620,12 +964,165 @@ fn toggle_main_window<R: Runtime>(app_handle: &AppHandle<R>) {
 #[tauri::command]
 async fn hide_main<R: Runtime>(app_handle: AppHandle<R>) {
     if let Some(window) = app_handle.get_webview_window("main") {
-        let pos = window.outer_position().unwrap_or(PhysicalPosition { x: 0, y: 0 });
-        let size = window.outer_size().unwrap_or(PhysicalSize { width: 0, height: 0 });
-        log::info!("hide_main: pos=({}, {}), size={}x{}", pos.x, pos.y, size.width, size.height);
+        let pos = window
+            .outer_position()
+            .unwrap_or(PhysicalPosition { x: 0, y: 0 });
+        let size = window.outer_size().unwrap_or(PhysicalSize {
+            width: 0,
+            height: 0,
+        });
+        log::info!(
+            "hide_main: pos=({}, {}), size={}x{}",
+            pos.x,
+            pos.y,
+            size.width,
+            size.height
+        );
         let _ = window.hide();
         let _ = app_handle.emit("main_hide_unhide", "hide");
     }
+}
+
+fn persist_window_placement<R: Runtime>(
+    window: &WebviewWindow<R>,
+    position: PhysicalPosition<i32>,
+) {
+    let size = window.outer_size().unwrap_or(PhysicalSize {
+        width: 0,
+        height: 0,
+    });
+    let window_size = WindowDimensions {
+        width: size.width as f64,
+        height: size.height as f64,
+    };
+
+    let Some(monitor) = monitor_at_window_center(window, position, window_size)
+        .or_else(|| monitor_at_cursor(window))
+    else {
+        return;
+    };
+    let bounds = monitor_bounds(&monitor);
+    let placement = relative_placement_from_position(&bounds, window_size, position);
+    let mut placements = load_window_placements();
+    placements.monitors.insert(monitor_key(&monitor), placement);
+    save_window_placements(&placements);
+}
+
+fn finish_window_drag_if_current<R: Runtime>(app_handle: &AppHandle<R>, expected_active: bool) {
+    let saved_position = {
+        let guard = app_handle.state::<std::sync::Mutex<WindowDragState>>();
+        let mut state = guard.lock().expect("window drag state lock poisoned");
+        if expected_active && !state.active {
+            return;
+        }
+
+        state.active = false;
+        state.last_move_at = None;
+        state.settle_task_running = false;
+        let saved_position = state.last_position;
+        state.last_position = None;
+        saved_position
+    };
+
+    let Some(window) = app_handle.get_webview_window("main") else {
+        return;
+    };
+    let position = match window.outer_position() {
+        Ok(position) => position,
+        Err(_) => {
+            let Some(position) = saved_position else {
+                return;
+            };
+            position
+        }
+    };
+    persist_window_placement(&window, position);
+}
+
+fn schedule_window_drag_finish<R: Runtime>(app_handle: AppHandle<R>) {
+    let should_spawn = {
+        let guard = app_handle.state::<std::sync::Mutex<WindowDragState>>();
+        let mut state = guard.lock().expect("window drag state lock poisoned");
+        if state.settle_task_running {
+            false
+        } else {
+            state.settle_task_running = true;
+            true
+        }
+    };
+
+    if !should_spawn {
+        return;
+    }
+
+    tauri::async_runtime::spawn(async move {
+        loop {
+            tokio::time::sleep(Duration::from_millis(250)).await;
+
+            let should_finish = {
+                let guard = app_handle.state::<std::sync::Mutex<WindowDragState>>();
+                let mut state = guard.lock().expect("window drag state lock poisoned");
+                if !state.active {
+                    state.settle_task_running = false;
+                    return;
+                }
+
+                match state.last_move_at {
+                    Some(last_move_at) => {
+                        last_move_at.elapsed()
+                            >= Duration::from_millis(DRAG_FALLBACK_FINISH_DELAY_MS)
+                    }
+                    None => false,
+                }
+            };
+
+            if should_finish {
+                finish_window_drag_if_current(&app_handle, true);
+                return;
+            }
+        }
+    });
+}
+
+fn handle_window_moved<R: Runtime>(app_handle: &AppHandle<R>, position: PhysicalPosition<i32>) {
+    {
+        let guard = app_handle.state::<std::sync::Mutex<WindowDragState>>();
+        let mut state = guard.lock().expect("window drag state lock poisoned");
+        if !state.active {
+            return;
+        }
+
+        state.last_position = Some(drag_position_for_window_move(position));
+        state.last_move_at = Some(Instant::now());
+    }
+    schedule_window_drag_finish(app_handle.clone());
+}
+
+fn register_window_move_handler<R: Runtime>(app_handle: AppHandle<R>) {
+    let Some(window) = app_handle.get_webview_window("main") else {
+        return;
+    };
+    let move_app_handle = app_handle.clone();
+    window.on_window_event(move |event| {
+        if let WindowEvent::Moved(position) = event {
+            handle_window_moved(&move_app_handle, *position);
+        }
+    });
+}
+
+#[tauri::command]
+fn begin_window_drag<R: Runtime>(app_handle: AppHandle<R>) {
+    let guard = app_handle.state::<std::sync::Mutex<WindowDragState>>();
+    let mut state = guard.lock().expect("window drag state lock poisoned");
+    state.active = true;
+    state.last_position = None;
+    state.last_move_at = None;
+    state.settle_task_running = false;
+}
+
+#[tauri::command]
+fn finish_window_drag<R: Runtime>(app_handle: AppHandle<R>) {
+    finish_window_drag_if_current(&app_handle, false);
 }
 
 #[tauri::command]
@@ -648,10 +1145,16 @@ async fn close_splashscreen<R: Runtime>(window: WebviewWindow<R>) {
 async fn trim_path(path: String) -> Result<String, SerError> {
     let path = std::path::Path::new(&path);
     let parent_path = path.parent().ok_or_else(|| {
-        std::io::Error::new(std::io::ErrorKind::InvalidInput, "Path has no parent directory")
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "Path has no parent directory",
+        )
     })?;
     let parent_str = parent_path.to_str().ok_or_else(|| {
-        std::io::Error::new(std::io::ErrorKind::InvalidData, "Path contains invalid UTF-8")
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "Path contains invalid UTF-8",
+        )
     })?;
     Ok(parent_str.to_string())
 }
@@ -739,8 +1242,7 @@ async fn get_config_dir() -> Result<String, SerError> {
 
 fn main() {
     // Load .env file - try project root first (for dev), then current dir (for release)
-    let _ = dotenvy::from_filename(".env")
-        .or_else(|_| dotenvy::from_filename("../.env"));
+    let _ = dotenvy::from_filename(".env").or_else(|_| dotenvy::from_filename("../.env"));
 
     // Get log level from RUST_LOG_LEVEL env var, default to "info"
     let log_level = std::env::var("RUST_LOG_LEVEL").unwrap_or_else(|_| "info".to_string());
@@ -787,11 +1289,14 @@ fn main() {
     builder
         .manage(KillChannel::default())
         .manage(Mutex::new(TrayState::default()))
+        .manage(std::sync::Mutex::new(WindowDragState::default()))
         .invoke_handler(tauri::generate_handler![
             run_program,
             stop_running,
             open_tray,
             close_tray,
+            begin_window_drag,
+            finish_window_drag,
             close_splashscreen,
             get_config_files,
             hide_main,
@@ -815,8 +1320,9 @@ fn main() {
                 .item(&toggle)
                 .build()?;
 
-            let tray_icon = tauri::image::Image::from_bytes(include_bytes!("../icons/peach-menu-bar.png"))
-                .expect("Failed to load tray icon");
+            let tray_icon =
+                tauri::image::Image::from_bytes(include_bytes!("../icons/peach-menu-bar.png"))
+                    .expect("Failed to load tray icon");
             let _tray = TrayIconBuilder::new()
                 .icon(tray_icon)
                 .icon_as_template(true)
@@ -896,7 +1402,9 @@ fn main() {
                 settings.start_minimised,
                 settings.always_on_top,
                 settings.max_window_width,
+                settings.reshow_in_center,
             );
+            register_window_move_handler(app.handle().clone());
 
             Ok(())
         })
@@ -960,43 +1468,46 @@ fn get_general_settings() -> Result<GeneralSettings, Box<dyn std::error::Error>>
     Ok(settings)
 }
 
-fn setup_main_window(app_handle: AppHandle, start_hidden: bool, on_top: bool, max_window_width: f64) {
+fn setup_main_window(
+    app_handle: AppHandle,
+    start_hidden: bool,
+    on_top: bool,
+    max_window_width: f64,
+    reshow_in_center: bool,
+) {
     let window = app_handle.get_webview_window("main").unwrap();
-    let monitor = window
-        .primary_monitor()
-        .unwrap_or_else(|_err| {
-            window
-                .current_monitor()
-                .expect("Couldn't get current monitor")
-        })
+    let monitor = monitor_at_cursor(&window)
+        .or_else(|| window.primary_monitor().ok().flatten())
+        .or_else(|| window.current_monitor().ok().flatten())
         .expect("Couldn't get monitor");
 
-    let screen_width = monitor.size().width as f64;
-    let screen_height = monitor.size().height as f64;
-
-    let phys_width = (screen_width * SCREEN_TO_WIDTH_RATIO).min(max_window_width);
-    let phys_height = phys_width * HEIGHT_TO_WIDTH_RATIO;
-    let phys_tray_height = phys_height * TRAY_TO_BAR_RATIO;
-
-    // Calculate position directly in physical coordinates to avoid logical/physical mismatch
-    let x = ((screen_width - phys_width) / 2.0) as i32;
-    let y = ((screen_height - phys_height) / 2.0 - (screen_height * Y_OFFSET_RATIO)) as i32;
+    let bounds = monitor_bounds(&monitor);
+    let dimensions = window_dimensions_from_monitor(bounds.width, max_window_width);
+    let phys_tray_height = dimensions.height * TRAY_TO_BAR_RATIO;
+    let window_size = WindowDimensions {
+        width: dimensions.width,
+        height: dimensions.height,
+    };
+    let placements = load_window_placements();
+    let saved = placements.monitors.get(&monitor_key(&monitor)).copied();
+    let target_position =
+        startup_position_for_monitor(&bounds, window_size, saved, reshow_in_center);
 
     let guard = app_handle.state::<Mutex<TrayState>>();
     let mut state = tauri::async_runtime::block_on(guard.lock());
     *state = TrayState {
-        width: phys_width,
-        tray_closed_height: phys_height,
-        tray_open_height: phys_tray_height + phys_height,
+        width: dimensions.width,
+        tray_closed_height: dimensions.height,
+        tray_open_height: phys_tray_height + dimensions.height,
         currently_open: false,
         max_window_width,
     };
 
     let _ = window.set_size(Size::Physical(PhysicalSize {
-        width: phys_width as u32,
-        height: phys_height as u32,
+        width: dimensions.width as u32,
+        height: dimensions.height as u32,
     }));
-    let _ = window.set_position(PhysicalPosition { x, y });
+    let _ = window.set_position(target_position);
 
     if on_top {
         let _ = window.set_always_on_top(on_top);

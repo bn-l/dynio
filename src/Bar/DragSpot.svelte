@@ -6,15 +6,46 @@
 <div
     id="dragSpot"
     class="absolute right-0 top-3 bottom-3 w-[2%] rounded-md cursor-grab"
-    
-    on:mousedown={() => {
-        appWindow.startDragging();
-    }}
+    on:mousedown={startDrag}
 ></div>
 
 
 
 <script lang="ts">
+    import { invoke } from "@tauri-apps/api/core";
     import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-const appWindow = getCurrentWebviewWindow()
+    import { onDestroy } from "svelte";
+
+    const appWindow = getCurrentWebviewWindow();
+    let clearDragListeners: (() => void) | undefined;
+
+    function startNativeDrag() {
+        void invoke("begin_window_drag");
+        void appWindow.startDragging();
+    }
+
+    function startDrag(event: MouseEvent) {
+        if (event.button !== 0) return;
+
+        clearDragListeners?.();
+        startNativeDrag();
+
+        const finishDrag = () => {
+            clearDragListeners?.();
+            void invoke("finish_window_drag");
+        };
+
+        clearDragListeners = () => {
+            window.removeEventListener("mouseup", finishDrag);
+            window.removeEventListener("blur", finishDrag);
+            clearDragListeners = undefined;
+        };
+
+        window.addEventListener("mouseup", finishDrag);
+        window.addEventListener("blur", finishDrag);
+    }
+
+    onDestroy(() => {
+        clearDragListeners?.();
+    });
 </script>
