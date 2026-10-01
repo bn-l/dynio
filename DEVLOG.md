@@ -1,5 +1,22 @@
 # Devlog
 
+## 2026-10-02: Window not centred on launch
+
+**Symptom**: On launch the bar appeared off-centre, wherever it had last been dragged, instead of in the middle of the screen.
+
+**Root cause**: Since 2026-05-30, drag positions were written to `window-placement.yaml` and restored on launch as well as on reveal. One drag moved every later launch, including across the dev build and the installed app, which share the file. Separately, when there was no drag position (or `reshowInCenter` was on), reveal centred the window at its *current* height. With the tray still open, that centred the tall window and put the bar about 158pt higher than usual.
+
+**Fix**:
+- Drag positions are kept in memory only (`WindowPlacementStore` managed state). Every launch starts centred, and drags are remembered until quit. `window-placement.yaml` is no longer read or written.
+- `show_position_for_monitor` takes the closed bar size and the real window size separately. Centring always uses the bar; the real size is only used to keep the window on screen.
+- Startup calls the same function with no drag position, so launch → hide → show doesn't jump.
+- `setup_main_window` now logs where it put the window. Startup wasn't logged before, which made this hard to diagnose.
+
+**Regression tests** (`tests/window.rs`):
+- The centred bar lands in the same place whether the tray is open or closed.
+- `reshowInCenter` centres the bar, not the open tray.
+- A centred open tray is moved up to stay on a short monitor.
+
 ## 2026-05-30: Drag smoothness + saved placement with tray height changes
 
 **Symptom**: Dragging the bar was choppy and used too much CPU after switching to a custom JS mousemove loop. The same change also reintroduced a position drift bug: if the tray expanded, the window was hidden, and the empty state caused the tray to close before the next reveal, the bar could jump lower on show.
