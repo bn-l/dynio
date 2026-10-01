@@ -162,6 +162,15 @@
         enabled: $currentTrayView === "cmdSelector",
     }}
     use:hotkeys={{
+        handler(event) {
+            event.preventDefault();
+            upDownListHandler(event, event.code === "KeyJ" ? 1 : -1);
+        },
+        codes: ["KeyJ", "KeyK"],
+        modifiers: ["CmdOrCtrl"],
+        enabled: $currentTrayView === "cmdSelector",
+    }}
+    use:hotkeys={{
         handler() {
             if ($currentTrayView === "cmdSelector") {
                 $currentTrayView = "stdout";

@@ -394,6 +394,63 @@ describe('CmdSelector.svelte', () => {
         });
     });
 
+    describe('Cmd/Ctrl+J/K navigation', () => {
+        it('Ctrl+J moves down and Cmd+K moves up', async () => {
+            cmdConfig.set({ cmd1: createConfig(), cmd2: createConfig(), cmd3: createConfig() });
+            currentCmd.set('cmd1');
+
+            const { container } = render(CmdSelector);
+            const items = () => container.querySelectorAll('.cmd-item');
+
+            await fireEvent.keyDown(document.body, { key: 'j', code: 'KeyJ', ctrlKey: true });
+            await new Promise((resolve) => setTimeout(resolve, 30));
+            await vi.waitFor(() => expect(items()[1].classList.contains('item-selected')).toBe(true));
+
+            await fireEvent.keyDown(document.body, { key: 'k', code: 'KeyK', metaKey: true });
+            await new Promise((resolve) => setTimeout(resolve, 30));
+            await vi.waitFor(() => expect(items()[0].classList.contains('item-selected')).toBe(true));
+        });
+
+        it('works when Ctrl+J gives a control character as the key (macOS)', async () => {
+            cmdConfig.set({ cmd1: createConfig(), cmd2: createConfig() });
+            currentCmd.set('cmd1');
+
+            const { container } = render(CmdSelector);
+
+            await fireEvent.keyDown(document.body, { key: '\n', code: 'KeyJ', ctrlKey: true });
+            await new Promise((resolve) => setTimeout(resolve, 30));
+
+            await vi.waitFor(() => {
+                expect(container.querySelectorAll('.cmd-item')[1].classList.contains('item-selected')).toBe(true);
+            });
+        });
+
+        it('plain J does not move the selection', async () => {
+            cmdConfig.set({ cmd1: createConfig(), cmd2: createConfig() });
+            currentCmd.set('cmd1');
+
+            const { container } = render(CmdSelector);
+
+            await fireEvent.keyDown(document.body, { key: 'j', code: 'KeyJ' });
+            await new Promise((resolve) => setTimeout(resolve, 30));
+
+            expect(container.querySelectorAll('.cmd-item')[0].classList.contains('item-selected')).toBe(true);
+        });
+
+        it('Ctrl+J does not select the command', async () => {
+            cmdConfig.set({ cmd1: createConfig(), cmd2: createConfig() });
+            currentCmd.set('cmd1');
+
+            render(CmdSelector);
+
+            await fireEvent.keyDown(document.body, { key: '\n', code: 'KeyJ', ctrlKey: true });
+            await new Promise((resolve) => setTimeout(resolve, 30));
+
+            expect(get(currentCmd)).toBe('cmd1');
+            expect(get(currentTrayView)).toBe('cmdSelector');
+        });
+    });
+
     describe('Enter key selection', () => {
         it('Enter selects command and updates $currentCmd', async () => {
             cmdConfig.set({

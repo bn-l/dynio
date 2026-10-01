@@ -672,4 +672,105 @@ describe('ListDisplay.svelte', () => {
             expect(mockInvoke).not.toHaveBeenCalledWith('trim_path', expect.anything());
         });
     });
+
+    describe('Cmd/Ctrl+J/K navigation', () => {
+        const pause = () => new Promise((resolve) => setTimeout(resolve, 30));
+        const selectedId = (container: HTMLElement) => container.querySelector('.item-selected')?.id;
+
+        it('Ctrl+J moves down and Ctrl+K moves up', async () => {
+            stdout.set(['item1', 'item2', 'item3']);
+
+            const { container } = render(ListDisplay);
+
+            await fireEvent.keyDown(document.body, { key: 'j', code: 'KeyJ', ctrlKey: true });
+            await pause();
+            await vi.waitFor(() => expect(selectedId(container)).toBe('item-1'));
+
+            await fireEvent.keyDown(document.body, { key: 'k', code: 'KeyK', ctrlKey: true });
+            await pause();
+            await vi.waitFor(() => expect(selectedId(container)).toBe('item-0'));
+        });
+
+        it('Cmd+J and Cmd+K work too', async () => {
+            stdout.set(['item1', 'item2', 'item3']);
+
+            const { container } = render(ListDisplay);
+
+            await fireEvent.keyDown(document.body, { key: 'j', code: 'KeyJ', metaKey: true });
+            await pause();
+            await fireEvent.keyDown(document.body, { key: 'j', code: 'KeyJ', metaKey: true });
+            await pause();
+            await vi.waitFor(() => expect(selectedId(container)).toBe('item-2'));
+
+            await fireEvent.keyDown(document.body, { key: 'k', code: 'KeyK', metaKey: true });
+            await pause();
+            await vi.waitFor(() => expect(selectedId(container)).toBe('item-1'));
+        });
+
+        it('works when Ctrl+letter gives a control character as the key (macOS)', async () => {
+            stdout.set(['item1', 'item2']);
+
+            const { container } = render(ListDisplay);
+
+            await fireEvent.keyDown(document.body, { key: '\n', code: 'KeyJ', ctrlKey: true });
+            await pause();
+
+            await vi.waitFor(() => expect(selectedId(container)).toBe('item-1'));
+        });
+
+        it('stays within the list at both ends', async () => {
+            stdout.set(['item1', 'item2']);
+
+            const { container } = render(ListDisplay);
+
+            await fireEvent.keyDown(document.body, { key: 'k', code: 'KeyK', ctrlKey: true });
+            await pause();
+            expect(selectedId(container)).toBe('item-0');
+
+            for (let i = 0; i < 3; i++) {
+                await fireEvent.keyDown(document.body, { key: 'j', code: 'KeyJ', ctrlKey: true });
+                await pause();
+            }
+            await vi.waitFor(() => expect(selectedId(container)).toBe('item-1'));
+        });
+
+        it('plain j and k (typing) do not move the selection', async () => {
+            stdout.set(['item1', 'item2']);
+
+            const { container } = render(ListDisplay);
+
+            await fireEvent.keyDown(document.body, { key: 'j', code: 'KeyJ' });
+            await pause();
+            await fireEvent.keyDown(document.body, { key: 'k', code: 'KeyK' });
+            await pause();
+
+            expect(selectedId(container)).toBe('item-0');
+        });
+
+        it('prevents the default action, even for repeats the debounce drops', async () => {
+            stdout.set(['item1', 'item2', 'item3']);
+
+            render(ListDisplay);
+
+            const first = new KeyboardEvent('keydown', { key: 'k', code: 'KeyK', ctrlKey: true, bubbles: true, cancelable: true });
+            const repeat = new KeyboardEvent('keydown', { key: 'k', code: 'KeyK', ctrlKey: true, bubbles: true, cancelable: true });
+            document.body.dispatchEvent(first);
+            document.body.dispatchEvent(repeat); // within the 16ms debounce window
+
+            expect(first.defaultPrevented).toBe(true);
+            expect(repeat.defaultPrevented).toBe(true);
+        });
+
+        it('Ctrl+J never activates the selected item', async () => {
+            stdout.set(['item1', 'item2']);
+
+            render(ListDisplay);
+
+            await fireEvent.keyDown(document.body, { key: '\n', code: 'KeyJ', ctrlKey: true });
+            await pause();
+
+            expect(mockWriteText).not.toHaveBeenCalled();
+            expect(mockOpenPath).not.toHaveBeenCalled();
+        });
+    });
 });

@@ -168,6 +168,16 @@
         enabled: true,
     }}
     use:hotkeys={{
+        handler(event) {
+            // Prevent up front: the debounce drops repeats, and Ctrl+K would delete the rest of the input line
+            event.preventDefault();
+            upDownListHandler(event, event.code === "KeyJ" ? 1 : -1);
+        },
+        codes: ["KeyJ", "KeyK"],
+        modifiers: ["CmdOrCtrl"],
+        enabled: true,
+    }}
+    use:hotkeys={{
         handler() {
             console.debug("enter pressed")
             if($currentCmdConfig?.runOnEnter) return;
