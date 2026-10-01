@@ -529,4 +529,65 @@ describe('hotkeys action', () => {
             expect(handler).toHaveBeenCalledTimes(2);
         });
     });
+
+    describe('codes (physical keys)', () => {
+        function createCodeEvent(code: string, key: string, options: Parameters<typeof createKeyboardEvent>[1] = {}) {
+            const event = createKeyboardEvent(key, options);
+            Object.defineProperty(event, 'code', { value: code });
+            return event;
+        }
+
+        it('matches by code even when event.key is a control character (macOS Ctrl+letter)', () => {
+            hotkeys(node, { codes: ['KeyJ', 'KeyK'], modifiers: ['CmdOrCtrl'], handler });
+
+            node.dispatchEvent(createCodeEvent('KeyJ', '\n', { ctrlKey: true }));
+            node.dispatchEvent(createCodeEvent('KeyK', '\v', { ctrlKey: true }));
+            expect(handler).toHaveBeenCalledTimes(2);
+        });
+
+        it('matches by code with Meta', () => {
+            hotkeys(node, { codes: ['KeyJ'], modifiers: ['CmdOrCtrl'], handler });
+
+            node.dispatchEvent(createCodeEvent('KeyJ', 'j', { metaKey: true }));
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+
+        it('still requires the modifiers', () => {
+            hotkeys(node, { codes: ['KeyJ'], modifiers: ['CmdOrCtrl'], handler });
+
+            node.dispatchEvent(createCodeEvent('KeyJ', 'j'));
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('does not fire for other codes', () => {
+            hotkeys(node, { codes: ['KeyJ'], modifiers: ['CmdOrCtrl'], handler });
+
+            node.dispatchEvent(createCodeEvent('KeyL', 'l', { ctrlKey: true }));
+            node.dispatchEvent(createCodeEvent('Enter', 'Enter', { ctrlKey: true }));
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('matches codes exactly, not case-insensitively or by key', () => {
+            hotkeys(node, { codes: ['KeyJ'], handler });
+
+            node.dispatchEvent(createCodeEvent('keyj', 'x'));
+            node.dispatchEvent(createCodeEvent('KeyX', 'KeyJ'));
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('keys and codes can be combined', () => {
+            hotkeys(node, { keys: ['a'], codes: ['KeyJ'], handler });
+
+            node.dispatchEvent(createCodeEvent('KeyA', 'a'));
+            node.dispatchEvent(createCodeEvent('KeyJ', 'j'));
+            expect(handler).toHaveBeenCalledTimes(2);
+        });
+
+        it('keys-only options ignore event.code', () => {
+            hotkeys(node, { keys: ['a'], handler });
+
+            node.dispatchEvent(createCodeEvent('KeyA', 'b'));
+            expect(handler).not.toHaveBeenCalled();
+        });
+    });
 });
