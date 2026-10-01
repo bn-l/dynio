@@ -473,7 +473,6 @@ mod setup_main_window_behavior {
         //     settings.start_minimised,  // -> start_hidden
         //     settings.always_on_top,    // -> on_top
         //     settings.max_window_width,
-        //     settings.reshow_in_center,
         // );
         let start_minimised = true;
         let always_on_top = false;

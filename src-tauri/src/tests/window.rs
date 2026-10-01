@@ -170,7 +170,8 @@ fn show_position_uses_saved_monitor_relative_placement_when_reshow_in_center_is_
         y_ratio: 0.40,
     };
 
-    let position = show_position_for_monitor(&monitor, window_size, Some(saved), false);
+    let position =
+        show_position_for_monitor(&monitor, window_size, window_size, Some(saved), false);
     let centered = centered_window_position(&monitor, window_size);
 
     assert_eq!(position.x, 2400);
@@ -180,26 +181,80 @@ fn show_position_uses_saved_monitor_relative_placement_when_reshow_in_center_is_
 }
 
 #[test]
-fn startup_position_uses_same_saved_placement_as_first_reveal() {
+fn centred_bar_lands_in_same_place_whether_tray_is_open_or_closed() {
+    let monitor = MonitorBounds {
+        x: 0,
+        y: 0,
+        width: 1920.0,
+        height: 1080.0,
+    };
+    let bar_size = WindowDimensions {
+        width: 800.0,
+        height: 120.0,
+    };
+    let open_tray_size = WindowDimensions {
+        width: 800.0,
+        height: 120.0 * (1.0 + TRAY_TO_BAR_RATIO),
+    };
+
+    let closed = show_position_for_monitor(&monitor, bar_size, bar_size, None, false);
+    let open = show_position_for_monitor(&monitor, bar_size, open_tray_size, None, false);
+
+    assert_eq!(closed, centered_window_position(&monitor, bar_size));
+    assert_eq!(open, closed);
+}
+
+#[test]
+fn reshow_in_center_centres_the_bar_not_the_open_tray() {
     let monitor = MonitorBounds {
         x: 1920,
         y: 0,
         width: 1920.0,
         height: 1080.0,
     };
-    let window_size = WindowDimensions {
+    let bar_size = WindowDimensions {
         width: 800.0,
         height: 120.0,
     };
+    let open_tray_size = WindowDimensions {
+        width: 800.0,
+        height: 120.0 * (1.0 + TRAY_TO_BAR_RATIO),
+    };
     let saved = RelativeWindowPlacement {
-        x_ratio: 0.25,
-        y_ratio: 0.40,
+        x_ratio: 0.10,
+        y_ratio: 0.80,
     };
 
-    let startup_position = startup_position_for_monitor(&monitor, window_size, Some(saved), false);
-    let reveal_position = show_position_for_monitor(&monitor, window_size, Some(saved), false);
+    let position = show_position_for_monitor(&monitor, bar_size, open_tray_size, Some(saved), true);
 
-    assert_eq!(startup_position, reveal_position);
+    assert_eq!(position, centered_window_position(&monitor, bar_size));
+    assert_ne!(position, centered_window_position(&monitor, open_tray_size));
+}
+
+#[test]
+fn centred_open_tray_is_moved_up_to_stay_on_a_short_monitor() {
+    let monitor = MonitorBounds {
+        x: 0,
+        y: 0,
+        width: 1920.0,
+        height: 600.0,
+    };
+    let bar_size = WindowDimensions {
+        width: 800.0,
+        height: 120.0,
+    };
+    let open_tray_size = WindowDimensions {
+        width: 800.0,
+        height: 486.0,
+    };
+    let centered = centered_window_position(&monitor, bar_size);
+
+    let position = show_position_for_monitor(&monitor, bar_size, open_tray_size, None, false);
+
+    // Centring the bar puts the tray's bottom at 696, past the monitor's 600
+    assert!(centered.y + 486 > 600);
+    assert_eq!(position.x, centered.x);
+    assert_eq!(position.y, 600 - 486);
 }
 
 #[test]
@@ -217,7 +272,7 @@ fn show_position_uses_center_without_saved_placement_even_after_hidden_position_
     let drifted_hidden_position = PhysicalPosition { x: 420, y: 720 };
     let centered = centered_window_position(&monitor, window_size);
 
-    let position = show_position_for_monitor(&monitor, window_size, None, false);
+    let position = show_position_for_monitor(&monitor, window_size, window_size, None, false);
 
     assert_ne!(drifted_hidden_position, centered);
     assert_ne!(position, drifted_hidden_position);
@@ -241,7 +296,7 @@ fn show_position_uses_center_when_reshow_in_center_is_true_even_with_saved_place
         y_ratio: 0.80,
     };
 
-    let position = show_position_for_monitor(&monitor, window_size, Some(saved), true);
+    let position = show_position_for_monitor(&monitor, window_size, window_size, Some(saved), true);
     let centered = centered_window_position(&monitor, window_size);
 
     assert_eq!(position, centered);

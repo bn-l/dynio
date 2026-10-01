@@ -71,14 +71,15 @@ struct WindowDimensions {
     height: f64,
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Clone, Copy, Debug, PartialEq)]
 struct RelativeWindowPlacement {
     x_ratio: f64,
     y_ratio: f64,
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+/// Where the window was last dragged to on each monitor. Kept in memory only, so every
+/// launch starts centred and drags are remembered until the app quits.
+#[derive(Debug, Default)]
 struct WindowPlacementStore {
     monitors: HashMap<String, RelativeWindowPlacement>,
 }
@@ -417,36 +418,6 @@ impl Default for TrayState {
     }
 }
 
-fn window_placement_path() -> std::path::PathBuf {
-    config_dir().join("window-placement.yaml")
-}
-
-fn load_window_placements() -> WindowPlacementStore {
-    let path = window_placement_path();
-    let Ok(text) = std::fs::read_to_string(&path) else {
-        return WindowPlacementStore::default();
-    };
-    match serde_yaml::from_str(&text) {
-        Ok(store) => store,
-        Err(err) => {
-            log::warn!("Could not parse {:?}: {:?}", path, err);
-            WindowPlacementStore::default()
-        }
-    }
-}
-
-fn save_window_placements(store: &WindowPlacementStore) {
-    let path = window_placement_path();
-    match serde_yaml::to_string(store) {
-        Ok(text) => {
-            if let Err(err) = std::fs::write(&path, text) {
-                log::warn!("Could not write {:?}: {:?}", path, err);
-            }
-        }
-        Err(err) => log::warn!("Could not serialize window placements: {:?}", err),
-    }
-}
-
 fn clamp_i32(value: i32, min: i32, max: i32) -> i32 {
     value.clamp(min, max.max(min))
 }
@@ -507,29 +478,27 @@ fn relative_placement_from_position(
     }
 }
 
+/// Picks where to show the window: where it was last dragged to on this monitor, or
+/// centred if it hasn't been dragged (or `reshow_in_center` is on).
+///
+/// The window can be two heights (closed bar, or bar plus open tray). Centring always uses
+/// the closed bar, so the bar lands in the same spot whether or not the tray is open. The
+/// window's real size (`window_size`) is only used to keep it on screen.
 fn show_position_for_monitor(
     monitor: &MonitorBounds,
+    bar_size: WindowDimensions,
     window_size: WindowDimensions,
     saved: Option<RelativeWindowPlacement>,
     reshow_in_center: bool,
 ) -> PhysicalPosition<i32> {
-    if reshow_in_center {
-        return centered_window_position(monitor, window_size);
-    }
-
-    match saved {
+    match saved.filter(|_| !reshow_in_center) {
         Some(placement) => position_from_saved_placement(monitor, window_size, placement),
-        None => centered_window_position(monitor, window_size),
+        None => clamp_position_to_monitor(
+            monitor,
+            window_size,
+            centered_window_position(monitor, bar_size),
+        ),
     }
-}
-
-fn startup_position_for_monitor(
-    monitor: &MonitorBounds,
-    window_size: WindowDimensions,
-    saved: Option<RelativeWindowPlacement>,
-    reshow_in_center: bool,
-) -> PhysicalPosition<i32> {
-    show_position_for_monitor(monitor, window_size, saved, reshow_in_center)
 }
 
 fn drag_position_for_window_move(position: PhysicalPosition<i32>) -> PhysicalPosition<i32> {
@@ -787,10 +756,20 @@ fn reposition_to_cursor_monitor<R: Runtime>(app_handle: &AppHandle<R>) {
         width: dimensions.width,
         height,
     };
-    let placements = load_window_placements();
-    let saved = placements.monitors.get(&monitor_key(&monitor)).copied();
-    let target_position =
-        show_position_for_monitor(&bounds, window_size, saved, reshow_in_center_setting());
+    let saved = app_handle
+        .state::<std::sync::Mutex<WindowPlacementStore>>()
+        .lock()
+        .expect("window placement lock poisoned")
+        .monitors
+        .get(&monitor_key(&monitor))
+        .copied();
+    let target_position = show_position_for_monitor(
+        &bounds,
+        dimensions,
+        window_size,
+        saved,
+        reshow_in_center_setting(),
+    );
 
     let _ = window.set_size(Size::Physical(PhysicalSize {
         width: dimensions.width as u32,
@@ -983,7 +962,7 @@ async fn hide_main<R: Runtime>(app_handle: AppHandle<R>) {
     }
 }
 
-fn persist_window_placement<R: Runtime>(
+fn remember_window_placement<R: Runtime>(
     window: &WebviewWindow<R>,
     position: PhysicalPosition<i32>,
 ) {
@@ -1003,9 +982,12 @@ fn persist_window_placement<R: Runtime>(
     };
     let bounds = monitor_bounds(&monitor);
     let placement = relative_placement_from_position(&bounds, window_size, position);
-    let mut placements = load_window_placements();
-    placements.monitors.insert(monitor_key(&monitor), placement);
-    save_window_placements(&placements);
+    window
+        .state::<std::sync::Mutex<WindowPlacementStore>>()
+        .lock()
+        .expect("window placement lock poisoned")
+        .monitors
+        .insert(monitor_key(&monitor), placement);
 }
 
 fn finish_window_drag_if_current<R: Runtime>(app_handle: &AppHandle<R>, expected_active: bool) {
@@ -1036,7 +1018,7 @@ fn finish_window_drag_if_current<R: Runtime>(app_handle: &AppHandle<R>, expected
             position
         }
     };
-    persist_window_placement(&window, position);
+    remember_window_placement(&window, position);
 }
 
 fn schedule_window_drag_finish<R: Runtime>(app_handle: AppHandle<R>) {
@@ -1290,6 +1272,7 @@ fn main() {
         .manage(KillChannel::default())
         .manage(Mutex::new(TrayState::default()))
         .manage(std::sync::Mutex::new(WindowDragState::default()))
+        .manage(std::sync::Mutex::new(WindowPlacementStore::default()))
         .invoke_handler(tauri::generate_handler![
             run_program,
             stop_running,
@@ -1402,7 +1385,6 @@ fn main() {
                 settings.start_minimised,
                 settings.always_on_top,
                 settings.max_window_width,
-                settings.reshow_in_center,
             );
             register_window_move_handler(app.handle().clone());
 
@@ -1473,7 +1455,6 @@ fn setup_main_window(
     start_hidden: bool,
     on_top: bool,
     max_window_width: f64,
-    reshow_in_center: bool,
 ) {
     let window = app_handle.get_webview_window("main").unwrap();
     let monitor = monitor_at_cursor(&window)
@@ -1484,14 +1465,19 @@ fn setup_main_window(
     let bounds = monitor_bounds(&monitor);
     let dimensions = window_dimensions_from_monitor(bounds.width, max_window_width);
     let phys_tray_height = dimensions.height * TRAY_TO_BAR_RATIO;
-    let window_size = WindowDimensions {
-        width: dimensions.width,
-        height: dimensions.height,
-    };
-    let placements = load_window_placements();
-    let saved = placements.monitors.get(&monitor_key(&monitor)).copied();
-    let target_position =
-        startup_position_for_monitor(&bounds, window_size, saved, reshow_in_center);
+    // Nothing has been dragged yet this run, so this matches the first reveal
+    let target_position = show_position_for_monitor(&bounds, dimensions, dimensions, None, false);
+    log::info!(
+        "setup_main_window: placing {}x{} at ({}, {}) on monitor at pos=({}, {}), size={}x{}",
+        dimensions.width as u32,
+        dimensions.height as u32,
+        target_position.x,
+        target_position.y,
+        bounds.x,
+        bounds.y,
+        bounds.width,
+        bounds.height
+    );
 
     let guard = app_handle.state::<Mutex<TrayState>>();
     let mut state = tauri::async_runtime::block_on(guard.lock());
