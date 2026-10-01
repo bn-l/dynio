@@ -1,5 +1,5 @@
 
-<DisplayWrapper padding="px-2 pt-2">
+<DisplayWrapper padding="px-2">
     <div
         id="listDisplay"
         style={displayOptions?.fontSize ? `font-size: ${displayOptions.fontSize}rem` : ""}
@@ -10,7 +10,7 @@
                 class="list-item {index === selectedIndex ? 'item-selected' : 'item-hover'}"
             >
                 <div
-                    class="list-item-inner cursor-pointer break-all"
+                    class="list-item-inner flex items-center gap-3 cursor-pointer"
                     on:click={() => {
                         selectedIndex = index;
                         onActivation?.(item.raw);
@@ -21,11 +21,19 @@
                         event.preventDefault();
                     }}
                 >
-                    {#if parseAnsiColors}
-                        {@html item.display}
-                    {:else}
-                        {item.display}
+                    {#if activationOptions?.isPath}
+                        <span class="row-icon"><FileIcon kind={fileKind(item.raw)} /></span>
                     {/if}
+                    <span class="row-text flex-1 min-w-0 break-all">
+                        {#if parseAnsiColors}
+                            {@html item.display}
+                        {:else}
+                            {item.display}
+                        {/if}
+                    </span>
+                    <!-- On every row but only visible on the selected one, so moving the selection
+                         never changes how a row's text wraps -->
+                    <span class="row-hint" class:row-hint-hidden={index !== selectedIndex} aria-hidden="true">{activateKey}</span>
                 </div>
             </div>
         {/each}
@@ -40,24 +48,23 @@
     import { stdout, statusBar, keySymbols } from "$lib/stores/globals.ts";
     import type { StatusBarAction } from "$lib/stores/globals.ts";
     import { activate } from "$lib/utils/activator.ts";
+    import { fileKind } from "$lib/utils/fileKind.ts";
     import { processListOutput, type ProcessedItem } from "./processListOutput.ts";
     import DisplayWrapper from "$lib/utils/DisplayWrapper.svelte";
+    import FileIcon from "./FileIcon.svelte";
 
     $: modeConfig = $currentCmdConfig?.modeConfig;
     $: parseAnsiColors = modeConfig?.displayOptions?.parseAnsiColors;
     $: displayOptions = modeConfig?.mode === "list" ? modeConfig.displayOptions : undefined;
     $: activationOptions = modeConfig?.mode === "list" ? modeConfig.activationOptions : undefined;
     $: runOnEnter = $currentCmdConfig?.runOnEnter;
+    // Shared by the status bar and the selected row's hint so they can't disagree
+    $: activateKey = runOnEnter ? `${keySymbols.cmd}+${keySymbols.enter}` : keySymbols.enter;
 
     $: {
-        const actions: StatusBarAction[] = [];
-        const activateAction = activationOptions?.activateAction ?? "copy";
-
-        if (runOnEnter) {
-            actions.push({ key: `${keySymbols.cmd}+${keySymbols.enter}`, label: activateAction });
-        } else {
-            actions.push({ key: keySymbols.enter, label: activateAction });
-        }
+        const actions: StatusBarAction[] = [
+            { key: activateKey, label: activationOptions?.activateAction ?? "copy" },
+        ];
 
         if (activationOptions?.isPath) {
             actions.push({ key: `${keySymbols.cmd}+O`, label: "reveal" });

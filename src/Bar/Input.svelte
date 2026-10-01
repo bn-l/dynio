@@ -1,15 +1,18 @@
 
 
-<div>
+<div class="flex items-center gap-3">
     <div
         id="leftDecoration"
-        class=""
+        class="flex items-center"
+        aria-hidden="true"
     >
-        
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 5.5 15.5 12 9 18.5" />
+        </svg>
     </div>
     <input
         id="cmdInput"
-        class="w-full h-full"
+        class="flex-1 min-w-0 h-full"
         style={fontSizeString}
         placeholder={$currentCmdConfig?.placeholderText}
         autoComplete="off"

@@ -20,7 +20,7 @@ https://tauri.app/v1/guides/distribution/updater/#built-in-dialog
     >
         <div
             id="inputWrapper"
-            class="grid grid-cols-[1fr_auto] items-center gap-2.7 p-3.3 relative my-0.5 pr-5 pl-6"
+            class="grid grid-cols-[1fr_auto] items-center gap-3 relative m-2.5 py-2.5 pl-4 pr-2.5"
         >
             <Input />
             <LeftTile />

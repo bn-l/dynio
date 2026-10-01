@@ -33,11 +33,11 @@ describe('DisplayWrapper.svelte', () => {
             expect(container).toBeInstanceOf(HTMLElement);
         });
 
-        it('scroll element has overflow-y-auto class', () => {
+        it('scroll element has overflow-y-scroll class', () => {
             render(DisplayWrapper);
 
             const container = get(scrollContainer);
-            expect(container?.classList.contains('overflow-y-auto')).toBe(true);
+            expect(container?.classList.contains('overflow-y-scroll')).toBe(true);
         });
 
         it('scroll element has overflow-x-hidden class', () => {
@@ -190,11 +190,14 @@ describe('DisplayWrapper.svelte', () => {
     });
 
     describe('overflow behavior', () => {
-        it('has overflow-y-auto for vertical scrolling', () => {
+        // Always scroll, never auto: an auto scrollbar takes width when it appears and
+        // re-wraps every row (WebKit's scrollbar-gutter doesn't reserve it for styled scrollbars)
+        it('has overflow-y-scroll so the scrollbar never shifts content', () => {
             render(DisplayWrapper);
 
             const container = get(scrollContainer);
-            expect(container?.classList.contains('overflow-y-auto')).toBe(true);
+            expect(container?.classList.contains('overflow-y-scroll')).toBe(true);
+            expect(container?.classList.contains('overflow-y-auto')).toBe(false);
         });
 
         it('has overflow-x-hidden to prevent horizontal scroll', () => {

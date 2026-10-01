@@ -19,16 +19,35 @@
     --lightText: #999999;
 
     /* Orange accent */
-    --accent: #f97316;
+    --accent: #f88732;
     --accent-light: #fdba74;
-    --accent-selection: rgba(255, 234, 217, 0.93);
+    --accent-selection: #fbe1cd;
     --accent-hover: rgba(255, 213, 171, 0.93);
 
     /* Warm tones */
-    --bg-app: rgba(255, 245, 236, 0.96);
-    --border-warm: color(srgb 1 0.8946 0.795);
+    --bg-app: rgba(251, 242, 234, 0.985);
     --text-muted: color(srgb 0.4631 0.4297 0.4056);
-    --divider-color: rgba(222, 120, 41, 0.2);
+    --divider-color: rgba(222, 150, 95, 0.18);
+
+    /* Card, input well and tray details */
+    --rim: rgba(222, 150, 95, 0.35);
+    --rim-highlight: rgba(255, 255, 255, 0.6);
+    /* The card sits in a transparent window with only ~0.75rem (sides) to ~0.9rem (bottom) of
+       margin, so the shadow must fade out well inside that or the window edge cuts it into a
+       hard line. rem keeps it in proportion, since the margins scale with the window width. */
+    --card-shadow: 0 0.15rem 0.45rem rgba(120, 60, 20, 0.10), 0 0.05rem 0.12rem rgba(120, 60, 20, 0.08);
+    --well: #fbe9db;
+    --pill: #f9ddc7;
+    --pill-text: #3b2b20;
+    --icon-tile: #faebdf;
+    --icon-color: #995c2a;
+    --keycap: #ede0d4;
+    --keycap-text: #524236;
+    --scroll-thumb: #f6c89e;
+    --badge-bg: #ef9646;
+    --badge-text: #ffffff;
+    --selection-edge: transparent;
+    --fade-height: 2.5rem;
 
     /* Code blocks */
     --code-bg: #1e1e1e;
@@ -43,43 +62,58 @@
 }
 
 #mainWrapper {
-    background: var(--bg-app);
+    background: var(--card-glow, none), var(--bg-app);
     color: var(--text);
     border-radius: 1.25rem;
-    box-shadow:
-        0 9px 10px rgba(0, 0, 0, 0.08),
-        0 3px 3px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--rim);
+    box-shadow: inset 0 0 0 1px var(--rim-highlight), var(--card-shadow);
     overflow: hidden;
     contain: paint;
-    border: 0.25rem solid var(--border-warm);
 }
 
 
+/* Dark peach. Dark orange used as a flat fill turns into muddy brown, so peach is used as light
+   instead: a terracotta base with a peach glow from the top, peach text and icons, and
+   a selection that's a translucent peach wash with a soft peach edge. Solid orange is only
+   used for small badges. */
 .dark {
-    /* Solid color system - warm stone tints */
-    --bg-primary: #1c1917;
-    --bg-secondary: #231f1c;
-    --bg-tertiary: #2c2622;
-    --border-color: rgba(245, 130, 70, 0.45);
-    --border-light: rgba(245, 130, 70, 0.5);
+    --bg-primary: #2b1d18;
+    --bg-secondary: #33231d;
+    --bg-tertiary: #3c2a23;
+    --border-color: rgba(255, 190, 150, 0.14);
+    --border-light: rgba(255, 190, 150, 0.08);
 
-    --text: #e0dbd5;
-    --text-secondary: #a09890;
-    --lightText: #6e6560;
+    --text: #fff0e6;
+    --text-secondary: #d6b9a7;
+    --lightText: #957563;
 
-    /* Peachy orange accent */
-    --accent-selection: #98623b36;
-    --accent-hover: rgba(255, 140, 80, 0.2);
+    --accent: #ffa36b;
+    --accent-light: rgba(255, 163, 107, 0.55);
+    --accent-selection: rgba(255, 165, 115, 0.17);
+    --accent-hover: rgba(255, 170, 120, 0.22);
+    --selection-edge: rgba(255, 190, 150, 0.2);
 
-    /* Warm tones */
-    --bg-app: rgba(28, 25, 23, 0.96);
-    --border-warm: rgba(245, 130, 70, 0.65);
-    --text-muted: #f9b886c3;
-    --divider-color: rgba(245, 130, 70, 0.4);
+    --bg-app: rgba(43, 29, 24, 0.985);
+    --card-glow: radial-gradient(130% 75% at 50% 0%, rgba(255, 150, 100, 0.14), transparent 72%);
+    --text-muted: #c9ab99;
+    --divider-color: rgba(255, 190, 150, 0.1);
 
-    /* Code blocks */
-    --code-bg: #12100e;
-    --code-text: #e5e0db;
+    --rim: rgba(255, 190, 150, 0.16);
+    --rim-highlight: rgba(255, 225, 200, 0.06);
+    --card-shadow: 0 0.15rem 0.45rem rgba(0, 0, 0, 0.32), 0 0.05rem 0.12rem rgba(0, 0, 0, 0.24);
+    --well: rgba(255, 190, 150, 0.08);
+    --pill: rgba(255, 160, 110, 0.2);
+    --pill-text: #ffd0ad;
+    --icon-tile: rgba(255, 190, 150, 0.09);
+    --icon-color: #ffb48a;
+    --keycap: rgba(255, 190, 150, 0.12);
+    --keycap-text: #f3d9c7;
+    --scroll-thumb: rgba(255, 170, 120, 0.32);
+    --badge-bg: #f2924c;
+    --badge-text: #fff8f2;
+
+    --code-bg: #1f1511;
+    --code-text: #f4e4d8;
 }
 
 * {
@@ -158,19 +192,31 @@ body {
 box-shadow: inset -3px -3px 7px #ffffffb0, inset 3px 3px 5px rgba(94, 104, 121, 0.692); */
 
 
+#inputWrapper {
+    background: var(--well);
+    border-radius: 0.875rem;
+}
+
+#leftDecoration {
+    color: var(--accent);
+}
+
+#leftDecoration svg {
+    width: 1.35rem;
+    height: 1.35rem;
+}
+
 #leftTile {
-    background: var(--accent-selection);
-    /* border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); */
-    border:rgba(0, 0, 0, 0);
-    border-radius: 0.5rem;
+    background: var(--pill);
+    border: none;
+    border-radius: 0.625rem;
     overflow: hidden;
     white-space: nowrap;
-    font-family: var(--main-font);
+    font-family: var(--mono-font), monospace;
     font-weight: 500;
     font-size: 0.85rem;
-    /* color: var(--text); */
     gap: 0.375rem;
-    color: var(--text-muted);
+    color: var(--pill-text);
     transition: all 0.15s ease;
 }
 
@@ -241,18 +287,32 @@ box-shadow: inset -3px -3px 7px #ffffffb0, inset 3px 3px 5px rgba(94, 104, 121, 
     background: var(--divider-color);
 }
 
+/* Fades the bottom of every tray view. The ::after spacer lets the last row scroll clear of
+   the fade, and scroll-padding keeps keyboard selection (scrollIntoView) above it. */
+.nice-scroll {
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--fade-height)), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - var(--fade-height)), transparent);
+    scroll-padding-bottom: var(--fade-height);
+}
+
+.nice-scroll::after {
+    content: "";
+    display: block;
+    height: var(--fade-height);
+}
+
 .nice-scroll::-webkit-scrollbar {
-    width: 0.5rem;
+    width: 0.375rem;
     background: transparent;
 }
 
 .nice-scroll::-webkit-scrollbar-track {
     background: transparent;
-    margin: 0.25rem 0;
+    margin: 0.25rem 0 var(--fade-height);
 }
 
 .nice-scroll::-webkit-scrollbar-thumb {
-    background: var(--accent-hover);
+    background: var(--scroll-thumb);
     border-radius: 0.25rem;
 }
 
@@ -275,78 +335,78 @@ box-shadow: inset -3px -3px 7px #ffffffb0, inset 3px 3px 5px rgba(94, 104, 121, 
     font-family: var(--mono-font);
 }
 
-/* Status bar */
-.status-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.375rem 0.75rem;
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-    /* background: #f0ebe5; */
-    /* border-radius: 0 0 12px 12px; */
-    gap: 0.75rem;
-    position: relative;
-}
-
-/* .status-bar::before {
-    content: "";
-    position: absolute;
-    bottom: 100%;
-    left: 0;
-    right: 8px;
-    height: 32px;
-    width: 100%;
-    background: linear-gradient(to bottom, transparent 0%, #f0ebe5 100%);
-    pointer-events: none;
-} */
-
-.status-bar-actions {
-    display: flex;
-    gap: 0.75rem;
-    align-items: center;
-}
-
-.status-bar-action {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-}
-
-.key-badge {
-    font-family: var(--mono-font), monospace;
-    font-size: 0.85rem;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: 0.25rem;
-    padding: 0.0625rem 0.375rem;
-    color: var(--text-secondary);
-}
-
-.status-bar-count {
-    color: var(--lightText);
-}
-
 /* List display */
 #listDisplay {
-    padding: 0.5rem;
+    padding: 0 0.5rem 0.5rem;
 }
 
 /* List item styling */
 .list-item {
-    border-radius: 0.375rem;
+    border-radius: 0.75rem;
     margin: 0.125rem 0;
     transition: background 0.1s ease;
 }
 
 .list-item-inner {
     padding: 0.625rem 0.75rem;
-    border-radius: 0.375rem;
+    border-radius: 0.75rem;
+}
+
+#listDisplay .list-item-inner {
+    padding: 0.45em 0.75em;
 }
 
 .item-selected {
     background: var(--accent-selection);
-    border-radius: 0.625rem;
+    box-shadow: inset 0 0 0 1px var(--selection-edge);
+    border-radius: 0.75rem;
+}
+
+.row-icon {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15em;
+    width: 1.85em;
+    height: 1.85em;
+    border-radius: 0.45em;
+    background: var(--icon-tile);
+    color: var(--icon-color);
+}
+
+/* The drawings fill ~70% of their 24-unit box, so this lands them at about half the tile */
+.file-glyph {
+    width: 1.35em;
+    height: 1.35em;
+}
+
+/* em here is the label size: the badge is 2.3x the label, about 60% of the tile like the mockup */
+.file-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.5em;
+    width: 2.3em;
+    height: 2.3em;
+    border-radius: 0.55em;
+    background: var(--badge-bg);
+    color: var(--badge-text);
+    font-family: var(--main-font);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+/* Inter, not the mono font: Roboto Mono has no ↵ or ⌘ glyphs */
+.row-hint {
+    flex: none;
+    font-family: var(--main-font);
+    color: var(--icon-color);
+    font-size: 1.1em;
+}
+
+.row-hint-hidden {
+    visibility: hidden;
 }
 
 .item-hover:not(.item-selected):hover {

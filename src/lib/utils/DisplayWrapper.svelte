@@ -15,7 +15,7 @@
 <div class="h-full w-full flex flex-col">
     <div
         bind:this={scrollEl}
-        class="flex-grow overflow-y-auto overflow-x-hidden nice-scroll list-none {padding}"
+        class="flex-grow overflow-y-scroll overflow-x-hidden nice-scroll list-none {padding}"
     >
         <slot />
     </div>

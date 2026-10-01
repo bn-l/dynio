@@ -673,6 +673,192 @@ describe('ListDisplay.svelte', () => {
         });
     });
 
+    describe('row icons', () => {
+        function pathConfig(displayOptions: Record<string, boolean> = {}) {
+            cmdConfig.set({
+                'test-cmd': createConfig({
+                    modeConfig: {
+                        mode: 'list',
+                        displayOptions,
+                        activationOptions: { activateAction: 'open', isPath: true },
+                    },
+                }),
+            });
+        }
+
+        it('renders one icon tile per row when isPath is true', () => {
+            pathConfig();
+            stdout.set(['/x/a.js', '/x/b']);
+
+            const { container } = render(ListDisplay);
+
+            const tiles = container.querySelectorAll('.row-icon');
+            expect(tiles).toHaveLength(2);
+            expect(tiles[0].querySelector('[data-kind="js"]')).toBeTruthy();
+            expect(tiles[1].querySelector('[data-kind="file"]')).toBeTruthy();
+        });
+
+        it('renders no icon tiles when isPath is false', () => {
+            cmdConfig.set({
+                'test-cmd': createConfig({
+                    modeConfig: {
+                        mode: 'list',
+                        displayOptions: {},
+                        activationOptions: { isPath: false },
+                    },
+                }),
+            });
+            stdout.set(['/x/a.js']);
+
+            const { container } = render(ListDisplay);
+
+            expect(container.querySelectorAll('.row-icon')).toHaveLength(0);
+        });
+
+        it('renders no icon tiles when isPath is not set', () => {
+            stdout.set(['/x/a.js']);
+
+            const { container } = render(ListDisplay);
+
+            expect(container.querySelectorAll('.row-icon')).toHaveLength(0);
+        });
+
+        it('picks the icon from ANSI-stripped text when colours are parsed', () => {
+            pathConfig({ parseAnsiColors: true });
+            stdout.set(['\x1b[31m/x/a.js\x1b[0m']);
+
+            const { container } = render(ListDisplay);
+
+            expect(container.querySelector('.row-icon [data-kind="js"]')).toBeTruthy();
+        });
+
+        it('picks the icon from ANSI-stripped text when colours are not parsed', () => {
+            pathConfig({ parseAnsiColors: false });
+            stdout.set(['\x1b[31m/x/a.js\x1b[0m']);
+
+            const { container } = render(ListDisplay);
+
+            expect(container.querySelector('.row-icon [data-kind="js"]')).toBeTruthy();
+        });
+
+        it('icon updates when the output changes', async () => {
+            pathConfig();
+            stdout.set(['/x/a.js']);
+
+            const { container } = render(ListDisplay);
+            stdout.set(['/x/a.png']);
+
+            await vi.waitFor(() => {
+                expect(container.querySelector('.row-icon [data-kind="image"]')).toBeTruthy();
+            });
+            expect(container.querySelector('.row-icon [data-kind="js"]')).toBeNull();
+        });
+
+        it('keeps the icon and hint out of the row text', () => {
+            pathConfig();
+            stdout.set(['/x/a.js']);
+
+            const { container } = render(ListDisplay);
+
+            expect(container.querySelector('.row-text')?.textContent?.trim()).toBe('/x/a.js');
+        });
+    });
+
+    describe('selected row hint', () => {
+        // Every row has a hint slot (so selection never re-wraps text); only the selected one is visible
+        const visibleHints = (container: HTMLElement) => container.querySelectorAll('.row-hint:not(.row-hint-hidden)');
+
+        it('reserves a hint slot on every row', () => {
+            stdout.set(['item1', 'item2', 'item3']);
+
+            const { container } = render(ListDisplay);
+
+            for (const row of container.querySelectorAll('.list-item')) {
+                expect(row.querySelectorAll('.row-hint')).toHaveLength(1);
+            }
+        });
+
+        it('shows the hint only on the selected row', () => {
+            stdout.set(['item1', 'item2', 'item3']);
+
+            const { container } = render(ListDisplay);
+
+            expect(visibleHints(container)).toHaveLength(1);
+            expect(visibleHints(container)[0].closest('.list-item')?.id).toBe('item-0');
+        });
+
+        it('moves the hint with arrow key navigation', async () => {
+            stdout.set(['item1', 'item2', 'item3']);
+
+            const { container } = render(ListDisplay);
+
+            await fireEvent.keyDown(document.body, { key: 'ArrowDown' });
+            await new Promise((resolve) => setTimeout(resolve, 30));
+
+            await vi.waitFor(() => {
+                expect(visibleHints(container)[0]?.closest('.list-item')?.id).toBe('item-1');
+            });
+            expect(visibleHints(container)).toHaveLength(1);
+            expect(container.querySelector('#item-0 .row-hint')?.classList.contains('row-hint-hidden')).toBe(true);
+        });
+
+        it('moves the hint to a clicked row', async () => {
+            stdout.set(['item1', 'item2', 'item3']);
+
+            const { container } = render(ListDisplay);
+
+            await fireEvent.click(container.querySelectorAll('.list-item-inner')[2]);
+
+            expect(visibleHints(container)).toHaveLength(1);
+            expect(visibleHints(container)[0].closest('.list-item')?.id).toBe('item-2');
+        });
+
+        it('shows the enter key when runOnEnter is false', () => {
+            cmdConfig.set({ 'test-cmd': createConfig({ runOnEnter: false }) });
+            stdout.set(['item']);
+
+            const { container } = render(ListDisplay);
+
+            expect(visibleHints(container)[0]?.textContent).toBe(keySymbols.enter);
+        });
+
+        it('shows Cmd+Enter when runOnEnter is true', () => {
+            cmdConfig.set({ 'test-cmd': createConfig({ runOnEnter: true }) });
+            stdout.set(['item']);
+
+            const { container } = render(ListDisplay);
+
+            expect(visibleHints(container)[0]?.textContent).toBe(`${keySymbols.cmd}+${keySymbols.enter}`);
+        });
+
+        it.each([false, true])('matches the status bar primary key (runOnEnter: %s)', async (runOnEnter) => {
+            cmdConfig.set({ 'test-cmd': createConfig({ runOnEnter }) });
+            stdout.set(['item']);
+
+            const { container } = render(ListDisplay);
+
+            await vi.waitFor(() => {
+                expect(get(statusBar).actions[0]?.key).toBe(visibleHints(container)[0]?.textContent);
+            });
+        });
+
+        it('is hidden from screen readers', () => {
+            stdout.set(['item']);
+
+            const { container } = render(ListDisplay);
+
+            expect(container.querySelector('.row-hint')?.getAttribute('aria-hidden')).toBe('true');
+        });
+
+        it('renders no hint when the list is empty', () => {
+            stdout.set([]);
+
+            const { container } = render(ListDisplay);
+
+            expect(container.querySelectorAll('.row-hint')).toHaveLength(0);
+        });
+    });
+
     describe('Cmd/Ctrl+J/K navigation', () => {
         const pause = () => new Promise((resolve) => setTimeout(resolve, 30));
         const selectedId = (container: HTMLElement) => container.querySelector('.item-selected')?.id;

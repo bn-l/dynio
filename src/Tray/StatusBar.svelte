@@ -69,10 +69,10 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         align-items: center;
-        padding: 0.4rem 0.6rem;
+        padding: 0.5rem 0.9rem 0.6rem;
         font-size: 0.75rem;
-        color: var(--text-muted, #888);
-        border-top: 1px solid var(--border-color, #333);
+        color: var(--text-muted);
+        border-top: 1px solid var(--divider-color);
     }
 
     .status-bar-left {
@@ -91,13 +91,32 @@
 
     .status-bar-actions {
         display: flex;
-        gap: 1rem;
+        align-items: center;
+        gap: 1.1rem;
+        padding-right: 1.1rem;
+        border-right: 1px solid var(--divider-color);
     }
 
     .status-bar-action {
         display: flex;
         align-items: center;
-        gap: 0.3rem;
+        gap: 0.5rem;
+    }
+
+    /* Inter, not the mono font: Roboto Mono has no ↵ or ⌘ glyphs */
+    .key-badge {
+        font-family: var(--main-font);
+        font-size: 0.8rem;
+        min-width: 1.6rem;
+        padding: 0.1rem 0.45rem;
+        text-align: center;
+        border-radius: 0.375rem;
+        background: var(--keycap);
+        color: var(--keycap-text);
+    }
+
+    .status-bar-count {
+        color: var(--text-muted);
     }
 
     .indicator-badge {
