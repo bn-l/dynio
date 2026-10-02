@@ -118,7 +118,7 @@ config:
 # Follow the Dynio log
 [group('misc')]
 logs:
-    tail -f "{{ config_dir }}/dynio.log"
+    tail -f "{{ config_dir }}/dynio_rCURRENT.log"
 
 # Delete build output (dist/, coverage/ and the Rust target dir)
 [confirm("Delete dist/, coverage/ and the Rust target dir?")]
