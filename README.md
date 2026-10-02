@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./assets-repo/peach.png" alt="Dynio logo" width="80">
+<img src="./assets-repo/logo.png" alt="Dynio logo" width="80">
 
 # Dynio
 
@@ -12,14 +12,6 @@
 
 </div>
 
-
-<!-- <div align="center">
-<img src="./assets-repo/open-closing-demo.webp" alt="Opening and closing demo" width="650">
-
-*Demnstrating the opening and closing speed. No unnecessary animation. No fading in slowly. Here I'm on macos typing `obs` and thanks to the simple find command (see below), apps from all the application folders on macos are fuzzy sorted using fzf with files underneath.*
-</div> -->
-
-<!-- <br /> -->
 
 ---
 
@@ -33,6 +25,8 @@ For example: Take the command `ls`. The app calls `ls` each time you press a key
 - Global shortcut (Alt/Option+Space) shows/hides instantly
 - Yaml config: Full schema with autocomplete in vscode. Paste the schema into an LLM and have it create a command.
 - LLM streaming: Chunk-based output for real-time LLM responses with `<think>` block rendering
+- Drop a file on the bar to put its path in the input
+- Light and dark themes
 
 <br />
 
@@ -90,9 +84,9 @@ You can put as many commands as you like in this file. Cmd or Ctrl + s will list
 ## Demo: Calculator with Qalc
 
 <div align="center">
-<img src="./assets-repo/qalc-demo-smaller.webp" alt="Qalc calculator demo" width="550">
+<img src="./assets-repo/demo-qalc.webp" alt="Qalc calculator demo" width="550">
 
-*[Qalc](https://github.com/Qalculate/libqalculate) is a really cool calculator that understands almost plain-english input. The garish colors here come directly from qalc. I.e. this is parsing qalc's ascii escape chars*
+*[Qalc](https://github.com/Qalculate/libqalculate) is a really cool calculator that understands almost plain-english input, including unit and currency conversions. The garish colors here come directly from qalc. I.e. this is parsing qalc's ascii escape chars*
 </div>
 
 ```yaml
@@ -121,7 +115,7 @@ qalc:
 ## Demo: LLM Integration
 
 <div align="center">
-<img src="./assets-repo/groq-demo-smaller.webp" alt="Groq LLM demo" width="550">
+<img src="./assets-repo/demo-groq.webp" alt="Groq LLM demo" width="550">
 
 *Adding an LLM is just a matter of copying and pasting the curl command you get in the code preview panel on most [LLM playgrounds](https://aistudio.google.com/prompts/new_chat). You can get fancier also:*
 </div>
@@ -239,9 +233,9 @@ process.stdout.write("\n");
 ## Demo: File Search
 
 <div align="center">
-<img src="./assets-repo/find-demo-smaller.webp" alt="File search demo" width="550">
+<img src="./assets-repo/demo-find.webp" alt="File search demo" width="550">
 
-*This is extremely fast and shows system applications like TextEdit. You could get really fancy by adding [frecency](https://en.wikipedia.org/wiki/Frecency) to the find script and a custom activation script that updates frequency scores*
+*This is extremely fast and shows system applications like Photos. You could get really fancy by adding [frecency](https://en.wikipedia.org/wiki/Frecency) to the find script and a custom activation script that updates frequency scores*
 </div>
 
 ```yaml
@@ -293,6 +287,121 @@ ls ~/Desktop ~/Documents ~/Downloads >/dev/null 2>&1
 
 ---
 
+## Demo: Convert a video with ffmpeg
+
+**Also demoing dark mode**
+
+<div align="center">
+<img src="./assets-repo/demo-to-mp4.webp" alt="A screen recording dropped on the bar and converted to mp4, in dark mode" width="550">
+
+*Drop a file on the bar and its path goes into the input. Press enter and the script's output shows up as it runs.*
+</div>
+
+The whole input reaches your command as **one argument**, so a path with spaces in it (like macOS's `Screen Recording … at 10.41.23.mov` names) arrives intact. There's no quoting or escaping to get right.
+
+When it's done, Cmd/Ctrl+Enter opens the new file and Cmd/Ctrl+O shows it in its folder: the script prints the new file's path last, and `extractorRegexBody` picks it out of the output.
+
+```yaml
+to_mp4:
+    command: /path/to/to-mp4.sh
+    description: Convert a video to mp4 (drop it on the bar)
+    placeholderText: Drop a video here...
+    runOnEnter: true
+    modeConfig:
+        mode: single
+        displayOptions:
+            json: false  # single mode reads output as JSON unless told not to
+            smallSize: 1
+        activationOptions:
+            activateAction: open
+            isPath: true
+            extractorRegexBody: "[^\\n]+\\.mp4$"  # the last line: the new file's path
+```
+
+<details>
+<summary><b>to-mp4.sh (needs ffmpeg)</b></summary>
+
+```bash
+#!/bin/bash
+# Converts a video to an mp4 next to the original, printing progress as it goes.
+# The last line is the new file's path, so Dynio can open or reveal it.
+in="$1"
+out="${in%.*}.mp4"
+size() { du -h "$1" | awk '{ print $1 }'; }
+duration=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$in")
+
+echo "Converting $(basename "$in") ($(size "$in"))"
+
+# -progress prints progress as key=value lines (ffmpeg's usual progress line rewrites itself
+# with \r, which never ends a line). awk turns them into a bar every 20%, and fflush() sends
+# each line straight away instead of when awk's buffer fills.
+ffmpeg -hide_banner -loglevel error -y -i "$in" \
+    -c:v libx264 -crf 23 -preset fast -c:a aac -movflags +faststart \
+    -progress pipe:1 -stats_period 0.2 -nostats "$out" |
+    awk -F= -v total="$duration" '
+        function show(pct,   bar, i) {
+            for (i = 0; i < 10; i++) bar = bar (i < pct / 10 ? "■" : "□")
+            printf "%s %3d%%\n", bar, pct
+            fflush()
+        }
+        $1 == "out_time_us" { while ($2 / 10000 / total >= next_pct + 20 && next_pct < 80) show(next_pct += 20) }
+        $1 == "progress" && $2 == "end" { show(100) }
+    '
+
+echo "Done: $(size "$in") → $(size "$out")"
+echo "$out"
+```
+</details>
+
+> **Windows and Linux:** with `hideOnLostFocus` on (the default), clicking a file in your file manager hides Dynio before you can drop it, so turn it off to drag files in. On macOS Dynio waits until you let go of the file.
+
+---
+
+## Demo: Run your own scripts
+
+<div align="center">
+<img src="./assets-repo/demo-scripts.webp" alt="Searching a folder of scripts and running one, in dark mode" width="550">
+
+*Every script in `~/scripts`, searched by name as you type. Enter runs the selected one and Dynio gets out of the way.*
+</div>
+
+Why bother?
+
+- **Your scripts stop getting lost.** Everyone collects little scripts and then forgets what they're called or where they live. Type a few letters of whatever you remember and it's there.
+- **The scripts you get an LLM to write have a home.** Save them all to one folder and you can see what you've got at a glance, instead of hunting through downloads and old chats. Cmd/Ctrl+O shows any of them in its folder when you want to read or tweak it.
+- **No terminal.** One keystroke from any app: no opening a terminal, no `cd`, no remembering flags. The flags live in the script.
+- **Adding one is just saving a file.** The list is read fresh every time, so a new script shows up straight away with no config change. It's like Raycast or Alfred script commands, but it's just a folder.
+- **It's for the jobs you do once a month:** flush DNS, restart audio, delete merged git branches, back up photos. They're too rare to remember and too fiddly to retype.
+- **It's portable.** Keep the folder in your dotfiles and you get the same launcher on every machine.
+
+```yaml
+scripts:
+    command: /path/to/list-scripts.sh
+    description: Run one of my scripts
+    placeholderText: Run a script...
+    modeConfig:
+        mode: list
+        displayOptions: {}
+        activationOptions:
+            activateAction: command
+            commandPath: /usr/bin/env  # runs the selected file, using its #! line
+            isPath: true               # file icons, and Cmd/Ctrl+O shows the script in its folder
+```
+
+<details>
+<summary><b>list-scripts.sh (needs fzf)</b></summary>
+
+```bash
+#!/bin/bash
+# Lists the scripts in ~/scripts, best matches for the input first (matching file names only)
+find "$HOME/scripts" -type f -perm -u+x | fzf --filter "$1" --delimiter / --nth -1
+```
+
+Each script needs to be executable (`chmod +x`) and start with a `#!` line, like `#!/bin/bash` or `#!/usr/bin/env python3`.
+</details>
+
+---
+
 ## Installation
 
 **macOS (Homebrew):**
@@ -337,7 +446,7 @@ The app watches its config directory and auto-restarts on changes.
 darkMode: auto                # auto | true | false (auto follows system preference)
 defaultCommand: find          # Command to use on launch
 startMinimised: false         # Start hidden
-inputFontSize: 1.8            # Input font size (rem)
+inputFontSize: 1.5            # Input font size (rem)
 alwaysOnTop: false            # Keep window above others
 globalShortcut: "Option+Space" # Toggle shortcut (macOS)
 hideOnLostFocus: true         # Hide when clicking outside
