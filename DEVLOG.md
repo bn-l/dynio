@@ -1,5 +1,15 @@
 # Devlog
 
+## 2026-10-02: Single mode squashed output onto one line
+
+**Symptom**: Multi-line output in single mode showed as one paragraph. Lines "one", "two" and "three" read "one two three", and pretty-printed JSON (`json: true` without `jsonPath`) lost its line breaks and indentation. Found while making the ffmpeg demo, whose progress is one line per step.
+
+**Root cause**: `processSingleOutput` joins the lines with `\n`, but the text is shown in a normal `<div>`, which collapses newlines and runs of spaces like any HTML text.
+
+**Fix**: `white-space: pre-wrap` on `#singleDisplay` (as `Stderr.svelte` already had). Checked in WebKit: three lines now take three line-heights. No unit test, since jsdom doesn't lay out text.
+
+**Gotcha found at the same time**: single mode's `json` option defaults to `true` (schema), so a command with plain-text output needs `json: false` or every run logs "JSON Parse error". The README examples set it.
+
 ## 2026-10-02: Window not centred on launch
 
 **Symptom**: On launch the bar appeared off-centre, wherever it had last been dragged, instead of in the middle of the screen.
