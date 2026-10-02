@@ -229,3 +229,68 @@ mod dynio_panel {
         assert!(!can_become_main_window);
     }
 }
+
+// hide_main_on_focus_lost only waits for a drop when the mouse is let go over the window
+mod point_in_window_tests {
+    use super::super::*;
+
+    fn window() -> (PhysicalPosition<i32>, PhysicalSize<u32>) {
+        (
+            PhysicalPosition { x: 100, y: 200 },
+            PhysicalSize {
+                width: 800,
+                height: 128,
+            },
+        )
+    }
+
+    fn inside(x: f64, y: f64) -> bool {
+        let (position, size) = window();
+        point_in_window(PhysicalPosition { x, y }, position, size)
+    }
+
+    #[test]
+    fn point_inside_is_inside() {
+        assert!(inside(500.0, 250.0));
+    }
+
+    #[test]
+    fn top_left_corner_is_inside() {
+        assert!(inside(100.0, 200.0));
+    }
+
+    #[test]
+    fn right_and_bottom_edges_are_outside() {
+        // The window covers x 100..900 and y 200..328, not including the far edges
+        assert!(!inside(900.0, 250.0));
+        assert!(!inside(500.0, 328.0));
+        assert!(inside(899.5, 327.5));
+    }
+
+    #[test]
+    fn points_beside_the_window_are_outside() {
+        assert!(!inside(99.9, 250.0));
+        assert!(!inside(500.0, 199.9));
+        assert!(!inside(-500.0, 250.0));
+    }
+
+    #[test]
+    fn window_on_a_monitor_left_of_the_main_one() {
+        // Monitors to the left of (or above) the main one have negative coordinates
+        let position = PhysicalPosition { x: -1800, y: -50 };
+        let size = PhysicalSize {
+            width: 800,
+            height: 128,
+        };
+        assert!(point_in_window(
+            PhysicalPosition { x: -1500.0, y: 0.0 },
+            position,
+            size
+        ));
+        assert!(!point_in_window(
+            PhysicalPosition { x: 500.0, y: 0.0 },
+            position,
+            size
+        ));
+    }
+}

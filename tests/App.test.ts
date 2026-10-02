@@ -61,6 +61,13 @@ vi.mock('@tauri-apps/api/webviewWindow', () => ({
     }),
 }));
 
+// Input listens for files dropped on the window
+vi.mock('@tauri-apps/api/webview', () => ({
+    getCurrentWebview: () => ({
+        onDragDropEvent: () => Promise.resolve(() => {}),
+    }),
+}));
+
 // Mock Svelte transitions to avoid getComputedStyle issues in jsdom
 vi.mock('svelte/transition', () => ({
     blur: () => ({ duration: 0 }),
@@ -837,7 +844,7 @@ describe('App.svelte', () => {
                 focusHandler({ payload: false });
             }
 
-            expect(mockInvoke).toHaveBeenCalledWith('hide_main');
+            expect(mockInvoke).toHaveBeenCalledWith('hide_main_on_focus_lost');
         });
 
         it('does not hide window when hideOnLostFocus=false', async () => {
@@ -859,6 +866,7 @@ describe('App.svelte', () => {
                 focusHandler({ payload: false });
             }
 
+            expect(mockInvoke).not.toHaveBeenCalledWith('hide_main_on_focus_lost');
             expect(mockInvoke).not.toHaveBeenCalledWith('hide_main');
         });
 
@@ -879,7 +887,7 @@ describe('App.svelte', () => {
                 focusHandler({ payload: false });
             }
 
-            expect(mockInvoke).toHaveBeenCalledWith('hide_main');
+            expect(mockInvoke).toHaveBeenCalledWith('hide_main_on_focus_lost');
         });
     });
 

@@ -18,6 +18,10 @@ import { cmdConfig } from '$lib/stores/cmd-config';
 import { settings } from '$lib/stores/settings';
 import { errors } from '$lib/stores/errors';
 import type { CmdConfigItem } from '$lib/stores/schema/cmd-config-schema';
+import { fileHovering } from '$lib/stores/globals';
+import type { DragDropEvent } from '@tauri-apps/api/webview';
+import type { EventCallback } from '@tauri-apps/api/event';
+import { PhysicalPosition } from '@tauri-apps/api/dpi';
 import Input from '../../src/Bar/Input.svelte';
 
 // Mock Tauri APIs
@@ -26,6 +30,36 @@ const mockInvoke = vi.fn();
 vi.mock('@tauri-apps/api/core', () => ({
     invoke: (...args: unknown[]) => mockInvoke(...args),
 }));
+
+// The handler Input registers for file drags, so tests can send it events
+let dragDropHandler: EventCallback<DragDropEvent> | undefined;
+
+vi.mock('@tauri-apps/api/webview', () => ({
+    getCurrentWebview: () => ({
+        onDragDropEvent: (handler: EventCallback<DragDropEvent>) => {
+            dragDropHandler = handler;
+            return Promise.resolve(() => {
+                dragDropHandler = undefined;
+            });
+        },
+    }),
+}));
+
+const dropPosition = new PhysicalPosition(10, 10);
+
+function sendDragEvent(payload: DragDropEvent) {
+    dragDropHandler?.({ event: 'tauri://drag-drop', id: 1, payload });
+}
+
+function dropFiles(...paths: string[]) {
+    sendDragEvent({ type: 'drop', paths, position: dropPosition });
+}
+
+function getInput(container: HTMLElement): HTMLInputElement {
+    const input = container.querySelector('#cmdInput');
+    if (!(input instanceof HTMLInputElement)) throw new Error('#cmdInput not found');
+    return input;
+}
 
 // Helper function to create a minimal config
 function createConfig(overrides: Partial<CmdConfigItem> = {}): CmdConfigItem {
@@ -59,6 +93,7 @@ describe('Input.svelte', () => {
         });
         settings.set({});
         errors.clear();
+        fileHovering.set(false);
 
         // Mock console.log to reduce noise
         vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -606,6 +641,155 @@ describe('Input.svelte', () => {
             expect(mockInvoke).toHaveBeenCalledWith('run_program', expect.objectContaining({
                 input: 'test & "quotes" <script>',
             }));
+        });
+    });
+
+    describe('dropping a file on the window', () => {
+        const recording = '/Users/sam/Desktop/Screen Recording 2026-10-02 at 10.41.23.mov';
+
+        async function renderWithValue(value: string) {
+            const { container, unmount } = render(Input);
+            const input = getInput(container);
+            query.set(value);
+            await vi.waitFor(() => expect(input.value).toBe(value));
+            return { input, unmount };
+        }
+
+        it('fills an empty input with the path', async () => {
+            const { input } = await renderWithValue('');
+
+            dropFiles(recording);
+
+            expect(get(query)).toBe(recording);
+            expect(input.value).toBe(recording);
+        });
+
+        it('inserts the path at the caret', async () => {
+            const { input } = await renderWithValue('grep  notes');
+            input.setSelectionRange(5, 5);
+
+            dropFiles('/tmp/a.txt');
+
+            expect(get(query)).toBe('grep /tmp/a.txt notes');
+            expect(input.selectionStart).toBe('grep /tmp/a.txt'.length);
+        });
+
+        it('replaces selected text with the path', async () => {
+            const { input } = await renderWithValue('old path here');
+            input.setSelectionRange(4, 8);
+
+            dropFiles('/x');
+
+            expect(get(query)).toBe('old /x here');
+        });
+
+        it('uses only the first of several files', async () => {
+            await renderWithValue('');
+
+            dropFiles('/first.mov', '/second.mov');
+
+            expect(get(query)).toBe('/first.mov');
+        });
+
+        it('ignores a drop with no paths', async () => {
+            await renderWithValue('keep');
+
+            dropFiles();
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            expect(get(query)).toBe('keep');
+            expect(mockInvoke).not.toHaveBeenCalledWith('run_program', expect.anything());
+        });
+
+        it('runs the command straight away when runOnEnter is off', async () => {
+            cmdConfig.set({ 'test-cmd': createConfig({ runOnEnter: false }) });
+            await renderWithValue('');
+
+            dropFiles('/tmp/a.txt');
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            expect(mockInvoke).toHaveBeenCalledWith('run_program', expect.objectContaining({
+                input: '/tmp/a.txt',
+            }));
+        });
+
+        it('waits for Enter when runOnEnter is on', async () => {
+            cmdConfig.set({ 'test-cmd': createConfig({ runOnEnter: true }) });
+            const { input } = await renderWithValue('');
+
+            dropFiles(recording);
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            expect(mockInvoke).not.toHaveBeenCalledWith('run_program', expect.anything());
+
+            await fireEvent.keyDown(input, { key: 'Enter' });
+            await new Promise((resolve) => setTimeout(resolve, 50));
+            expect(mockInvoke).toHaveBeenCalledWith('run_program', expect.objectContaining({
+                input: recording,
+            }));
+        });
+
+        it('passes a path with spaces, quotes and unicode through unchanged', async () => {
+            const path = `/Users/sam/Desktop/Sam's "best" café — 日本.mov`;
+            await renderWithValue('');
+
+            dropFiles(path);
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            expect(mockInvoke).toHaveBeenCalledWith('run_program', expect.objectContaining({
+                arguments: [],
+                input: path,
+            }));
+        });
+
+        it('focuses the input so Enter reaches it', async () => {
+            cmdConfig.set({ 'test-cmd': createConfig({ runOnEnter: true }) });
+            const { input } = await renderWithValue('');
+            const other = document.createElement('button');
+            document.body.appendChild(other);
+            other.focus();
+
+            dropFiles(recording);
+
+            expect(document.activeElement).toBe(input);
+            other.remove();
+        });
+
+        it('highlights the bar while files are dragged over it', async () => {
+            await renderWithValue('');
+
+            sendDragEvent({ type: 'enter', paths: [recording], position: dropPosition });
+            expect(get(fileHovering)).toBe(true);
+
+            sendDragEvent({ type: 'over', position: dropPosition });
+            expect(get(fileHovering)).toBe(true);
+
+            sendDragEvent({ type: 'leave' });
+            expect(get(fileHovering)).toBe(false);
+        });
+
+        it('removes the highlight on drop', async () => {
+            await renderWithValue('');
+
+            sendDragEvent({ type: 'enter', paths: [recording], position: dropPosition });
+            dropFiles(recording);
+
+            expect(get(fileHovering)).toBe(false);
+        });
+
+        it('does not highlight a drag with no files', async () => {
+            await renderWithValue('');
+
+            sendDragEvent({ type: 'enter', paths: [], position: dropPosition });
+
+            expect(get(fileHovering)).toBe(false);
+        });
+
+        it('stops listening when unmounted', async () => {
+            const { unmount } = await renderWithValue('');
+            expect(dragDropHandler).toBeDefined();
+
+            unmount();
+            await vi.waitFor(() => expect(dragDropHandler).toBeUndefined());
         });
     });
 });

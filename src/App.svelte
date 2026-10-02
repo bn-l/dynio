@@ -21,6 +21,7 @@ https://tauri.app/v1/guides/distribution/updater/#built-in-dialog
         <div
             id="inputWrapper"
             class="grid grid-cols-[1fr_auto] items-center gap-3 relative m-2.5 py-2.5 pl-4 pr-2.5"
+            class:file-hovering={$fileHovering}
         >
             <Input />
             <LeftTile />
@@ -78,7 +79,7 @@ as regular stdout from commands) -->
     
     import { settings } from "$lib/stores/settings.js";
     // import AutoUpdater from "./Meta/AutoUpdater.svelte";
-    import { trayOpen, running, stdoutLock, query, clickInBounds, stderr, currentTrayView, currentCmd, clearInput, isMac, statusBar, scrollContainer } from "$lib/stores/globals.js";
+    import { trayOpen, running, stdoutLock, query, clickInBounds, stderr, currentTrayView, currentCmd, clearInput, isMac, statusBar, scrollContainer, fileHovering } from "$lib/stores/globals.js";
     import { errors } from "$lib/stores/errors.ts";
     import Tray from "./Tray/Tray.svelte";
     import Input from "./Bar/Input.svelte";
@@ -234,7 +235,8 @@ as regular stdout from commands) -->
 
         getCurrentWindow().onFocusChanged(({ payload: focused }) => {
             if (!focused && ($settings.hideOnLostFocus ?? true)) {
-                void invoke("hide_main");
+                // Waits if a mouse button is held, in case a file is being dragged in
+                void invoke("hide_main_on_focus_lost");
             }
         }).then(fn => { unlisten = fn; });
 

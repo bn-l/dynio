@@ -7,8 +7,8 @@ use std::collections::HashMap;
 use std::process::Stdio;
 use std::time::Instant;
 use tauri::{
-    AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Runtime, Size, WebviewWindow,
-    WindowEvent,
+    AppHandle, DragDropEvent, Emitter, Manager, PhysicalPosition, PhysicalSize, Runtime, Size,
+    WebviewWindow, WindowEvent,
 };
 use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 use tokio::sync::Mutex;
@@ -1080,16 +1080,82 @@ fn handle_window_moved<R: Runtime>(app_handle: &AppHandle<R>, position: Physical
     schedule_window_drag_finish(app_handle.clone());
 }
 
-fn register_window_move_handler<R: Runtime>(app_handle: AppHandle<R>) {
+fn register_window_event_handlers<R: Runtime>(app_handle: AppHandle<R>) {
     let Some(window) = app_handle.get_webview_window("main") else {
         return;
     };
-    let move_app_handle = app_handle.clone();
-    window.on_window_event(move |event| {
-        if let WindowEvent::Moved(position) = event {
-            handle_window_moved(&move_app_handle, *position);
-        }
+    let event_app_handle = app_handle.clone();
+    window.on_window_event(move |event| match event {
+        WindowEvent::Moved(position) => handle_window_moved(&event_app_handle, *position),
+        // A file dragged in from another app leaves that app focused. Take focus so Enter
+        // reaches the input, which the frontend has just filled with the file's path.
+        WindowEvent::DragDrop(DragDropEvent::Drop { .. }) => make_main_key(&event_app_handle),
+        _ => {}
     });
+}
+
+/// Gives the main window keyboard focus. On macOS the panel becomes the key window without
+/// activating the app, the same as when it's shown.
+fn make_main_key<R: Runtime>(app_handle: &AppHandle<R>) {
+    #[cfg(target_os = "macos")]
+    if let Ok(panel) = app_handle.get_webview_panel("main") {
+        panel.make_key_window();
+    }
+    #[cfg(not(target_os = "macos"))]
+    if let Some(window) = app_handle.get_webview_window("main") {
+        let _ = window.set_focus();
+    }
+}
+
+/// How long to wait, after a mouse button is let go over the window, for a dropped file to give
+/// the window focus back (see `hide_main_on_focus_lost`).
+#[cfg(target_os = "macos")]
+const DROP_FOCUS_GRACE_MS: u64 = 150;
+
+/// Hides the window after it loses focus (the `hideOnLostFocus` setting).
+///
+/// Pressing on a file in another app to drag it here also takes focus away. So on macOS, while a
+/// mouse button is held this waits. If the button is let go over the window, it gives the drop a
+/// moment to take focus back (`make_main_key`) and only hides if it didn't. Elsewhere it hides
+/// straight away.
+#[tauri::command]
+async fn hide_main_on_focus_lost<R: Runtime>(app_handle: AppHandle<R>) {
+    #[cfg(target_os = "macos")]
+    {
+        use tauri_nspanel::objc2_app_kit::NSEvent;
+        while NSEvent::pressedMouseButtons() != 0 {
+            tokio::time::sleep(Duration::from_millis(30)).await;
+        }
+        if let Some(window) = app_handle.get_webview_window("main") {
+            let over_window = match (
+                app_handle.cursor_position(),
+                window.outer_position(),
+                window.outer_size(),
+            ) {
+                (Ok(cursor), Ok(position), Ok(size)) => point_in_window(cursor, position, size),
+                _ => false,
+            };
+            if over_window {
+                tokio::time::sleep(Duration::from_millis(DROP_FOCUS_GRACE_MS)).await;
+                if window.is_focused().unwrap_or(false) {
+                    return;
+                }
+            }
+        }
+    }
+    hide_main(app_handle).await;
+}
+
+/// Whether a point (e.g. the cursor) is inside a window with the given top-left and size.
+#[cfg(target_os = "macos")]
+fn point_in_window(
+    point: PhysicalPosition<f64>,
+    position: PhysicalPosition<i32>,
+    size: PhysicalSize<u32>,
+) -> bool {
+    let (left, top) = (f64::from(position.x), f64::from(position.y));
+    (left..left + f64::from(size.width)).contains(&point.x)
+        && (top..top + f64::from(size.height)).contains(&point.y)
 }
 
 #[tauri::command]
@@ -1283,6 +1349,7 @@ fn main() {
             close_splashscreen,
             get_config_files,
             hide_main,
+            hide_main_on_focus_lost,
             get_config_dir,
             trim_path,
             spawn_detached
@@ -1386,7 +1453,7 @@ fn main() {
                 settings.always_on_top,
                 settings.max_window_width,
             );
-            register_window_move_handler(app.handle().clone());
+            register_window_event_handlers(app.handle().clone());
 
             Ok(())
         })
