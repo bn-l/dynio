@@ -8,6 +8,7 @@ import { stdout, statusBar, keySymbols, currentCmd } from '$lib/stores/globals';
 import { cmdConfig } from '$lib/stores/cmd-config';
 import type { CmdConfigItem } from '$lib/stores/schema/cmd-config-schema';
 import ListDisplay from '../../../../src/Tray/Stdout/ListDisplay/ListDisplay.svelte';
+import { stubPanelScroll } from '../../../helpers/panelScroll';
 
 // Mock Tauri APIs
 const mockInvoke = vi.fn();
@@ -945,6 +946,22 @@ describe('ListDisplay.svelte', () => {
 
             expect(first.defaultPrevented).toBe(true);
             expect(repeat.defaultPrevented).toBe(true);
+        });
+
+        it('Ctrl+J/K move the selection without also scrolling the panel by a step', async () => {
+            stdout.set(['item1', 'item2', 'item3']);
+
+            const { container } = render(ListDisplay);
+            const scrollBy = stubPanelScroll();
+
+            await fireEvent.keyDown(document.body, { key: 'j', code: 'KeyJ', ctrlKey: true });
+            await pause();
+            await vi.waitFor(() => expect(selectedId(container)).toBe('item-1'));
+            await fireEvent.keyDown(document.body, { key: 'k', code: 'KeyK', metaKey: true });
+            await pause();
+            await vi.waitFor(() => expect(selectedId(container)).toBe('item-0'));
+
+            expect(scrollBy).not.toHaveBeenCalled();
         });
 
         it('Ctrl+J never activates the selected item', async () => {

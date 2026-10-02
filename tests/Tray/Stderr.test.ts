@@ -6,6 +6,7 @@ import { render, fireEvent, cleanup } from '@testing-library/svelte';
 import { get } from 'svelte/store';
 import { stderr } from '$lib/stores/globals';
 import Stderr from '../../src/Tray/Stderr.svelte';
+import { stubPanelScroll } from '../helpers/panelScroll';
 
 describe('Stderr.svelte', () => {
     beforeEach(() => {
@@ -274,6 +275,22 @@ describe('Stderr.svelte', () => {
             await vi.waitFor(() => {
                 expect(preElement?.textContent).toBe('');
             });
+        });
+    });
+
+    describe('Cmd/Ctrl+J/K scrolling', () => {
+        it('Ctrl+J scrolls stderr down and Cmd+K scrolls it back up', async () => {
+            stderr.set('Traceback (most recent call last):\n  File "x.py", line 1\nError: boom');
+
+            render(Stderr);
+            const scrollBy = stubPanelScroll();
+
+            await fireEvent.keyDown(document.body, { key: 'j', code: 'KeyJ', ctrlKey: true });
+            await fireEvent.keyDown(document.body, { key: 'k', code: 'KeyK', metaKey: true });
+
+            expect(scrollBy).toHaveBeenCalledTimes(2);
+            expect(scrollBy.mock.calls[0][0].top).toBeGreaterThan(0);
+            expect(scrollBy.mock.calls[1][0].top).toBeLessThan(0);
         });
     });
 });

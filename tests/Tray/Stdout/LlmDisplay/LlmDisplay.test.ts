@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, cleanup } from '@testing-library/svelte';
+import { render, fireEvent, cleanup } from '@testing-library/svelte';
 import { get } from 'svelte/store';
 import { stdout, running } from '$lib/stores/globals';
 import { cmdConfig } from '$lib/stores/cmd-config';
@@ -10,6 +10,7 @@ import { currentCmd } from '$lib/stores/globals';
 import { errors } from '$lib/stores/errors';
 import type { CmdConfigItem } from '$lib/stores/schema/cmd-config-schema';
 import LlmDisplay from '../../../../src/Tray/Stdout/LlmDisplay/LlmDisplay.svelte';
+import { stubPanelScroll } from '../../../helpers/panelScroll';
 
 // Mock Tauri APIs
 const mockInvoke = vi.fn();
@@ -713,6 +714,35 @@ describe('LlmDisplay.svelte', () => {
             expect(container.textContent).toContain('chunk1');
             expect(container.textContent).toContain('chunk2');
             expect(container.textContent).toContain('chunk3');
+        });
+    });
+
+    describe('Cmd/Ctrl+J/K scrolling', () => {
+        it('Ctrl+J scrolls the answer down and Cmd+K scrolls it back up', async () => {
+            stdout.set(['# Answer\n\n', 'A long reply that runs past the bottom of the tray.']);
+
+            render(LlmDisplay);
+            const scrollBy = stubPanelScroll();
+
+            await fireEvent.keyDown(document.body, { key: 'j', code: 'KeyJ', ctrlKey: true });
+            await fireEvent.keyDown(document.body, { key: 'k', code: 'KeyK', metaKey: true });
+
+            expect(scrollBy).toHaveBeenCalledTimes(2);
+            expect(scrollBy.mock.calls[0][0].top).toBeGreaterThan(0);
+            expect(scrollBy.mock.calls[1][0].top).toBeLessThan(0);
+        });
+
+        it('still scrolls while the answer is streaming', async () => {
+            running.set(true);
+            stdout.set(['Partial ']);
+
+            render(LlmDisplay);
+            const scrollBy = stubPanelScroll();
+
+            stdout.set(['Partial ', 'output']);
+            await fireEvent.keyDown(document.body, { key: '\n', code: 'KeyJ', ctrlKey: true });
+
+            expect(scrollBy).toHaveBeenCalledTimes(1);
         });
     });
 });

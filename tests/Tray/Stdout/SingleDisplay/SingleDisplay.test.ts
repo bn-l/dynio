@@ -8,6 +8,7 @@ import { stdout, statusBar, keySymbols, currentCmd } from '$lib/stores/globals';
 import { cmdConfig } from '$lib/stores/cmd-config';
 import type { CmdConfigItem } from '$lib/stores/schema/cmd-config-schema';
 import SingleDisplay from '../../../../src/Tray/Stdout/SingleDisplay/SingleDisplay.svelte';
+import { stubPanelScroll } from '../../../helpers/panelScroll';
 
 // Mock Tauri APIs
 const mockInvoke = vi.fn();
@@ -620,6 +621,35 @@ describe('SingleDisplay.svelte', () => {
             await new Promise((resolve) => setTimeout(resolve, 50));
 
             expect(mockInvoke).not.toHaveBeenCalledWith('trim_path', expect.anything());
+        });
+    });
+
+    describe('Cmd/Ctrl+J/K scrolling', () => {
+        it('Ctrl+J scrolls the output down and Cmd+K scrolls it back up', async () => {
+            stdout.set(['line 1', 'line 2', 'line 3']);
+
+            render(SingleDisplay);
+            const scrollBy = stubPanelScroll();
+
+            await fireEvent.keyDown(document.body, { key: 'j', code: 'KeyJ', ctrlKey: true });
+            await fireEvent.keyDown(document.body, { key: 'k', code: 'KeyK', metaKey: true });
+
+            expect(scrollBy).toHaveBeenCalledTimes(2);
+            expect(scrollBy.mock.calls[0][0].top).toBeGreaterThan(0);
+            expect(scrollBy.mock.calls[1][0].top).toBeLessThan(0);
+        });
+
+        it('Ctrl+J does not activate the output', async () => {
+            stdout.set(['some output']);
+
+            render(SingleDisplay);
+            stubPanelScroll();
+
+            await fireEvent.keyDown(document.body, { key: '\n', code: 'KeyJ', ctrlKey: true });
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            expect(mockWriteText).not.toHaveBeenCalled();
+            expect(mockOpenPath).not.toHaveBeenCalled();
         });
     });
 });

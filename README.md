@@ -523,6 +523,7 @@ modeConfig:
 | `Enter` | Activate selected item (list mode) |
 | `Cmd/Ctrl + Enter` | Activate when `runOnEnter: true` |
 | `Cmd/Ctrl + O` | Open containing folder (when `isPath: true`) |
+| `Cmd/Ctrl + J/K` | Move down/up through list items, or scroll the output in other modes |
 | `Ctrl + U/D` | Half-page scroll up/down |
 | `Up/Down` | Navigate list items |
 

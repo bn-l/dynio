@@ -1,5 +1,5 @@
 
-<DisplayWrapper padding="pl-2">
+<DisplayWrapper padding="pl-2" keyScroll={false}>
     <div
         id="listDisplay"
         style={displayOptions?.fontSize ? `font-size: ${displayOptions.fontSize}rem` : ""}

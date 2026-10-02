@@ -17,6 +17,7 @@ import {
 } from '$lib/stores/globals';
 import type { CmdConfigItem } from '$lib/stores/schema/cmd-config-schema';
 import CmdSelector from '../../src/Tray/CmdSelector.svelte';
+import { stubPanelScroll } from '../helpers/panelScroll';
 
 // Mock Tauri APIs
 const mockInvoke = vi.fn();
@@ -435,6 +436,24 @@ describe('CmdSelector.svelte', () => {
             await new Promise((resolve) => setTimeout(resolve, 30));
 
             expect(container.querySelectorAll('.cmd-item')[0].classList.contains('item-selected')).toBe(true);
+        });
+
+        it('Ctrl+J/K move the selection without also scrolling the panel by a step', async () => {
+            cmdConfig.set({ cmd1: createConfig(), cmd2: createConfig() });
+            currentCmd.set('cmd1');
+
+            const { container } = render(CmdSelector);
+            const scrollBy = stubPanelScroll();
+
+            await fireEvent.keyDown(document.body, { key: 'j', code: 'KeyJ', ctrlKey: true });
+            await new Promise((resolve) => setTimeout(resolve, 30));
+            await vi.waitFor(() => {
+                expect(container.querySelectorAll('.cmd-item')[1].classList.contains('item-selected')).toBe(true);
+            });
+            await fireEvent.keyDown(document.body, { key: 'k', code: 'KeyK', metaKey: true });
+            await new Promise((resolve) => setTimeout(resolve, 30));
+
+            expect(scrollBy).not.toHaveBeenCalled();
         });
 
         it('Ctrl+J does not select the command', async () => {

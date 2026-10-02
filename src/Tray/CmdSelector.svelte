@@ -1,4 +1,4 @@
-<DisplayWrapper padding="pl-2 py-2">
+<DisplayWrapper padding="pl-2 py-2" keyScroll={false}>
     <div id="cmdSelector">
         {#each items as item, index (item.cmdName)}
             <div

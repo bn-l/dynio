@@ -2,10 +2,11 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, cleanup } from '@testing-library/svelte';
+import { render, fireEvent, cleanup } from '@testing-library/svelte';
 import { get } from 'svelte/store';
 import { scrollContainer } from '$lib/stores/globals';
 import DisplayWrapper from '../../../src/lib/utils/DisplayWrapper.svelte';
+import { stubPanelScroll } from '../../helpers/panelScroll';
 
 // Mock Tauri APIs
 vi.mock('@tauri-apps/api/core', () => ({
@@ -236,6 +237,97 @@ describe('DisplayWrapper.svelte', () => {
             expect(get(scrollContainer)).toBeNull();
 
             unmount1();
+        });
+    });
+
+    describe('Cmd/Ctrl+J/K scrolling', () => {
+        const keydown = (init: KeyboardEventInit) =>
+            new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init });
+
+        it('Ctrl+J scrolls down and Cmd+K scrolls back up by the same amount', async () => {
+            render(DisplayWrapper);
+            const scrollBy = stubPanelScroll();
+
+            await fireEvent.keyDown(document.body, { key: 'j', code: 'KeyJ', ctrlKey: true });
+            await fireEvent.keyDown(document.body, { key: 'k', code: 'KeyK', metaKey: true });
+
+            const [[down], [up]] = scrollBy.mock.calls;
+            expect(down.top).toBeGreaterThan(0);
+            expect(up.top).toBe(-down.top);
+            expect(down.behavior).toBe('instant');
+            expect(up.behavior).toBe('instant');
+        });
+
+        it('works when Ctrl+letter gives a control character as the key (macOS)', async () => {
+            render(DisplayWrapper);
+            const scrollBy = stubPanelScroll();
+
+            await fireEvent.keyDown(document.body, { key: '\n', code: 'KeyJ', ctrlKey: true });
+            await fireEvent.keyDown(document.body, { key: '\v', code: 'KeyK', ctrlKey: true });
+
+            expect(scrollBy).toHaveBeenCalledTimes(2);
+            expect(scrollBy.mock.calls[0][0].top).toBeGreaterThan(0);
+            expect(scrollBy.mock.calls[1][0].top).toBeLessThan(0);
+        });
+
+        it('scrolls on every key repeat (none are dropped)', async () => {
+            render(DisplayWrapper);
+            const scrollBy = stubPanelScroll();
+
+            for (let i = 0; i < 3; i++) {
+                document.body.dispatchEvent(keydown({ key: 'j', code: 'KeyJ', ctrlKey: true }));
+            }
+
+            expect(scrollBy).toHaveBeenCalledTimes(3);
+        });
+
+        it('prevents Ctrl+K in the input, so it does not delete the rest of the line', () => {
+            render(DisplayWrapper);
+            stubPanelScroll();
+            const input = document.createElement('input');
+            document.body.appendChild(input);
+            input.focus();
+
+            const event = keydown({ key: '\v', code: 'KeyK', ctrlKey: true });
+            input.dispatchEvent(event);
+
+            expect(event.defaultPrevented).toBe(true);
+            input.remove();
+        });
+
+        it('plain j and k (typing) neither scroll nor get prevented', () => {
+            render(DisplayWrapper);
+            const scrollBy = stubPanelScroll();
+
+            const j = keydown({ key: 'j', code: 'KeyJ' });
+            const k = keydown({ key: 'k', code: 'KeyK' });
+            document.body.dispatchEvent(j);
+            document.body.dispatchEvent(k);
+
+            expect(scrollBy).not.toHaveBeenCalled();
+            expect(j.defaultPrevented).toBe(false);
+            expect(k.defaultPrevented).toBe(false);
+        });
+
+        it('keyScroll={false} leaves Ctrl+J/K alone', () => {
+            render(DisplayWrapper, { props: { keyScroll: false } });
+            const scrollBy = stubPanelScroll();
+
+            const event = keydown({ key: 'j', code: 'KeyJ', ctrlKey: true });
+            document.body.dispatchEvent(event);
+
+            expect(scrollBy).not.toHaveBeenCalled();
+            expect(event.defaultPrevented).toBe(false);
+        });
+
+        it('stops handling Ctrl+J/K after unmount', () => {
+            const { unmount } = render(DisplayWrapper);
+            unmount();
+
+            const event = keydown({ key: 'k', code: 'KeyK', ctrlKey: true });
+            document.body.dispatchEvent(event);
+
+            expect(event.defaultPrevented).toBe(false);
         });
     });
 
