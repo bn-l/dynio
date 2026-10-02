@@ -297,9 +297,9 @@ ls ~/Desktop ~/Documents ~/Downloads >/dev/null 2>&1
 *Drop a file on the bar and its path goes into the input. Press enter and the script's output shows up as it runs.*
 </div>
 
-The whole input reaches your command as **one argument**, so a path with spaces in it (like macOS's `Screen Recording … at 10.41.23.mov` names) arrives intact. There's no quoting or escaping to get right.
+The whole input reaches your command as **one argument** so a path with spaces in it is no problems.
 
-When it's done, Cmd/Ctrl+Enter opens the new file and Cmd/Ctrl+O shows it in its folder: the script prints the new file's path last, and `extractorRegexBody` picks it out of the output.
+In this example script, when it's done, Cmd/Ctrl+Enter opens the new file and Cmd/Ctrl+O shows it in its folder (the script prints the new file's path last, and `extractorRegexBody` picks it out of the output).
 
 ```yaml
 to_mp4:
@@ -310,7 +310,7 @@ to_mp4:
     modeConfig:
         mode: single
         displayOptions:
-            json: false  # single mode reads output as JSON unless told not to
+            json: false  # NB: "single" mode reads output as JSON unless this is false
             smallSize: 1
         activationOptions:
             activateAction: open
@@ -365,14 +365,12 @@ echo "$out"
 *Every script in `~/scripts`, searched by name as you type. Enter runs the selected one and Dynio gets out of the way.*
 </div>
 
-Why bother?
+Why this might be a good idea:
 
-- **Your scripts stop getting lost.** Everyone collects little scripts and then forgets what they're called or where they live. Type a few letters of whatever you remember and it's there.
-- **The scripts you get an LLM to write have a home.** Save them all to one folder and you can see what you've got at a glance, instead of hunting through downloads and old chats. Cmd/Ctrl+O shows any of them in its folder when you want to read or tweak it.
-- **No terminal.** One keystroke from any app: no opening a terminal, no `cd`, no remembering flags. The flags live in the script.
-- **Adding one is just saving a file.** The list is read fresh every time, so a new script shows up straight away with no config change. It's like Raycast or Alfred script commands, but it's just a folder.
-- **It's for the jobs you do once a month:** flush DNS, restart audio, delete merged git branches, back up photos. They're too rare to remember and too fiddly to retype.
-- **It's portable.** Keep the folder in your dotfiles and you get the same launcher on every machine.
+- Keeping all the little scripts and commands you create in one place with a nice fuzzy filtered list to search them.
+- Adding a new script is just saving a file: Like Raycast or Alfred script commands, but all you need is a folder with scripts.
+- Examples: flush DNS, restart audio, delete merged git branches, back up photos.
+- Portable: Keep the folder in your dotfiles and you get the same launcher on every machine.
 
 ```yaml
 scripts:
