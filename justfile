@@ -103,6 +103,11 @@ gen-schema:
 icons source:
     npm run tauri icon {{ source }}
 
+# Make the README's animated demos in assets-repo/ (all, or the ones named)
+[group('misc')]
+demos *args:
+    uv run scripts/demos/make-demos.py {{ args }}
+
 # Open the Dynio config folder
 [group('misc')]
 [macos]

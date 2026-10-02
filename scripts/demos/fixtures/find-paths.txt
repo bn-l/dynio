@@ -1,0 +1,59 @@
+/System/Applications/App Store.app
+/System/Applications/Automator.app
+/System/Applications/Books.app
+/System/Applications/Calculator.app
+/System/Applications/Calendar.app
+/System/Applications/Chess.app
+/System/Applications/Clock.app
+/System/Applications/Contacts.app
+/System/Applications/Dictionary.app
+/System/Applications/FaceTime.app
+/System/Applications/Find My.app
+/System/Applications/Font Book.app
+/System/Applications/Freeform.app
+/System/Applications/Home.app
+/System/Applications/Image Playground.app
+/System/Applications/Mail.app
+/System/Applications/Maps.app
+/System/Applications/Messages.app
+/System/Applications/Mission Control.app
+/System/Applications/Music.app
+/System/Applications/News.app
+/System/Applications/Notes.app
+/System/Applications/Passwords.app
+/System/Applications/Photo Booth.app
+/System/Applications/Photos.app
+/System/Applications/Podcasts.app
+/System/Applications/Preview.app
+/System/Applications/QuickTime Player.app
+/System/Applications/Reminders.app
+/System/Applications/Shortcuts.app
+/System/Applications/Stickies.app
+/System/Applications/Stocks.app
+/System/Applications/System Settings.app
+/System/Applications/TextEdit.app
+/System/Applications/Time Machine.app
+/System/Applications/TV.app
+/System/Applications/Voice Memos.app
+/System/Applications/Weather.app
+/System/Applications/Utilities/Activity Monitor.app
+/System/Applications/Utilities/Disk Utility.app
+/System/Applications/Utilities/Screenshot.app
+/System/Applications/Utilities/Terminal.app
+/Applications/Firefox.app
+/Applications/Pixelmator Pro.app
+/Applications/Safari.app
+/Applications/Visual Studio Code.app
+/Users/Shared/wedding-photos.jpg
+/Users/Shared/photo-booth-export.mov
+/Users/Shared/photo-backup-2026.zip
+/Users/Shared/photo-ideas.md
+/Users/Shared/Music/Photograph.mp3
+/Users/Shared/Documents/photo-release-form.pdf
+/Users/Shared/Projects/photo-gallery/photo-grid.ts
+/Users/Shared/Projects/photo-gallery/photo_utils.py
+/Users/Shared/Projects/photo-gallery/photos.json
+/Users/Shared/budget-2026.xlsx
+/Users/Shared/notes.txt
+/Users/Shared/Projects/photo-gallery/index.html
+/Users/Shared/Projects/photo-gallery/README.md

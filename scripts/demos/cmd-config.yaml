@@ -1,0 +1,87 @@
+# The commands the README demos use. These match the README's examples. make-demos.py works out
+# each command's output itself, so the command paths here are never run.
+
+qalc:
+    command: qalc
+    arguments:
+        - -t
+        - -c
+        - -s
+        - "upxrates 1"
+    description: Calculator (Qalculate)
+    hotkeyNumber: 1
+    placeholderText: Calculate...
+    noOutputTimeoutMs: 100
+    modeConfig:
+        mode: single
+        displayOptions:
+            parseAnsiColors: true
+            json: false
+        activationOptions:
+            activateAction: copy
+
+find:
+    command: /path/to/custom-find.sh
+    description: Search files using Spotlight. Apps shown first.
+    hotkeyNumber: 2
+    placeholderText: Search files
+    noOutputTimeoutMs: 150
+    modeConfig:
+        mode: list
+        displayOptions:
+            parseAnsiColors: true
+            stderrFilterRegex: "\\[UserQueryParser\\]"
+            maxLineLength: 160
+            lineSplitter: "\n"
+            fontSize: 0.8
+        activationOptions:
+            activateAction: open
+            hideOnActivation: true
+            isPath: true
+
+groq:
+    command: node
+    arguments:
+        - /path/to/groq-ask.js
+    description: Ask Groq a question (uses compound model with web search)
+    hotkeyNumber: 3
+    placeholderText: Ask Groq...
+    runOnEnter: true
+    noOutputTimeoutMs: 2000
+    modeConfig:
+        mode: llm
+        displayOptions:
+            parseAnsiColors: false
+            thinkingDisplay: showWhileThinking
+            smallSize: 0.8
+            largeSize: 1
+            sizeBreakPoint: 100
+
+to_mp4:
+    command: /path/to/to-mp4.sh
+    description: Convert a video to mp4 (drop it on the bar)
+    hotkeyNumber: 4
+    placeholderText: Drop a video here...
+    runOnEnter: true
+    modeConfig:
+        mode: single
+        displayOptions:
+            json: false
+            smallSize: 1
+        activationOptions:
+            activateAction: open
+            isPath: true
+            extractorRegexBody: "[^\\n]+\\.mp4$"
+
+scripts:
+    command: /path/to/list-scripts.sh
+    description: Run one of my scripts
+    hotkeyNumber: 5
+    placeholderText: Run a script...
+    modeConfig:
+        mode: list
+        displayOptions: {}
+        activationOptions:
+            activateAction: command
+            commandPath: /usr/bin/env
+            isPath: true
