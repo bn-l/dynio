@@ -26,9 +26,12 @@
             }
         }}
         on:keydown={(event) => {
+            // Only plain Enter runs: Cmd/Ctrl+Enter activates the output (the displays handle it)
             if(
-                $currentCmdConfig?.runOnEnter 
+                $currentCmdConfig?.runOnEnter
                 && event.key === "Enter"
+                && !event.metaKey
+                && !event.ctrlKey
             ) {
                 debouncedRP($query);
             }

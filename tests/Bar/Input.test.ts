@@ -201,6 +201,22 @@ describe('Input.svelte', () => {
                 input: 'test',
             }));
         });
+
+        // Cmd/Ctrl+Enter activates the output (e.g. opens a converted file). It used to run the
+        // command again as well, which restarted a conversion and overwrote the file being opened.
+        it.each([
+            ['Cmd+Enter', { metaKey: true }],
+            ['Ctrl+Enter', { ctrlKey: true }],
+        ])('does not run on %s', async (_name, modifier) => {
+            const { container } = render(Input);
+            const input = getInput(container);
+
+            await fireEvent.input(input, { target: { value: 'test' } });
+            await fireEvent.keyDown(input, { key: 'Enter', ...modifier });
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            expect(mockInvoke).not.toHaveBeenCalledWith('run_program', expect.anything());
+        });
     });
 
     describe('empty/whitespace input handling', () => {
