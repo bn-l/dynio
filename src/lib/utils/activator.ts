@@ -42,14 +42,20 @@ export async function activate(
     if(openContaining) text = await invoke("trim_path", { path: text });
 
     try {
-        if (activateAction === "command" && "commandPath" in options) {
+        // Cmd/Ctrl+O opens the folder whatever the action is. It used to do the action with the
+        // folder's path, e.g. run the command on the folder.
+        if (openContaining) {
+            await openPath(text);
+        }
+        else if (activateAction === "command" && "commandPath" in options) {
             const args = [...(options.commandArguments ?? []), text];
             await invoke("spawn_detached", {
                 program: options.commandPath,
                 arguments: args,
                 current_dir: options.commandCurrentDir,
             });
-        } else {
+        }
+        else {
             const action = activateAction === "open" ? openPath : writeText;
             await action(text);
         }

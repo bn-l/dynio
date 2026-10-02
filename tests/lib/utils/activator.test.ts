@@ -206,7 +206,7 @@ describe('activate', () => {
             expect(mockOpenPath).toHaveBeenCalledWith('/parent/dir');
         });
 
-        it('passes trimmed path to copy action', async () => {
+        it('opens the folder for the copy action too, instead of copying its path', async () => {
             mockInvoke.mockImplementation((cmd: string) => {
                 if (cmd === 'trim_path') return Promise.resolve('/parent');
                 return Promise.resolve(undefined);
@@ -214,7 +214,8 @@ describe('activate', () => {
 
             await activate('/parent/child', { activateAction: 'copy' }, true);
 
-            expect(mockWriteText).toHaveBeenCalledWith('/parent');
+            expect(mockOpenPath).toHaveBeenCalledWith('/parent');
+            expect(mockWriteText).not.toHaveBeenCalled();
         });
     });
 
@@ -413,7 +414,8 @@ describe('activate', () => {
             });
         });
 
-        it('passes parent directory to command when openContaining is true', async () => {
+        // A command that deletes its argument must never be handed the folder
+        it('opens the folder instead of running the command when openContaining is true', async () => {
             mockInvoke.mockImplementation((cmd: string) => {
                 if (cmd === 'trim_path') return Promise.resolve('/parent');
                 return Promise.resolve(undefined);
@@ -424,11 +426,8 @@ describe('activate', () => {
                 commandPath: '/usr/bin/code',
             }, true);
 
-            expect(mockInvoke).toHaveBeenCalledWith('spawn_detached', {
-                program: '/usr/bin/code',
-                arguments: ['/parent'],
-                current_dir: undefined,
-            });
+            expect(mockOpenPath).toHaveBeenCalledWith('/parent');
+            expect(mockInvoke).not.toHaveBeenCalledWith('spawn_detached', expect.anything());
         });
     });
 
