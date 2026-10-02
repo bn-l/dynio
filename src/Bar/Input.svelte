@@ -84,7 +84,8 @@
                     break;
             }
         });
-        return () => { void unlisten.then(f => f()); };
+        // Cancel a run that's still waiting on the debounce, so it can't fire after unmount
+        return () => { debouncedRP.cancel(); void unlisten.then(f => f()); };
     });
 
     function runProgram(input: string) {
