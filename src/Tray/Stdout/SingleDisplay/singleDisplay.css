@@ -1,6 +1,8 @@
 #singleDisplay {
     font-family: Inter;
     letter-spacing: normal;
+    /* Keep the output's line breaks (and the indentation of pretty-printed JSON) */
+    white-space: pre-wrap;
 }
 
 #singleDisplay li {
