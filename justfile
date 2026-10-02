@@ -14,10 +14,24 @@ default:
 install:
     npm install
 
-# Run the full app (Tauri + Vite) in dev mode
+# Run the app in dev mode; `dark`/`light` force the theme on a temp copy of your config
 [group('app')]
-dev:
-    npm run tauri dev
+dev theme="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{ theme }}" in
+        "") exec npm run tauri dev ;;
+        dark) mode=on ;;
+        light) mode=off ;;
+        *) echo "theme must be dark or light" >&2; exit 1 ;;
+    esac
+    tmp=$(mktemp -d)
+    trap 'rm -rf "$tmp"' EXIT
+    mkdir "$tmp/dynio"
+    cp "{{ config_dir }}/cmd-config.yaml" "$tmp/dynio/"
+    sed '/^darkMode:/d' "{{ config_dir }}/general-settings.yaml" > "$tmp/dynio/general-settings.yaml"
+    printf '\ndarkMode: "%s"\n' "$mode" >> "$tmp/dynio/general-settings.yaml"
+    XDG_CONFIG_HOME="$tmp" npm run tauri dev
 
 # Run only the frontend dev server (http://localhost:14222)
 [group('app')]
