@@ -43,6 +43,23 @@ dev-web:
 build:
     npm run tauri build
 
+# Sign the installed app with your own certificate so macOS keeps its permissions across updates (run after each brew install/upgrade)
+[group('app')]
+[macos]
+sign-installed identity="Local Dev Signing":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    app=/Applications/dynio.app
+    was_running=false
+    if pkill -f "$app/Contents/MacOS/dynio"; then
+        was_running=true
+        while pgrep -f "$app/Contents/MacOS/dynio" >/dev/null; do sleep 0.2; done
+    fi
+    codesign --force --sign "{{ identity }}" "$app"
+    codesign --verify --strict "$app"
+    codesign -d -r- "$app" 2>&1 | tail -1
+    if $was_running; then open "$app"; fi
+
 # Build only the frontend into dist/
 [group('app')]
 build-web:
