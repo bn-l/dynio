@@ -67,7 +67,7 @@
 }
 
 #mainWrapper {
-    background: var(--card-glow, none), var(--bg-app);
+    background: var(--bg-app);
     color: var(--text);
     border-radius: 1.25rem;
     border: 1px solid var(--rim);
@@ -78,7 +78,7 @@
 
 
 /* Dark peach. Dark orange used as a flat fill turns into muddy brown, so peach is used as light
-   instead: a terracotta base with a peach glow from the top, peach text and icons, and
+   instead: a terracotta base, peach text and icons, and
    a selection that's a translucent peach wash with a soft peach edge. Solid orange is only
    used for small badges. */
 .dark {
@@ -99,7 +99,6 @@
     --selection-edge: rgba(255, 190, 150, 0.2);
 
     --bg-app: rgba(43, 29, 24, 0.985);
-    --card-glow: radial-gradient(130% 75% at 50% 0%, rgba(255, 150, 100, 0.14), transparent 72%);
     --text-muted: #c9ab99;
     --divider-color: rgba(255, 190, 150, 0.1);
 
