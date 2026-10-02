@@ -1,4 +1,4 @@
-<DisplayWrapper padding="px-2 py-2">
+<DisplayWrapper padding="pl-2 py-2">
     <div id="cmdSelector">
         {#each items as item, index (item.cmdName)}
             <div

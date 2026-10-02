@@ -1,4 +1,4 @@
-<DisplayWrapper padding="pl-4 pt-4 pr-6">
+<DisplayWrapper padding="pl-4 pt-4 pr-4">
     <div
         id="llmDisplay"
         style={`font-size: ${fontSize}rem`}

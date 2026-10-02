@@ -1,5 +1,5 @@
 
-<DisplayWrapper padding="px-2">
+<DisplayWrapper padding="pl-2">
     <div
         id="listDisplay"
         style={displayOptions?.fontSize ? `font-size: ${displayOptions.fontSize}rem` : ""}

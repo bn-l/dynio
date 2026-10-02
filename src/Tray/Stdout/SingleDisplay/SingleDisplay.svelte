@@ -1,4 +1,4 @@
-<DisplayWrapper padding="p-4">
+<DisplayWrapper padding="pl-4 py-4 pr-2">
     <div
         id="singleDisplay"
         style={`font-size: ${fontSize}rem`}
