@@ -41,10 +41,10 @@ mod settings_initialization_values {
     }
 
     #[test]
-    fn input_font_size_defaults_to_1_8() {
+    fn input_font_size_defaults_to_1_5() {
         let yaml = "{}";
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-        assert!((settings.input_font_size - 1.8).abs() < f32::EPSILON);
+        assert!((settings.input_font_size - 1.5).abs() < f32::EPSILON);
     }
 
     #[test]
@@ -279,10 +279,10 @@ mod input_font_size_settings {
     use super::*;
 
     #[test]
-    fn default_font_size_is_1_8() {
+    fn default_font_size_is_1_5() {
         let yaml = "{}";
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-        assert!((settings.input_font_size - 1.8).abs() < 0.001);
+        assert!((settings.input_font_size - 1.5).abs() < 0.001);
     }
 
     #[test]
@@ -446,7 +446,7 @@ globalShortcut: "Ctrl+Space"
         // Everything else uses defaults
         assert_eq!(settings.dark_mode, DarkMode::Off);
         assert!(!settings.always_on_top);
-        assert!((settings.input_font_size - 1.8).abs() < 0.001);
+        assert!((settings.input_font_size - 1.5).abs() < 0.001);
     }
 
     #[test]

@@ -78,7 +78,7 @@ test-cmd:
             const loadedSettings = get(settings);
             // Zod should apply defaults for unspecified fields
             expect(loadedSettings.darkMode).toBe('off');
-            expect(loadedSettings.inputFontSize).toBe(1.8);
+            expect(loadedSettings.inputFontSize).toBe(1.5);
             expect(loadedSettings.hideOnLostFocus).toBe(true);
         });
 

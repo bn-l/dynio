@@ -17,7 +17,7 @@ export type GeneralSettings = {
     startMinimised?: boolean;
     /**
      * Size of input font in rem.
-     * @default 1.8
+     * @default 1.5
      */
     inputFontSize?: number;
     /**

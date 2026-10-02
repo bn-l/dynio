@@ -49,7 +49,7 @@ reshowInCenter: true
         assert!(settings.default_command.is_none());
         assert!(settings.first_launch.is_none());
         assert!(!settings.start_minimised);
-        assert_eq!(settings.input_font_size, 1.8); // default
+        assert_eq!(settings.input_font_size, 1.5); // default
         assert!(!settings.always_on_top);
         assert!(settings.global_shortcut.is_none());
         assert!(!settings.reshow_in_center);
@@ -79,7 +79,7 @@ alwaysOnTop: true
         assert!(settings.always_on_top);
         // Other fields use defaults
         assert!(!settings.start_minimised);
-        assert_eq!(settings.input_font_size, 1.8);
+        assert_eq!(settings.input_font_size, 1.5);
         assert!(settings.global_shortcut.is_none());
     }
 }
@@ -103,10 +103,10 @@ mod default_values {
     }
 
     #[test]
-    fn input_font_size_defaults_to_1_8() {
+    fn input_font_size_defaults_to_1_5() {
         let yaml = "{}";
         let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
-        assert_eq!(settings.input_font_size, 1.8);
+        assert_eq!(settings.input_font_size, 1.5);
     }
 
     #[test]
@@ -540,7 +540,7 @@ mod get_general_settings_pattern {
         let settings = result.unwrap();
         assert_eq!(settings.dark_mode, DarkMode::Off);
         assert!(!settings.start_minimised);
-        assert_eq!(settings.input_font_size, 1.8);
+        assert_eq!(settings.input_font_size, 1.5);
     }
 }
 

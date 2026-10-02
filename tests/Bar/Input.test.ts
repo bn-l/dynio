@@ -270,13 +270,13 @@ describe('Input.svelte', () => {
             expect(input.style.fontSize).toBe('2.5rem');
         });
 
-        it('uses default 1.8rem when inputFontSize not set', () => {
+        it('uses default 1.5rem when inputFontSize not set', () => {
             settings.set({});
 
             const { container } = render(Input);
             const input = container.querySelector('#cmdInput') as HTMLInputElement;
 
-            expect(input.style.fontSize).toBe('1.8rem');
+            expect(input.style.fontSize).toBe('1.5rem');
         });
     });
 

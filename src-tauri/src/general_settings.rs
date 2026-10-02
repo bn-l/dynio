@@ -120,7 +120,7 @@ fn default_false() -> bool {
 
 /// Provides a default value for `timeout_secs`.
 fn default_input_font_size() -> f32 {
-    1.8
+    1.5
 }
 
 fn default_max_window_width() -> f64 {

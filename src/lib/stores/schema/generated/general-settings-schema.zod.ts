@@ -22,7 +22,7 @@ export default z
     inputFontSize: z
       .number()
       .describe("Size of input font in rem.")
-      .default(1.8),
+      .default(1.5),
     alwaysOnTop: z
       .boolean()
       .describe("Always on top of other windows?")

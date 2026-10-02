@@ -30,7 +30,7 @@
         "inputFontSize": {
           "type": "number",
           "description": "Size of input font in rem.",
-          "default": 1.8
+          "default": 1.5
         },
         "alwaysOnTop": {
           "type": "boolean",

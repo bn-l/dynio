@@ -44,7 +44,7 @@
     import { debounce } from "lodash-es";
     import { inputFocusAction } from "./InputFocusAction.ts";
 
-    $: fontSizeString = "font-size: " + ($settings.inputFontSize ?? 1.8.toString()) + "rem";
+    $: fontSizeString = "font-size: " + ($settings.inputFontSize ?? 1.5.toString()) + "rem";
     
     function runProgram(input: string) {
 
