@@ -1,5 +1,52 @@
 # Devlog
 
+## 2026-10-03: Cmd+O ran the activate action on the folder instead of opening it
+
+**Symptom**: With `isPath: true`, Cmd/Ctrl+O (and right-click in list mode) is documented as "open containing folder", but it only did that for `activateAction: open`. With `copy` it copied the folder's path. With `command` it ran the command with the folder as its argument. That was dangerous for a command that deletes its argument: a "move the original to the Trash" command would have been handed the folder.
+
+**Root cause**: `activate()` replaced the text with its parent folder (`trim_path`) and then did the configured action with it, the same as for Enter.
+
+**Fix**: when `openContaining` is set, `activate()` always opens the folder with `openPath` and skips the action.
+
+**Behaviour change**: in my find command (`activateAction: command`, the frecency script), Cmd+O used to run that script on the folder, which recorded the folder as opened and then opened it. Now it just opens the folder.
+
+**Tests** (`tests/lib/utils/activator.test.ts`): two tests asserted the old behaviour and now assert the new one. "passes trimmed path to copy action" is now "opens the folder for the copy action too", and "passes parent directory to command" is now "opens the folder instead of running the command", which also checks that `spawn_detached` isn't called.
+
+## 2026-10-03: Cmd+Enter also re-ran runOnEnter commands
+
+**Symptom**: For a command with `runOnEnter`, Cmd/Ctrl+Enter (activate the output) also started the command again. In the README's `to_mp4` example, Cmd+Enter opened the converted file and restarted the conversion, which overwrote that file. Found while planning a "Cmd+Enter moves the original to the Trash" action for a screen recording converter, where the re-run would convert the file being trashed.
+
+**Root cause**: `Input.svelte`'s keydown handler ran the command on any Enter without looking at modifier keys. The same keypress then bubbled up to the display's Cmd+Enter handler on `<body>`, which activated the output, so both happened (the re-run 30 ms later, after the debounce).
+
+**Fix**: the input only runs the command on plain Enter (`!event.metaKey && !event.ctrlKey`, matching the displays' `CmdOrCtrl`).
+
+**Regression tests** (`tests/Bar/Input.test.ts`): with `runOnEnter`, Cmd+Enter and Ctrl+Enter don't call `run_program`.
+
+**Related, not fixed**: the `hotkeys` action doesn't check that modifiers it wasn't given are *up*, so a handler for plain Enter also fires on Cmd+Enter. Without `runOnEnter`, Cmd+Enter therefore activates twice in single mode (the Enter and the Cmd+Enter handler). It's harmless for copy/open, but a `command` action runs twice.
+
+## 2026-10-02: macOS privacy permissions lost on every update
+
+**Symptom**: After an update, commands using Spotlight (`mdfind`) stopped finding files in Desktop, Documents and Downloads. There was no prompt and no error, just fewer results. Touching those folders from a command (`ls ~/Desktop ...`) brought the prompts back, but only until the next update.
+
+**Root cause**: Release builds were only linker-signed (ad-hoc). macOS identifies an ad-hoc app by a hash of that exact build, and stores that hash with each privacy permission it grants. Every new build has a new hash, so the old grants stopped applying. `mdfind` never triggers a prompt: Spotlight just leaves out results the app isn't allowed to see. TCC.db had the grants pinned to `cdhash d601b0bc…` while the installed 1.7.0 was `cdhash 759e7a85…`.
+
+**Fix**: Releases are still ad-hoc signed. Only my own install is re-signed, with my local self-signed certificate ("Local Dev Signing"), after every `brew install` / `brew upgrade`:
+- `just sign-installed` quits the installed app if it's running, signs `/Applications/dynio.app`, and reopens it if it was running. The app's code identity is then `identifier "com.dynio.net" and certificate root = H"2b4e4707…"`, the same for every build, so permissions granted once carry over to later versions.
+- Permissions have to be granted *after* signing, because macOS stores the identity the app had at the time. dynio only gets Desktop, Documents and Downloads (Files & Folders), not Full Disk Access. Files & Folders entries can't be added by hand in System Settings; they only appear after the app asks. My find script (`~/.config/dynio/scripts/custom-find.sh`) has a commented-out `ls` of the three folders for this. I uncommented it, did one search, allowed the three prompts (stored against the certificate, not the build), and commented it out again. That's back to the old setup, except it no longer needs redoing after every update.
+- `src-tauri/Info.plist` (merged by Tauri) adds usage descriptions for Desktop, Documents, Downloads, removable and network drives, so the prompts say why.
+
+**Decisions**:
+- **Signing is for my machine only.** CI doesn't sign anything. Other people who install dynio get the ad-hoc build and lose permissions on each update, as before. They can sign their own install with their own certificate (`just sign-installed "<their identity>"`) or re-grant after each update.
+- **The certificate isn't backed up.** If it's ever lost or replaced, there's nothing to recover: sign with whatever certificate there is now, then grant the permissions again (`tccutil reset All com.dynio.net`, then uncomment the `ls` line in the find script, do one search, allow the three prompts and comment it out again).
+
+**Gotchas**:
+- If I forget to re-sign after an upgrade, the original symptom comes back: no error, just missing results (the unsigned build is a different app to macOS). Running `just sign-installed` fixes it without re-granting, because nothing asked, so the stored permissions were never touched. dynio's built-in updater is disabled (`App.svelte`), so Homebrew is the only thing that replaces the app.
+- `signingIdentity: "-"` (ad-hoc, what Tauri's docs suggest without an Apple account) doesn't help. An ad-hoc identity is always the build hash.
+- If CI signing is ever wanted with a self-signed certificate, Tauri's own `APPLE_CERTIFICATE` import can't be used. After importing, it only looks for Apple-issued certificate names (`Developer ID Application:`, `Apple Development:`, ...) and fails on a self-signed one. The workflow would have to import the certificate into a keychain itself and pass only `APPLE_SIGNING_IDENTITY`.
+- Dev builds (`just dev`) are separate apps as far as permissions go, so they won't see protected folders.
+
+**Checked**: two copies of the app with different build hashes, signed with the same certificate, had the same code identity and passed `codesign --verify --strict`.
+
 ## 2026-10-02: Single mode squashed output onto one line
 
 **Symptom**: Multi-line output in single mode showed as one paragraph. Lines "one", "two" and "three" read "one two three", and pretty-printed JSON (`json: true` without `jsonPath`) lost its line breaks and indentation. Found while making the ffmpeg demo, whose progress is one line per step.
