@@ -45,8 +45,8 @@
     import { onDestroy } from "svelte";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
-    import { stdout, statusBar, keySymbols } from "$lib/stores/globals.ts";
-    import type { StatusBarAction } from "$lib/stores/globals.ts";
+    import { stdout, statusBar, keySymbols, clearStatusBarIfShowing } from "$lib/stores/globals.ts";
+    import type { StatusBarAction, StatusBarState } from "$lib/stores/globals.ts";
     import { activate } from "$lib/utils/activator.ts";
     import { fileKind } from "$lib/utils/fileKind.ts";
     import { processListOutput, type ProcessedItem } from "./processListOutput.ts";
@@ -61,6 +61,9 @@
     // Shared by the status bar and the selected row's hint so they can't disagree
     $: activateKey = runOnEnter ? `${keySymbols.cmd}+${keySymbols.enter}` : keySymbols.enter;
 
+    // What this list last put in the status bar, so it only clears that when it goes away
+    let shownStatus: StatusBarState | undefined;
+
     $: {
         const actions: StatusBarAction[] = [
             { key: activateKey, label: activationOptions?.activateAction ?? "copy" },
@@ -71,15 +74,16 @@
         }
 
         console.debug("[DEBUG] ListDisplay: SETTING statusBar, actions:", actions.map(a => a.label).join(","), "count:", items.length);
-        $statusBar = {
+        shownStatus = {
             actions,
             count: !displayOptions?.hideCount && items.length > 0 ? `${items.length} items` : ""
         };
+        $statusBar = shownStatus;
     }
 
     onDestroy(() => {
-        console.debug("[DEBUG] ListDisplay: onDestroy - CLEARING statusBar");
-        $statusBar = { actions: [], count: "" };
+        console.debug("[DEBUG] ListDisplay: onDestroy - clearing statusBar if it's still the list's");
+        clearStatusBarIfShowing(shownStatus);
     });
 
 

@@ -51,21 +51,26 @@
     import { debounce } from "lodash-es";
     import { onDestroy, onMount } from "svelte";
     import { cmdConfig } from "$lib/stores/cmd-config.ts";
-    import { currentCmd, query, stdout, currentTrayView, currentFocus, stdoutLock, statusBar, keySymbols } from "$lib/stores/globals.ts";
+    import { currentCmd, query, stdout, currentTrayView, currentFocus, stdoutLock, statusBar, keySymbols, clearStatusBarIfShowing } from "$lib/stores/globals.ts";
+    import type { StatusBarState } from "$lib/stores/globals.ts";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { invoke } from "@tauri-apps/api/core";
     import DisplayWrapper from "$lib/utils/DisplayWrapper.svelte";
 
     console.debug($cmdConfig);
 
-    $: $statusBar = {
-        actions: [{ key: "↵", label: "select" }],
-        count: `${items.length} commands`
-    };
+    // What the selector last put in the status bar, so it only clears that when it goes away
+    let shownStatus: StatusBarState | undefined;
 
-    onDestroy(() => {
-        $statusBar = { actions: [], count: "" };
-    });
+    $: {
+        shownStatus = {
+            actions: [{ key: "↵", label: "select" }],
+            count: `${items.length} commands`
+        };
+        $statusBar = shownStatus;
+    }
+
+    onDestroy(() => clearStatusBarIfShowing(shownStatus));
 
     // Sort by hotkey number: items with hotkeys come first (sorted by number), then items without
     $: commandList = Object.entries($cmdConfig).sort((a, b) => {

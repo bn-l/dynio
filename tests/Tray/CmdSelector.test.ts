@@ -682,21 +682,33 @@ describe('CmdSelector.svelte', () => {
             });
         });
 
-        it('status bar cleared on destroy', async () => {
+        it('its own status bar is cleared on destroy', async () => {
             cmdConfig.set({
                 cmd: createConfig(),
             });
 
             const { unmount } = render(CmdSelector);
-
-            // Set status bar to have content
-            statusBar.set({ actions: [{ key: '↵', label: 'select' }], count: '1 command' });
+            expect(get(statusBar).count).toBe('1 commands');
 
             unmount();
 
             const state = get(statusBar);
             expect(state.actions).toEqual([]);
             expect(state.count).toBe('');
+        });
+
+        it('a status bar something else set after it is left on destroy', async () => {
+            cmdConfig.set({
+                cmd: createConfig(),
+            });
+
+            const { unmount } = render(CmdSelector);
+            const hint = { actions: [{ key: 'esc', label: 'to hide' }], count: '' };
+            statusBar.set(hint);
+
+            unmount();
+
+            expect(get(statusBar)).toBe(hint);
         });
     });
 

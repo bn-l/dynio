@@ -19,8 +19,8 @@
     import { onDestroy } from "svelte";
     import { hotkeys } from "$lib/actions/hotkeys.ts";
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
-    import { stdout, statusBar, keySymbols } from "$lib/stores/globals.ts";
-    import type { StatusBarAction } from "$lib/stores/globals.ts";
+    import { stdout, statusBar, keySymbols, clearStatusBarIfShowing } from "$lib/stores/globals.ts";
+    import type { StatusBarAction, StatusBarState } from "$lib/stores/globals.ts";
     import stripAnsi from 'strip-ansi';
     import { activate } from "$lib/utils/activator.ts";
     import { processSingleOutput } from "./processSingleOuput.ts";
@@ -31,6 +31,9 @@
     $: parseAnsiColors = modeConfig?.displayOptions?.parseAnsiColors;
     $: activationOptions = modeConfig?.mode === "single" ? modeConfig.activationOptions : undefined;
     $: runOnEnter = $currentCmdConfig?.runOnEnter;
+
+    // What this display last put in the status bar, so it only clears that when it goes away
+    let shownStatus: StatusBarState | undefined;
 
     $: {
         const actions: StatusBarAction[] = [];
@@ -46,12 +49,11 @@
             actions.push({ key: `${keySymbols.cmd}+O`, label: "reveal" });
         }
 
-        $statusBar = { actions, count: "" };
+        shownStatus = { actions, count: "" };
+        $statusBar = shownStatus;
     }
 
-    onDestroy(() => {
-        $statusBar = { actions: [], count: "" };
-    });
+    onDestroy(() => clearStatusBarIfShowing(shownStatus));
 
     $: processedOutput = processSingleOutput($stdout, displayOptions);
 

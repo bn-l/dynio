@@ -997,6 +997,28 @@ describe('App.svelte', () => {
             const status = get(statusBar);
             expect(status.actions).toContainEqual({ key: 'esc', label: 'to hide' });
         });
+
+        // The list used to clear the status bar as it went away, right after App had put up
+        // "esc to clear". The status bar disappeared and the panel jumped (e.g. find: "ukr" to "uk").
+        it('keeps "esc to clear" when a list gives way to no output', async () => {
+            const { container } = render(App);
+            await vi.runAllTimersAsync();
+
+            stdoutLock.set(false);
+            query.set('ukr');
+            emitEvent('stdout', ['/docs/Ukrainian.txt', '/books/Ukridge.m4b']);
+            await vi.runAllTimersAsync();
+            expect(container.querySelector('#listDisplay')).not.toBeNull();
+
+            query.set('uk');
+            emitEvent('stdout', []);
+            emitEvent('exit', 0);
+            await vi.runAllTimersAsync();
+
+            expect(container.querySelector('#listDisplay')).toBeNull();
+            expect(get(statusBar).actions).toContainEqual({ key: 'esc', label: 'to clear' });
+            expect(container.querySelector('.status-bar')).not.toBeNull();
+        });
     });
 
     describe('prevented keys', () => {

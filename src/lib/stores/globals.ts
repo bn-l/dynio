@@ -1,5 +1,5 @@
 
-import { writable } from "svelte/store";
+import { get, writable } from "svelte/store";
 import { invoke } from "@tauri-apps/api/core";
 
 // navigator.platform is deprecated but we're keeping it because:
@@ -102,6 +102,16 @@ export interface StatusBarState {
 }
 
 export const statusBar = writable<StatusBarState>({ actions: [], count: "" });
+
+/**
+ * Clears the status bar, but only if it still shows `shown`. A view that sets the status bar
+ * calls this with what it last set when it goes away. By then App.svelte may have put up its
+ * own hint, like "esc to clear" when the output empties, and clearing that would hide the whole
+ * status bar.
+ */
+export function clearStatusBarIfShowing(shown: StatusBarState | undefined) {
+    if (get(statusBar) === shown) statusBar.set({ actions: [], count: "" });
+}
 
 // Scroll container for half-page scrolling (Ctrl+U/D)
 export const scrollContainer = writable<HTMLElement | null>(null);

@@ -356,20 +356,31 @@ describe('SingleDisplay.svelte', () => {
     });
 
     describe('onDestroy cleanup', () => {
-        it('clears status bar on destroy', async () => {
+        it('clears its own status bar on destroy', async () => {
             stdout.set(['content']);
 
             const { unmount } = render(SingleDisplay);
-
-            // Set some status bar state
-            statusBar.set({ actions: [{ key: '↵', label: 'copy' }], count: '' });
+            expect(get(statusBar).actions).not.toEqual([]);
 
             unmount();
 
-            // Status bar should be cleared
             const state = get(statusBar);
             expect(state.actions).toEqual([]);
             expect(state.count).toBe('');
+        });
+
+        // App.svelte puts up "esc to clear" when the output empties, just before this display is
+        // destroyed. Clearing it hid the status bar and made the panel jump.
+        it('leaves a status bar something else set after it', async () => {
+            stdout.set(['content']);
+
+            const { unmount } = render(SingleDisplay);
+            const hint = { actions: [{ key: 'esc', label: 'to clear' }], count: '' };
+            statusBar.set(hint);
+
+            unmount();
+
+            expect(get(statusBar)).toBe(hint);
         });
     });
 
