@@ -1,5 +1,25 @@
 # Devlog
 
+## 2026-10-04: Stopping a command left the programs it started running
+
+**Symptom**: My find command starts a new search on every keystroke, and the searches it replaced kept going. dynio stopped the script, but its `mdfind` and `fzf` ran on to the end, so typing `settings` left up to six Spotlight searches competing with the one being shown. Any script with a pipeline did the same; the README's to-mp4 example kept converting after Esc.
+
+**Root cause**: `run_program` stopped a command with `child.kill()`, which only SIGKILLs the process it started. The programs that process started were left running.
+
+**Fix**: each command now runs in its own process group (`process_group(0)`), and `stop_child` signals the whole group. It sends SIGTERM first, so scripts can clean up with `trap`, then SIGKILL if the command is still running after `STOP_GRACE` (5 s). Windows has no process groups, so there it still kills just the command.
+
+**Why not SIGKILL the group straight away**: SIGKILL can't be caught. My srconv script relied on only ffmpeg being killed: its progress reader was a separate process that survived, noticed, and deleted the half-written file. Killing the whole group outright would have left those files behind. Now srconv deletes the file in a `trap`. The grace is 5 s because ffmpeg takes about 1.3 s to finish writing after SIGTERM (x264 `veryslow`).
+
+**Gotchas**:
+- The group has to be created when the command starts. Otherwise the command is in dynio's own group, and signalling "its group" stops dynio.
+- macOS returns EPERM from `killpg` when everything in the group has exited but the command hasn't been waited for yet, so `stop_child` ignores errors.
+- bash postpones a trap until the command it's running in the foreground finishes, so srconv starts ffmpeg with `&`, `wait`s for it, and its trap kills ffmpeg straight away.
+- srconv's new version needs this dynio. With an older one, stopping srconv kills only bash and ffmpeg converts to the end.
+
+**Tests** (`src-tauri/src/tests/stop_running.rs`, `process_group`), not run yet:
+- Through the real `run_program` and `stop_running`: a `sleep` the script started in the background is stopped too, and a script's `trap ... TERM` runs.
+- `stop_child` kills a command that ignores SIGTERM once the grace period is up, and returns at once for a command that has already exited.
+
 ## 2026-10-03: Cmd+O ran the activate action on the folder instead of opening it
 
 **Symptom**: With `isPath: true`, Cmd/Ctrl+O (and right-click in list mode) is documented as "open containing folder", but it only did that for `activateAction: open`. With `copy` it copied the folder's path. With `command` it ran the command with the folder as its argument. That was dangerous for a command that deletes its argument: a "move the original to the Trash" command would have been handed the folder.
