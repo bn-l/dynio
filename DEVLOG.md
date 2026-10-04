@@ -1,5 +1,19 @@
 # Devlog
 
+## 2026-10-04: The status bar disappeared when a list gave way to "No output"
+
+**Symptom**: In find, typing `ukr` and then deleting the "r" sometimes made the panel jump. The list (and its scrollbar) gave way to "No output", and at the same moment the status bar disappeared, so the content area grew by 45 px and everything recentred. Typing `uk` straight away showed "No output" with "esc to clear" in the status bar, so the panel looked different depending on how you got there.
+
+**Root cause**: when the output empties, a reactive block in `App.svelte` puts up "esc to clear". Svelte then destroys `ListDisplay`, whose `onDestroy` cleared the status bar whatever was in it, wiping App's hint. With nothing in it, `Tray` hides the status bar. `SingleDisplay` and `CmdSelector` had the same `onDestroy`.
+
+**Not the cause**: the scrollbar. `overflow-y: scroll` keeps its space whether or not the list can scroll. I checked in a real WKWebView at the window's size, with both macOS scroll bar styles (macOS switches between them when a mouse is connected): the content width doesn't change, and a list going from scrolling to fitting doesn't move its rows (compared pixel by pixel).
+
+**Fix**: each of the three components remembers the status it last set and, when it's destroyed, clears the status bar only if it still shows that (`clearStatusBarIfShowing` in `globals.ts`).
+
+**Tests** (not run yet):
+- New in `tests/App.test.ts`: "keeps "esc to clear" when a list gives way to no output". It fails on the old code.
+- The three "clears status bar on destroy" tests (ListDisplay, SingleDisplay, CmdSelector) set a status the component hadn't set and expected it to be cleared, which is the bug. Each is now two tests: the component clears its own status, and it leaves one that was set after it.
+
 ## 2026-10-04: Stopping a command left the programs it started running
 
 **Symptom**: My find command starts a new search on every keystroke, and the searches it replaced kept going. dynio stopped the script, but its `mdfind` and `fzf` ran on to the end, so typing `settings` left up to six Spotlight searches competing with the one being shown. Any script with a pipeline did the same; the README's to-mp4 example kept converting after Esc.
