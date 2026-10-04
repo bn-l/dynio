@@ -39,22 +39,21 @@ find:
             hideOnActivation: true
             isPath: true
 
-groq:
+gpt:
     command: node
     arguments:
-        - /path/to/groq-ask.js
-    description: Ask Groq a question (uses compound model with web search)
+        - /path/to/gpt-ask.mjs
+    description: Ask GPT a question (on your ChatGPT plan, through Codex's login)
     hotkeyNumber: 3
-    placeholderText: Ask Groq...
+    placeholderText: Ask GPT...
     runOnEnter: true
     noOutputTimeoutMs: 2000
     modeConfig:
         mode: llm
         displayOptions:
             parseAnsiColors: false
-            thinkingDisplay: showWhileThinking
-            smallSize: 0.8
-            largeSize: 1
+            smallSize: 0.9
+            largeSize: 1.1
             sizeBreakPoint: 100
 
 to_mp4:

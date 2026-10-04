@@ -14,12 +14,12 @@ Where each demo's output comes from:
 - qalc: real qalc.
 - find: fixtures/find-paths.txt, narrowed the way the README's find script does it (apps always,
   other files only if their name contains the query, then fzf).
-- groq: fixtures/groq-answer.md, sent in small chunks like a streaming answer.
+- gpt: fixtures/gpt-answer.md, sent in small chunks like a streaming answer.
 - to_mp4: fixtures/to-mp4-output.txt, recorded from to-mp4.sh by `--record-to-mp4`.
 - scripts: list-scripts.sh, run for real on a temporary ~/scripts holding the files named in
   fixtures/scripts-folder.txt.
 
-Usage: `just demos` makes them all, `just demos find groq` makes some, and
+Usage: `just demos` makes them all, `just demos find gpt` makes some, and
 `just demos --record-to-mp4` re-records the ffmpeg output first. Needs img2webp
 (`brew install webp`), fzf, qalc and ffmpeg on PATH, and Playwright's WebKit
 (`uvx playwright@1.61.0 install webkit`).
@@ -268,8 +268,8 @@ def find(demo: Demo, run: dict):
     send_lines(demo, fzf(query, found))
 
 
-def groq(demo: Demo, _run: dict):
-    text = (FIXTURES / "groq-answer.md").read_text()
+def gpt(demo: Demo, _run: dict):
+    text = (FIXTURES / "gpt-answer.md").read_text()
     demo.emit("stdout", [])
     demo.snap(600)
     # Streaming output arrives in chunks, and the backend sends every chunk so far each time
@@ -334,12 +334,12 @@ def find_demo(demo: Demo):
     demo.snap(2000)
 
 
-def groq_demo(demo: Demo):
+def gpt_demo(demo: Demo):
     demo.snap(700)
-    demo.type("How do I undo my last git commit but keep the changes?", groq, ms_per_key=(35, 85))
+    demo.type("How do I undo my last git commit but keep the changes?", gpt, ms_per_key=(35, 85))
     demo.snap(500)
-    demo.press("Enter", 2500, groq)
-    # Ctrl+D scrolls half a page (smoothly), down to the sources
+    demo.press("Enter", 2500, gpt)
+    # Ctrl+D scrolls half a page (smoothly), down to the end of the answer
     demo.page.keyboard.press("Control+d")
     for _ in range(12):
         demo.snap(33)
@@ -374,7 +374,7 @@ class Spec(NamedTuple):
 DEMOS: dict[str, Spec] = {
     "qalc": Spec("qalc", False, qalc_demo),
     "find": Spec("find", False, find_demo),
-    "groq": Spec("groq", False, groq_demo, input_font_size=1.3),
+    "gpt": Spec("gpt", False, gpt_demo, input_font_size=1.3),
     "to-mp4": Spec("to_mp4", True, to_mp4_demo),
     "scripts": Spec("scripts", True, scripts_demo),
 }
