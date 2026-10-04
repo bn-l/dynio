@@ -304,8 +304,12 @@ def scripts(demo: Demo, run: dict):
         folder.mkdir()
         for name in (FIXTURES / "scripts-folder.txt").read_text().split():
             (folder / name).touch(mode=0o755)
+        # Run through bash: the repo has core.fileMode off, so the script may not be executable
         result = subprocess.run(
-            [HERE / "list-scripts.sh", run["input"]], capture_output=True, text=True, env={**os.environ, "HOME": home}
+            ["bash", HERE / "list-scripts.sh", run["input"]],
+            capture_output=True,
+            text=True,
+            env={**os.environ, "HOME": home},
         )
     send_lines(demo, result.stdout.replace(home, FAKE_HOME).splitlines())
 
@@ -425,7 +429,7 @@ def record_to_mp4():
         )
         rows, arrived = [], 0
         start = time.monotonic()
-        with subprocess.Popen([HERE / "to-mp4.sh", video], stdout=subprocess.PIPE, text=True) as convert:
+        with subprocess.Popen(["bash", HERE / "to-mp4.sh", video], stdout=subprocess.PIPE, text=True) as convert:
             for line in convert.stdout or []:
                 arrived = round((time.monotonic() - start) * 1000)
                 rows.append(f"{arrived}\t{line.rstrip(os.linesep).replace(str(desktop), f'{FAKE_HOME}/Desktop')}")
