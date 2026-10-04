@@ -48,6 +48,9 @@ panel!(DynioPanel {
 });
 
 const POLL_DELAY_MS: u64 = 16;
+/// How long a stopped command gets to exit by itself before it's killed (see `stop_child`).
+/// Enough for ffmpeg to finish writing the file it was making.
+const STOP_GRACE: Duration = Duration::from_secs(5);
 type VecSender = tokio::sync::watch::Sender<Vec<String>>;
 
 // Window sizing constants (relative to screen dimensions)
@@ -226,6 +229,35 @@ async fn read_and_send_chunks<R>(
     }
 }
 
+/// Stops a running command and everything it started, like the programs in a script's
+/// pipeline. `run_program` makes each command the leader of its own process group, so the
+/// whole group can be signalled at once.
+///
+/// They're asked to stop first (SIGTERM), so a script can clean up with `trap`. If the command
+/// is still running after `grace`, the whole group is killed (SIGKILL). Errors are ignored:
+/// they only mean the group has already gone (macOS says EPERM when everything in it has
+/// exited but the command hasn't been waited for yet).
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+async fn stop_child(child: &mut tokio::process::Child, grace: Duration) {
+    use nix::sys::signal::{killpg, Signal};
+    use nix::unistd::Pid;
+
+    // No id means it has already exited and been waited for
+    let Some(id) = child.id() else { return };
+    let group = Pid::from_raw(id as i32);
+    let _ = killpg(group, Signal::SIGTERM);
+    if tokio::time::timeout(grace, child.wait()).await.is_err() {
+        let _ = killpg(group, Signal::SIGKILL);
+        let _ = child.wait().await;
+    }
+}
+
+/// Windows has no process groups, so only the command itself is killed, straight away
+#[cfg(target_os = "windows")]
+async fn stop_child(child: &mut tokio::process::Child, _grace: Duration) {
+    let _ = child.kill().await;
+}
+
 #[tauri::command]
 async fn run_program<R: Runtime>(
     program: String,
@@ -275,6 +307,8 @@ async fn run_program<R: Runtime>(
     {
         command.args(arguments);
         command.arg(input);
+        // Its own process group, so stopping it stops everything it started too (`stop_child`)
+        command.process_group(0);
 
         // GUI apps on macOS don't inherit the user's shell PATH, so we need to set it explicitly
         // to include common locations where CLI tools are installed
@@ -377,9 +411,9 @@ async fn run_program<R: Runtime>(
             }
         }
         _ = kill_receiver => {
-            log::debug!("[DEBUG] kill_receiver triggered, killing process");
+            log::debug!("[DEBUG] kill_receiver triggered, stopping process");
             finish_flag.store(true, atomic::Ordering::Relaxed);
-            child.kill().await.expect("Couldn't kill process")
+            stop_child(&mut child, STOP_GRACE).await;
         }
     }
 

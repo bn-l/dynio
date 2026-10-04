@@ -912,6 +912,7 @@ dependencies = [
  "env_logger",
  "flexi_logger",
  "log",
+ "nix",
  "serde",
  "serde_json",
  "serde_yaml",
