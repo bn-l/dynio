@@ -120,7 +120,7 @@
 
 /* Code */
 .prose code {
-    color: var(--accent);
+    color: var(--code-inline-text);
     background-color: var(--bg-secondary);
     padding: 0.2rem 0.4rem;
     border-radius: 0.25rem;

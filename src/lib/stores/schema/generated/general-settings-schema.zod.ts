@@ -8,6 +8,18 @@ export default z
         "Theme mode: 'off' for light, 'on' for dark, 'auto' to follow system preference.",
       )
       .default("off"),
+    lightTheme: z
+      .enum(["dusty-peach", "dusty-peach-inverted"])
+      .describe(
+        'Colour theme in light mode. "dusty-peach": a light peach tray with a deeper input. "dusty-peach-inverted": a deeper peach tray with a lighter input.',
+      )
+      .default("dusty-peach"),
+    darkTheme: z
+      .literal("dark-peach")
+      .describe(
+        'Colour theme in dark mode. "dark-peach": charcoal greys with peach highlights.',
+      )
+      .default("dark-peach"),
     defaultCommand: z
       .string()
       .describe(

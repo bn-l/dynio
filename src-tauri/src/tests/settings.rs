@@ -40,6 +40,35 @@ reshowInCenter: true
         assert!(settings.reshow_in_center);
     }
 
+    /// Only the frontend reads the theme settings. The backend must still load a settings file
+    /// that has them, and keep the settings it does read.
+    #[test]
+    fn theme_settings_do_not_stop_the_backend_reading_settings() {
+        let yaml = r#"
+darkMode: true
+lightTheme: dusty-peach-inverted
+darkTheme: dark-peach
+inputFontSize: 1.3
+"#;
+        let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
+        assert_eq!(settings.dark_mode, DarkMode::On);
+        assert_eq!(settings.input_font_size, 1.3);
+    }
+
+    /// The settings file a new install starts with must load on every platform.
+    #[test]
+    fn every_platforms_default_settings_file_parses() {
+        for yaml in [
+            include_str!("../data/default-general-settings-macos.yaml"),
+            include_str!("../data/default-general-settings-win.yaml"),
+            include_str!("../data/default-general-settings-linux.yaml"),
+        ] {
+            let settings: GeneralSettings = serde_yaml::from_str(yaml).unwrap();
+            assert_eq!(settings.dark_mode, DarkMode::Off);
+            assert_eq!(settings.input_font_size, 1.5);
+        }
+    }
+
     #[test]
     fn parses_minimal_yaml() {
         let yaml = "{}";

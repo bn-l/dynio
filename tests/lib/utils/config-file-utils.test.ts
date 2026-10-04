@@ -575,6 +575,75 @@ inputFontSize: "not a number"
 
             await expect(loadValidateAndInitConfigStores()).rejects.toThrow();
         });
+
+        describe('themes', () => {
+            const cmdConfigYaml = `
+test-cmd:
+  command: echo
+  modeConfig:
+    mode: list
+    displayOptions: {}
+    activationOptions: {}
+`;
+
+            it('defaults to dusty-peach for light mode and dark-peach for dark mode', async () => {
+                mockInvoke.mockResolvedValue({ cmd_config: cmdConfigYaml, settings: `{}` });
+
+                await loadValidateAndInitConfigStores();
+
+                expect(get(settings).lightTheme).toBe('dusty-peach');
+                expect(get(settings).darkTheme).toBe('dark-peach');
+            });
+
+            it('loads the inverted light theme and keeps the default dark theme', async () => {
+                mockInvoke.mockResolvedValue({
+                    cmd_config: cmdConfigYaml,
+                    settings: `
+lightTheme: dusty-peach-inverted
+`,
+                });
+
+                await loadValidateAndInitConfigStores();
+
+                expect(get(settings).lightTheme).toBe('dusty-peach-inverted');
+                expect(get(settings).darkTheme).toBe('dark-peach');
+            });
+
+            it('rejects a misspelt light theme and names the setting in the error', async () => {
+                mockInvoke.mockResolvedValue({
+                    cmd_config: cmdConfigYaml,
+                    settings: `
+lightTheme: dusty-peach-invert
+`,
+                });
+
+                await expect(loadValidateAndInitConfigStores()).rejects.toThrow(/lightTheme/);
+                expect(get(errors).some(error => error.message.includes('lightTheme'))).toBe(true);
+            });
+
+            // A light theme can't be used in dark mode, or the other way round
+            it('rejects a light theme set as the dark theme', async () => {
+                mockInvoke.mockResolvedValue({
+                    cmd_config: cmdConfigYaml,
+                    settings: `
+darkTheme: dusty-peach
+`,
+                });
+
+                await expect(loadValidateAndInitConfigStores()).rejects.toThrow(/darkTheme/);
+            });
+
+            it('rejects the dark theme set as the light theme', async () => {
+                mockInvoke.mockResolvedValue({
+                    cmd_config: cmdConfigYaml,
+                    settings: `
+lightTheme: dark-peach
+`,
+                });
+
+                await expect(loadValidateAndInitConfigStores()).rejects.toThrow(/lightTheme/);
+            });
+        });
     });
 
     describe('edge cases', () => {

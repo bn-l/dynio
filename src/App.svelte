@@ -15,8 +15,7 @@ https://tauri.app/v1/guides/distribution/updater/#built-in-dialog
 >
     <div
         id="mainWrapper"
-        class="rounded-xl absolute top-4 left-3 right-4"
-        class:dark={isDark}
+        class="rounded-xl absolute top-4 left-3 right-4 theme-{theme}"
     >
         <div
             id="inputWrapper"
@@ -101,6 +100,9 @@ as regular stdout from commands) -->
     // Dark mode state
     let systemPrefersDark = false;
     $: isDark = $settings.darkMode === "on" || ($settings.darkMode === "auto" && systemPrefersDark);
+    // Sets the colours (main.css). The settings store is empty until the config file loads, and
+    // stays empty if there's no settings file, so the defaults are needed here too.
+    $: theme = isDark ? ($settings.darkTheme ?? "dark-peach") : ($settings.lightTheme ?? "dusty-peach");
 
     onMount(() => {
         void loadValidateAndInitConfigStores();

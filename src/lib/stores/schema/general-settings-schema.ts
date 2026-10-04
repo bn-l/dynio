@@ -6,6 +6,17 @@ export type GeneralSettings = {
      */
     darkMode?: "off" | "on" | "auto";
     /**
+     * Colour theme in light mode. "dusty-peach": a light peach tray with a deeper input.
+     * "dusty-peach-inverted": a deeper peach tray with a lighter input.
+     * @default "dusty-peach"
+     */
+    lightTheme?: "dusty-peach" | "dusty-peach-inverted";
+    /**
+     * Colour theme in dark mode. "dark-peach": charcoal greys with peach highlights.
+     * @default "dark-peach"
+     */
+    darkTheme?: "dark-peach";
+    /**
      * Defaults to whichever has hotkey number 1 (or if no hotkeys, the first one it finds)
      */
     defaultCommand?: string;

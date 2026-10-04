@@ -1,5 +1,7 @@
 
 
+/* Colours come from the theme class on #mainWrapper (App.svelte picks it from the lightTheme /
+   darkTheme settings), so only sizes and fonts are set here. */
 :root {
     --main-font: Inter;
     --mono-font: 'Roboto Mono';
@@ -7,56 +9,12 @@
     font-family: var(--main-font);
     letter-spacing: var(--main-letter-spacing);
 
-    /* Solid color system */
-    --bg-primary: #ffffff;
-    --bg-secondary: #f7f7f8;
-    --bg-tertiary: #efefef;
-    --border-color: #e5e5e5;
-    --border-light: #f0f0f0;
-
-    --text: #1a1a1a;
-    --text-secondary: #6b6b6b;
-    --lightText: #999999;
-
-    /* Orange accent */
-    --accent: #f88732;
-    --accent-light: #fdba74;
-    --accent-selection: #fbe1cd;
-    --accent-hover: rgba(255, 213, 171, 0.93);
-
-    /* Warm tones */
-    --bg-app: rgba(251, 242, 234, 0.985);
-    --text-muted: color(srgb 0.4631 0.4297 0.4056);
-    --divider-color: rgba(222, 150, 95, 0.18);
-
-    /* Card, input well and tray details */
-    --rim: rgba(222, 150, 95, 0.35);
-    --rim-highlight: rgba(255, 255, 255, 0.6);
-    /* The card sits in a transparent window with only ~0.75rem (sides) to ~0.9rem (bottom) of
-       margin, so the shadow must fade out well inside that or the window edge cuts it into a
-       hard line. rem keeps it in proportion, since the margins scale with the window width. */
-    --card-shadow: 0 0.15rem 0.45rem rgba(120, 60, 20, 0.10), 0 0.05rem 0.12rem rgba(120, 60, 20, 0.08);
-    --well: #fbe9db;
-    --pill: #f9ddc7;
-    --pill-text: #3b2b20;
-    --icon-tile: #faebdf;
-    --icon-color: #995c2a;
-    --keycap: #ede0d4;
-    --keycap-text: #524236;
-    --scroll-thumb: #f6c89e;
-    --badge-bg: #ef9646;
-    --badge-text: #ffffff;
-    --selection-edge: transparent;
     --fade-height: 2.5rem;
     /* The painted scroll thumb, plus an invisible strip to its left that also grabs it. Tray
        views (DisplayWrapper `padding` props) take the strip's width off their right padding,
        so content keeps its width. */
     --scroll-thumb-width: 0.375rem;
     --scroll-thumb-grab: 0.5rem;
-
-    /* Code blocks */
-    --code-bg: #1e1e1e;
-    --code-text: #d4d4d4;
 
     font-size: 2.4vw;
 
@@ -77,47 +35,122 @@
 }
 
 
-/* Dark peach. Dark orange used as a flat fill turns into muddy brown, so peach is used as light
-   instead: a terracotta base, peach text and icons, and
-   a selection that's a translucent peach wash with a soft peach edge. Solid orange is only
-   used for small badges. */
-.dark {
-    --bg-primary: #2b1d18;
-    --bg-secondary: #33231d;
-    --bg-tertiary: #3c2a23;
-    --border-color: rgba(255, 190, 150, 0.14);
-    --border-light: rgba(255, 190, 150, 0.08);
+/* The light themes. Everything is on one peach hue. Text is warm near-black and warm greys,
+   never neutral grey. One brown is used for icons, key labels and inline code, and one caramel
+   for the chevron, caret, links and badges. The themes differ only in their surfaces. */
+.theme-dusty-peach,
+.theme-dusty-peach-inverted {
+    --bg-primary: #ffffff;
+    --border-light: #f0f0f0;
 
-    --text: #fff0e6;
-    --text-secondary: #d6b9a7;
-    --lightText: #957563;
+    --text: #241e1a;
+    --text-secondary: #675b51;
+    --lightText: #a08f80;
+    --text-muted: #6e6055;
 
-    --accent: #ffa36b;
-    --accent-light: rgba(255, 163, 107, 0.55);
-    --accent-selection: rgba(255, 165, 115, 0.17);
-    --accent-hover: rgba(255, 170, 120, 0.22);
-    --selection-edge: rgba(255, 190, 150, 0.2);
+    --accent: #cb8747;
+    --accent-light: #e1ab7b;
+    --accent-hover: rgba(255, 213, 171, 0.93);
+    --selection-edge: transparent;
+    --caret: var(--accent);
+    --row-hint: var(--icon-color);
+    --code-inline-text: #7e522c;
 
-    --bg-app: rgba(43, 29, 24, 0.985);
-    --text-muted: #c9ab99;
-    --divider-color: rgba(255, 190, 150, 0.1);
+    --rim-highlight: rgba(255, 255, 255, 0.6);
+    /* The card sits in a transparent window with only ~0.75rem (sides) to ~0.9rem (bottom) of
+       margin, so the shadow must fade out well inside that or the window edge cuts it into a
+       hard line. rem keeps it in proportion, since the margins scale with the window width. */
+    --card-shadow: 0 0.15rem 0.45rem rgba(120, 60, 20, 0.10), 0 0.05rem 0.12rem rgba(120, 60, 20, 0.08);
+    --pill-text: #392a1e;
+    --icon-color: #7e522c;
+    --keycap-text: #7e522c;
+    --badge-bg: #cb8747;
+    --badge-text: #fffaf5;
 
-    --rim: rgba(255, 190, 150, 0.16);
-    --rim-highlight: rgba(255, 225, 200, 0.06);
+    --code-bg: #2c251f;
+    --code-text: #f1e2d4;
+}
+
+/* A light peach tray with a deeper peach input. The command button, key labels and selected row
+   are a step deeper again, and icon tiles take the input's colour. */
+.theme-dusty-peach {
+    --bg-app: rgba(255, 239, 224, 0.985);
+    --well: #ffe8d4;
+    --pill: #fadfc7;
+    --accent-selection: #fae2cc;
+    --icon-tile: #ffe8d4;
+    --keycap: #fadfc7;
+    --scroll-thumb: #f4d6bc;
+    --divider-color: #f9dfc8;
+    --border-color: #f9dfc8;
+    --rim: #f2d0b2;
+    --bg-secondary: #ffe8d4;
+    --bg-tertiary: #ffe8d4;
+}
+
+/* Dusty peach with the tray and input swapped: a deeper peach tray with a lighter input. The
+   selected row, key labels and icon tiles share the input's colour, and the command button
+   takes the tray's, so it looks like a slot in the input. */
+.theme-dusty-peach-inverted {
+    --bg-app: rgba(255, 232, 212, 0.985);
+    --well: #ffefe1;
+    --pill: #ffe8d4;
+    --accent-selection: #ffefe1;
+    --icon-tile: #ffefe1;
+    --keycap: #ffefe1;
+    --scroll-thumb: #eec9a9;
+    --divider-color: #efd4bb;
+    --border-color: #efd4bb;
+    --rim: #e7c3a2;
+    --bg-secondary: #ffefe1;
+    --bg-tertiary: #ffefe1;
+}
+
+
+/* Neutral greys, not a darkened peach. Surfaces are white at low opacity over a charcoal card, so
+   they stay grey whatever is behind them. Peach (light mode's caramel, made lighter so it reads
+   the same on charcoal) is kept for a few small marks: the chevron, the caret, the selected
+   row's key hint, links and list bullets, and the drop highlight. */
+.theme-dark-peach {
+    --bg-primary: #1d1d1d;
+    --bg-secondary: rgba(255, 255, 255, 0.07);
+    --bg-tertiary: rgba(255, 255, 255, 0.1);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --border-light: rgba(255, 255, 255, 0.06);
+
+    --text: #ececec;
+    --text-secondary: #a6a6a6;
+    --lightText: #767676;
+    --text-muted: #8f8f8f;
+
+    --accent: #e3a165;
+    --accent-light: rgba(227, 161, 101, 0.5);
+    --accent-selection: rgba(255, 255, 255, 0.075);
+    --accent-hover: rgba(255, 255, 255, 0.1);
+    --selection-edge: rgba(255, 255, 255, 0.05);
+    --caret: var(--accent);
+    --row-hint: var(--accent);
+    --code-inline-text: var(--text);
+
+    --bg-app: rgba(29, 29, 29, 0.985);
+    --divider-color: rgba(255, 255, 255, 0.07);
+
+    --rim: rgba(255, 255, 255, 0.1);
+    --rim-highlight: rgba(255, 255, 255, 0.04);
     --card-shadow: 0 0.15rem 0.45rem rgba(0, 0, 0, 0.32), 0 0.05rem 0.12rem rgba(0, 0, 0, 0.24);
-    --well: rgba(255, 190, 150, 0.08);
-    --pill: rgba(255, 160, 110, 0.2);
-    --pill-text: #ffd0ad;
-    --icon-tile: rgba(255, 190, 150, 0.09);
-    --icon-color: #ffb48a;
-    --keycap: rgba(255, 190, 150, 0.12);
-    --keycap-text: #f3d9c7;
-    --scroll-thumb: rgba(255, 170, 120, 0.32);
-    --badge-bg: #f2924c;
-    --badge-text: #fff8f2;
+    --well: rgba(255, 255, 255, 0.045);
+    --pill: rgba(255, 255, 255, 0.08);
+    --pill-text: #d0d0d0;
+    --icon-tile: rgba(255, 255, 255, 0.06);
+    --icon-color: #b4b4b4;
+    --keycap: rgba(255, 255, 255, 0.08);
+    --keycap-text: #c4c4c4;
+    --scroll-thumb: rgba(255, 255, 255, 0.16);
+    --badge-bg: rgba(255, 255, 255, 0.16);
+    --badge-text: #ececec;
 
-    --code-bg: #1f1511;
-    --code-text: #f4e4d8;
+    --code-bg: rgba(0, 0, 0, 0.28);
+    --code-text: #dedede;
 }
 
 * {
@@ -161,6 +194,10 @@ input {
     outline: none;
     border: none;
     color: var(--text);
+}
+
+#cmdInput {
+    caret-color: var(--caret);
 }
 
 input::placeholder {
@@ -416,7 +453,7 @@ box-shadow: inset -3px -3px 7px #ffffffb0, inset 3px 3px 5px rgba(94, 104, 121, 
 .row-hint {
     flex: none;
     font-family: var(--main-font);
-    color: var(--icon-color);
+    color: var(--row-hint);
     font-size: 1.1em;
 }
 

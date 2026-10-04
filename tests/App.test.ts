@@ -1081,6 +1081,73 @@ describe('App.svelte', () => {
         });
     });
 
+    // The theme class on #mainWrapper sets the colours (main.css)
+    describe('themes', () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        function themeClasses(container: HTMLElement): string[] {
+            const wrapper = container.querySelector('#mainWrapper');
+            return Array.from(wrapper?.classList ?? []).filter(name => name.startsWith('theme-'));
+        }
+
+        it('uses dusty-peach before any settings have loaded', async () => {
+            const { container } = render(App);
+            await vi.runAllTimersAsync();
+
+            expect(themeClasses(container)).toEqual(['theme-dusty-peach']);
+        });
+
+        it('uses the light theme from the settings', async () => {
+            settings.set({ lightTheme: 'dusty-peach-inverted' });
+            const { container } = render(App);
+            await vi.runAllTimersAsync();
+
+            expect(themeClasses(container)).toEqual(['theme-dusty-peach-inverted']);
+        });
+
+        it('uses dark-peach in dark mode, whatever the light theme is', async () => {
+            settings.set({ darkMode: 'on', lightTheme: 'dusty-peach-inverted' });
+            const { container } = render(App);
+            await vi.runAllTimersAsync();
+
+            expect(themeClasses(container)).toEqual(['theme-dark-peach']);
+        });
+
+        it('switches theme straight away when the settings change', async () => {
+            const { container } = render(App);
+            await vi.runAllTimersAsync();
+
+            settings.set({ darkMode: 'on' });
+            await vi.runAllTimersAsync();
+            expect(themeClasses(container)).toEqual(['theme-dark-peach']);
+
+            settings.set({ darkMode: 'off', lightTheme: 'dusty-peach-inverted' });
+            await vi.runAllTimersAsync();
+            expect(themeClasses(container)).toEqual(['theme-dusty-peach-inverted']);
+        });
+
+        it('follows the system in auto mode, including when the system changes', async () => {
+            let onSystemChange: ((event: { matches: boolean }) => void) | undefined;
+            vi.stubGlobal('matchMedia', () => ({
+                matches: true,
+                addEventListener: (_type: string, handler: (event: { matches: boolean }) => void) => {
+                    onSystemChange = handler;
+                },
+                removeEventListener: () => {},
+            }));
+            settings.set({ darkMode: 'auto', lightTheme: 'dusty-peach-inverted' });
+            const { container } = render(App);
+            await vi.runAllTimersAsync();
+            expect(themeClasses(container)).toEqual(['theme-dark-peach']);
+
+            onSystemChange?.({ matches: false });
+            await vi.runAllTimersAsync();
+            expect(themeClasses(container)).toEqual(['theme-dusty-peach-inverted']);
+        });
+    });
+
     describe('window hide during output streaming - state consistency', () => {
         // Section 30 Frontend test: Window hide during output streaming → state consistent
 

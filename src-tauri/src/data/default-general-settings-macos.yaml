@@ -1,6 +1,8 @@
 # yaml-language-server: $schema=./general-settings-schema.json
 
 darkMode: off
+lightTheme: dusty-peach
+darkTheme: dark-peach
 startMinimised: false
 inputFontSize: 1.5
 globalShortcut: "Option+Space"
