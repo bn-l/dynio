@@ -442,6 +442,8 @@ The app watches its config directory and auto-restarts on changes.
 
 ```yaml
 darkMode: auto                # auto | true | false (auto follows system preference)
+lightTheme: dusty-peach       # dusty-peach | dusty-peach-inverted
+darkTheme: dark-peach         # dark-peach
 defaultCommand: find          # Command to use on launch
 startMinimised: false         # Start hidden
 inputFontSize: 1.5            # Input font size (rem)
