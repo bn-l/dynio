@@ -600,6 +600,8 @@ scoop install everything-cli # Fast file search (requires Everything)
 
 **LLM mode** uses chunk-based reading instead, so tokens appear immediately without waiting for newlines.
 
+**Stopping**: Dynio stops a command that's still running when it runs it again (as you type, or on Enter with `runOnEnter`), when you clear the input with Esc, and when you switch commands. On macOS and Linux it sends SIGTERM to the command and everything it started (like each program in a script's pipeline), then SIGKILL to anything still running 5 seconds later. To clean up when stopped, e.g. delete a half-written file, use `trap 'rm -f "$out"; exit 143' TERM`. Bash only runs a trap once the command it's running in the foreground has finished, so start long commands with `&` and then `wait` for them. On Windows only the command itself is stopped.
+
 ---
 
 ## Privacy
