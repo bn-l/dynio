@@ -6,7 +6,7 @@ import { render, fireEvent, cleanup } from '@testing-library/svelte';
 import { get } from 'svelte/store';
 import { stdout, statusBar, keySymbols, currentCmd } from '$lib/stores/globals';
 import { cmdConfig } from '$lib/stores/cmd-config';
-import type { CmdConfigItem } from '$lib/stores/schema/cmd-config-schema';
+import type { ActivationOptions, CmdConfigItem } from '$lib/stores/schema/cmd-config-schema';
 import ListDisplay from '../../../../src/Tray/Stdout/ListDisplay/ListDisplay.svelte';
 import { stubPanelScroll } from '../../../helpers/panelScroll';
 
@@ -786,6 +786,91 @@ describe('ListDisplay.svelte', () => {
             for (const tile of tiles) {
                 expect(tile.firstElementChild?.getAttribute('data-kind')).toBe(tile.getAttribute('data-kind'));
             }
+        });
+
+        describe('with an extractor regex', () => {
+            function extractorConfig(activationOptions: ActivationOptions) {
+                cmdConfig.set({
+                    'test-cmd': createConfig({
+                        modeConfig: { mode: 'list', displayOptions: {}, activationOptions },
+                    }),
+                });
+            }
+
+            function tileKinds(container: HTMLElement) {
+                return [...container.querySelectorAll('.row-icon')].map((tile) => tile.getAttribute('data-kind'));
+            }
+
+            // grep-style output: the whole line's "extension" would be "ts:12: const x = 1"
+            const GREP_LINE = 'src/app.ts:12: const x = 1';
+            const GREP_PATH = { extractorRegexBody: '^(.+?):\\d+:', extractorGroup: 1 };
+
+            it('picks the icon from the extracted path, the same text Cmd/Ctrl+O reveals', async () => {
+                extractorConfig({ activateAction: 'open', isPath: true, ...GREP_PATH });
+                stdout.set([GREP_LINE]);
+                mockInvoke.mockImplementation((cmd: string) =>
+                    Promise.resolve(cmd === 'trim_path' ? 'src' : undefined));
+
+                const { container } = render(ListDisplay);
+
+                expect(tileKinds(container)).toEqual(['ts']);
+                await fireEvent.keyDown(document.body, { key: 'o', ctrlKey: true });
+                await vi.waitFor(() => {
+                    expect(mockInvoke).toHaveBeenCalledWith('trim_path', { path: 'src/app.ts' });
+                });
+            });
+
+            it('uses the whole match when no group is set', () => {
+                extractorConfig({ isPath: true, extractorRegexBody: '\\S+\\.py' });
+                stdout.set(['run /x/tool.py now']);
+
+                const { container } = render(ListDisplay);
+
+                expect(tileKinds(container)).toEqual(['py']);
+            });
+
+            it('goes by the whole line when the regex does not match', () => {
+                extractorConfig({ isPath: true, extractorRegexBody: '^\\d+$' });
+                stdout.set(['/x/a.png']);
+
+                const { container } = render(ListDisplay);
+
+                expect(tileKinds(container)).toEqual(['image']);
+            });
+
+            it('goes by the whole line when the group does not exist', () => {
+                extractorConfig({ isPath: true, extractorRegexBody: '(\\w+)\\.png', extractorGroup: 3 });
+                stdout.set(['/x/a.png']);
+
+                const { container } = render(ListDisplay);
+
+                expect(tileKinds(container)).toEqual(['image']);
+            });
+
+            it('still shows every row when the regex is invalid', () => {
+                extractorConfig({ isPath: true, extractorRegexBody: '[oops' });
+                stdout.set(['/x/a.png', '/x/b.js']);
+
+                const { container } = render(ListDisplay);
+
+                expect(tileKinds(container)).toEqual(['image', 'js']);
+                expect([...container.querySelectorAll('.row-text')].map((row) => row.textContent?.trim()))
+                    .toEqual(['/x/a.png', '/x/b.js']);
+            });
+
+            it('follows a change to the extractor without new output', async () => {
+                extractorConfig({ isPath: true });
+                stdout.set([GREP_LINE]);
+
+                const { container } = render(ListDisplay);
+                expect(tileKinds(container)).toEqual(['file']);
+
+                extractorConfig({ isPath: true, ...GREP_PATH });
+
+                await vi.waitFor(() => {
+                    expect(tileKinds(container)).toEqual(['ts']);
+                });
+            });
         });
     });
 

@@ -90,7 +90,7 @@ export default z.record(
                     isPath: z
                       .boolean()
                       .describe(
-                        "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent folder of the extracted text or error if the extract text is not a path.",
+                        "Treats the extracted text (the whole line if there's no extractor) as a file path: 1. List rows get an icon for the file's type, guessed from its extension. 2. Control or Cmd (on mac) + O opens the folder it's in, or errors if it isn't a path.",
                       )
                       .default(false),
                     hideOnActivation: z
@@ -129,7 +129,7 @@ export default z.record(
                     isPath: z
                       .boolean()
                       .describe(
-                        "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent folder of the extracted text or error if the extract text is not a path.",
+                        "Treats the extracted text (the whole line if there's no extractor) as a file path: 1. List rows get an icon for the file's type, guessed from its extension. 2. Control or Cmd (on mac) + O opens the folder it's in, or errors if it isn't a path.",
                       )
                       .default(false),
                     hideOnActivation: z
@@ -181,7 +181,7 @@ export default z.record(
                     isPath: z
                       .boolean()
                       .describe(
-                        "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent folder of the extracted text or error if the extract text is not a path.",
+                        "Treats the extracted text (the whole line if there's no extractor) as a file path: 1. List rows get an icon for the file's type, guessed from its extension. 2. Control or Cmd (on mac) + O opens the folder it's in, or errors if it isn't a path.",
                       )
                       .default(false),
                     hideOnActivation: z
@@ -282,7 +282,7 @@ export default z.record(
                     isPath: z
                       .boolean()
                       .describe(
-                        "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent folder of the extracted text or error if the extract text is not a path.",
+                        "Treats the extracted text (the whole line if there's no extractor) as a file path: 1. List rows get an icon for the file's type, guessed from its extension. 2. Control or Cmd (on mac) + O opens the folder it's in, or errors if it isn't a path.",
                       )
                       .default(false),
                     hideOnActivation: z
@@ -321,7 +321,7 @@ export default z.record(
                     isPath: z
                       .boolean()
                       .describe(
-                        "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent folder of the extracted text or error if the extract text is not a path.",
+                        "Treats the extracted text (the whole line if there's no extractor) as a file path: 1. List rows get an icon for the file's type, guessed from its extension. 2. Control or Cmd (on mac) + O opens the folder it's in, or errors if it isn't a path.",
                       )
                       .default(false),
                     hideOnActivation: z
@@ -373,7 +373,7 @@ export default z.record(
                     isPath: z
                       .boolean()
                       .describe(
-                        "Enables Control or Cmd (on mac) + O to open containing folder. This will get the parent folder of the extracted text or error if the extract text is not a path.",
+                        "Treats the extracted text (the whole line if there's no extractor) as a file path: 1. List rows get an icon for the file's type, guessed from its extension. 2. Control or Cmd (on mac) + O opens the folder it's in, or errors if it isn't a path.",
                       )
                       .default(false),
                     hideOnActivation: z

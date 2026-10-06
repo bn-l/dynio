@@ -22,7 +22,7 @@
                     }}
                 >
                     {#if activationOptions?.isPath}
-                        {@const kind = fileKind(item.raw)}
+                        {@const kind = fileKind(iconText(item.raw, extractor, activationOptions.extractorGroup))}
                         <!-- The kind is on the tile too so themes can colour it (main.css) -->
                         <span class="row-icon" data-kind={kind}><FileIcon {kind} /></span>
                     {/if}
@@ -49,6 +49,7 @@
     import { currentCmdConfig } from "$lib/stores/cmd-config.ts";
     import { stdout, statusBar, keySymbols, clearStatusBarIfShowing } from "$lib/stores/globals.ts";
     import type { StatusBarAction, StatusBarState } from "$lib/stores/globals.ts";
+    import type { ActivationOptions } from "$lib/stores/schema/cmd-config-schema.ts";
     import { activate } from "$lib/utils/activator.ts";
     import { fileKind } from "$lib/utils/fileKind.ts";
     import { processListOutput, type ProcessedItem } from "./processListOutput.ts";
@@ -97,6 +98,25 @@
     function onActivation(text: string, openContaining: boolean = false) {
         console.debug(`calling activator with: "${text.replace(/<.*?>/gm, '')}"`);
         void activate(text, activationOptions, openContaining);
+    }
+
+    // Icons go by the same text Enter and Cmd+O act on: with an extractor regex that's its match,
+    // or its extractorGroup group, as in activate(). If the regex doesn't match, or is invalid
+    // (activating reports that), the icon goes by the whole line so the list still shows.
+    $: extractor = compileExtractor(activationOptions);
+
+    function compileExtractor(options: ActivationOptions | undefined): RegExp | undefined {
+        if (!options?.extractorRegexBody) return undefined;
+        try {
+            return new RegExp(options.extractorRegexBody, options.extractorFlags);
+        }
+        catch {
+            return undefined;
+        }
+    }
+
+    function iconText(line: string, regex: RegExp | undefined, group: number | undefined): string {
+        return (regex && line.match(regex)?.[group ?? 0]) || line;
     }
 
 
