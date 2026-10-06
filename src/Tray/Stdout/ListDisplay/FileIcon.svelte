@@ -6,8 +6,8 @@
     const badges: Partial<Record<FileKind, string>> = { js: "JS", ts: "TS", py: "PY", rs: "RS", go: "GO", rb: "RB" };
 </script>
 
-<!-- Hand-drawn in the mockup's style: thin rounded outlines in the icon colour, and solid
-     accent badges with a two-letter label for programming languages. -->
+<!-- Hand-drawn in the mockup's style: thin rounded outlines in the icon colour, and badges with
+     a two-letter label for programming languages. The theme sets their colours (main.css). -->
 {#if badges[kind]}
     <span class="file-badge" data-kind={kind}>{badges[kind]}</span>
 {:else}

@@ -22,7 +22,9 @@
                     }}
                 >
                     {#if activationOptions?.isPath}
-                        <span class="row-icon"><FileIcon kind={fileKind(item.raw)} /></span>
+                        {@const kind = fileKind(item.raw)}
+                        <!-- The kind is on the tile too so themes can colour it (main.css) -->
+                        <span class="row-icon" data-kind={kind}><FileIcon {kind} /></span>
                     {/if}
                     <span class="row-text flex-1 min-w-0 break-all">
                         {#if parseAnsiColors}

@@ -66,6 +66,13 @@
     --keycap-text: #7e522c;
     --badge-bg: #cb8747;
     --badge-text: #fffaf5;
+    /* File icons by kind (.row-icon[data-kind]): the same brown for all of them */
+    --icon-blue: var(--icon-color);
+    --icon-green: var(--icon-color);
+    --icon-yellow: var(--icon-color);
+    --icon-purple: var(--icon-color);
+    --icon-red: var(--icon-color);
+    --icon-orange: var(--icon-color);
 
     --code-bg: #2c251f;
     --code-text: #f1e2d4;
@@ -109,8 +116,9 @@
 
 /* Neutral greys, not a darkened peach. Surfaces are white at low opacity over a charcoal card, so
    they stay grey whatever is behind them. Peach (light mode's caramel, made lighter so it reads
-   the same on charcoal) is kept for a few small marks: the chevron, the caret, the selected
-   row's key hint, links and list bullets, and the drop highlight. */
+   the same on charcoal) is kept for a few small marks: the chevron, the caret, the command
+   button's name, the selected row's key hint, links and list bullets, and the drop highlight.
+   The text is a soft white (#bfbfbf), not near-white, so the peach marks stand out. */
 .theme-dark-peach {
     --bg-primary: #1d1d1d;
     --bg-secondary: rgba(255, 255, 255, 0.07);
@@ -118,7 +126,7 @@
     --border-color: rgba(255, 255, 255, 0.1);
     --border-light: rgba(255, 255, 255, 0.06);
 
-    --text: #ececec;
+    --text: #bfbfbf;
     --text-secondary: #a6a6a6;
     --lightText: #767676;
     --text-muted: #8f8f8f;
@@ -140,17 +148,26 @@
     --card-shadow: 0 0.15rem 0.45rem rgba(0, 0, 0, 0.32), 0 0.05rem 0.12rem rgba(0, 0, 0, 0.24);
     --well: rgba(255, 255, 255, 0.045);
     --pill: rgba(255, 255, 255, 0.08);
-    --pill-text: #d0d0d0;
+    --pill-text: var(--accent);
     --icon-tile: rgba(255, 255, 255, 0.06);
     --icon-color: #b4b4b4;
     --keycap: rgba(255, 255, 255, 0.08);
-    --keycap-text: #c4c4c4;
+    --keycap-text: #bfbfbf;
     --scroll-thumb: rgba(255, 255, 255, 0.16);
-    --badge-bg: rgba(255, 255, 255, 0.16);
-    --badge-text: #ececec;
+    /* Badges take their tile's colour (currentColor), so each language's colour from below */
+    --badge-bg: color-mix(in srgb, currentColor 20%, transparent);
+    --badge-text: currentColor;
+    /* File icons by kind (.row-icon[data-kind]): soft colours at about the text's lightness, so
+       they tell kinds apart without competing with the peach. Plain files stay --icon-color. */
+    --icon-blue: #7ebbd8;
+    --icon-green: #95c295;
+    --icon-yellow: #d0bd82;
+    --icon-purple: #b2a1d4;
+    --icon-red: #d48f93;
+    --icon-orange: #dea279;
 
     --code-bg: rgba(0, 0, 0, 0.28);
-    --code-text: #dedede;
+    --code-text: #b2b2b2;
 }
 
 * {
@@ -425,6 +442,32 @@ box-shadow: inset -3px -3px 7px #ffffffb0, inset 3px 3px 5px rgba(94, 104, 121, 
     border-radius: 0.45em;
     background: var(--icon-tile);
     color: var(--icon-color);
+}
+
+/* Icon colour by file kind; each theme sets the colours. Text, documents and unknown files keep
+   --icon-color. */
+.row-icon:is([data-kind="app"], [data-kind="folder"], [data-kind="py"], [data-kind="ts"], [data-kind="go"]) {
+    color: var(--icon-blue);
+}
+
+.row-icon[data-kind="code"] {
+    color: var(--icon-green);
+}
+
+.row-icon:is([data-kind="data"], [data-kind="archive"], [data-kind="js"]) {
+    color: var(--icon-yellow);
+}
+
+.row-icon:is([data-kind="image"], [data-kind="audio"]) {
+    color: var(--icon-purple);
+}
+
+.row-icon:is([data-kind="video"], [data-kind="rb"]) {
+    color: var(--icon-red);
+}
+
+.row-icon[data-kind="rs"] {
+    color: var(--icon-orange);
 }
 
 /* The drawings fill ~70% of their 24-unit box, so this lands them at about half the tile */

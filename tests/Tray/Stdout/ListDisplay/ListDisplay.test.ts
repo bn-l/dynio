@@ -774,6 +774,19 @@ describe('ListDisplay.svelte', () => {
 
             expect(container.querySelector('.row-text')?.textContent?.trim()).toBe('/x/a.js');
         });
+
+        it('puts the kind on the tile too (themes colour icons by it), matching the icon', () => {
+            pathConfig();
+            stdout.set(['/x/a.py', '/x/b.mov', '/x/c']);
+
+            const { container } = render(ListDisplay);
+
+            const tiles = [...container.querySelectorAll('.row-icon')];
+            expect(tiles.map((tile) => tile.getAttribute('data-kind'))).toEqual(['py', 'video', 'file']);
+            for (const tile of tiles) {
+                expect(tile.firstElementChild?.getAttribute('data-kind')).toBe(tile.getAttribute('data-kind'));
+            }
+        });
     });
 
     describe('selected row hint', () => {
