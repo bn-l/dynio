@@ -1,5 +1,15 @@
 # Devlog
 
+## 2026-10-16: Tables in LLM replies shown as plain text
+
+**Symptom**: a GPT reply's table showed as lines of pipes instead of a table.
+
+**Root cause**: the reply had three header cells but only two separator cells (`|---|---|`). GFM only recognizes a table when the header row and the separator row have the same number of cells, so marked (like GitHub) rendered the lines as a paragraph. Not a marked bug, but a common slip in model output.
+
+**Fix**: `renderMarkdown` fixes such separators before marked parses the text (`fixTableSeparators`, in marked's `hooks.preprocess`). It adds missing `---` cells or drops extra ones, keeping `:` alignment. It only changes the line after a table's first row, so a body row of dashes stays as it is, and it skips fenced code.
+
+**Tests** (`tests/lib/utils/markdown.test.ts`, "separator line with the wrong number of cells"), not run yet: the reply that showed it, too many cells, alignment kept, fenced code left alone, a body row of dashes left alone, and a `---` heading underline under a line with a pipe.
+
 ## 2026-10-04: The status bar disappeared when a list gave way to "No output"
 
 **Symptom**: In find, typing `ukr` and then deleting the "r" sometimes made the panel jump. The list (and its scrollbar) gave way to "No output", and at the same moment the status bar disappeared, so the content area grew by 45 px and everything recentred. Typing `uk` straight away showed "No output" with "esc to clear" in the status bar, so the panel looked different depending on how you got there.
