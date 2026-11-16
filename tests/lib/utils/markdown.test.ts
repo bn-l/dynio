@@ -213,6 +213,54 @@ describe('renderMarkdown', () => {
             expect(result).toContain('Center');
             expect(result).toContain('Right');
         });
+
+        // Models often get the separator line's cell count wrong. GFM then doesn't see a table
+        // at all, so renderMarkdown fixes the separator first.
+        describe('separator line with the wrong number of cells', () => {
+            it('renders a table whose separator has too few cells (from a real reply)', () => {
+                const markdown = `| Stream | Purpose | Unix file descriptor |
+|---|---|
+| stdin | Input to the program | 0 |
+| stdout | Normal output | 1 |
+| stderr | Errors and diagnostics | 2 |`;
+                const result = renderMarkdown(markdown);
+                expect(result).toContain('<table>');
+                expect(result.match(/<th>/g)).toHaveLength(3);
+                expect(result).toContain('<th>Unix file descriptor</th>');
+                expect(result).toContain('<td>2</td>');
+            });
+
+            it('renders a table whose separator has too many cells, without extra columns', () => {
+                const result = renderMarkdown('| a | b |\n|---|---|---|---|\n| 1 | 2 |');
+                expect(result).toContain('<table>');
+                expect(result.match(/<th>/g)).toHaveLength(2);
+            });
+
+            it('keeps the alignment of the separator cells that were there', () => {
+                const result = renderMarkdown('| a | b | c |\n|:---|---:|\n| 1 | 2 | 3 |');
+                expect(result).toContain('<th align="left">a</th>');
+                expect(result).toContain('<th align="right">b</th>');
+                expect(result).toContain('<th>c</th>');
+            });
+
+            it('leaves a table in fenced code as it was written', () => {
+                const result = renderMarkdown('```\n| a | b | c |\n|---|---|\n```');
+                expect(result).not.toContain('<table>');
+                expect(result).toContain('| a | b | c |\n|---|---|');
+            });
+
+            it('leaves a body row of dashes as it is', () => {
+                const result = renderMarkdown('| a | b |\n|---|---|\n| 1 | 2 |\n| - |');
+                expect(result).toMatch(/<td>-<\/td>\s*<td><\/td>/);
+                expect(result).not.toContain('<td>---</td>');
+            });
+
+            it('keeps a heading underline under a line with a pipe in it', () => {
+                const result = renderMarkdown('a | b\n---');
+                expect(result).toContain('<h2>a | b</h2>');
+                expect(result).not.toContain('<table>');
+            });
+        });
     });
 
     describe('line breaks (breaks: true)', () => {
